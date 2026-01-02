@@ -1,0 +1,657 @@
+/* --- 基礎設定與導覽列 --- */
+body {
+  font-family: "PingFang TC", "Microsoft JhengHei", sans-serif;
+  background-color: #f4f7f9;
+  color: #333;
+  margin: 0;
+  padding: 0;
+}
+
+.top-nav {
+  display: flex;
+  justify-content: center;
+  background: #fff;
+  padding: 10px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.nav-item {
+  text-decoration: none;
+  color: #7f8c8d;
+  padding: 10px 20px;
+  font-weight: bold;
+  font-size: 0.95rem;
+}
+
+.nav-item.active {
+  color: #3498db;
+  background: #ebf5fb;
+  border-radius: 20px;
+}
+
+/* --- 容器佈局 --- */
+.list-container {
+  max-width: 850px; /* 稍微加寬一點以容納封面 */
+  margin: 20px auto;
+  padding: 0 15px;
+}
+
+/* --- 列表項目設計 --- */
+.book-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.book-list-item {
+  background: #fff;
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.book-list-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.08);
+}
+
+/* --- 搜尋列與標題區優化 --- */
+.list-header {
+  margin-bottom: 25px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.search-bar {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+  margin-bottom: 15px;
+  align-items: stretch; /* 確保輸入框跟按鈕高度一致 */
+}
+
+#searchInput {
+  flex: 1; /* 重要：讓搜尋框自動撐開 */
+  min-width: 0; /* 防止在窄螢幕擠壓 */
+  padding: 12px 15px;
+  border-radius: 10px;
+  border: 1px solid #ddd;
+  font-size: 1rem;
+  outline: none;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+#searchInput:focus {
+  border-color: #3498db;
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+}
+
+/* 排序按鈕組美化 */
+.sort-group {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap; /* 手機版自動換行 */
+}
+
+.sort-btn {
+  padding: 8px 16px;
+  border: 1px solid #eee;
+  background: white;
+  border-radius: 20px;
+  cursor: pointer;
+  color: #666;
+  font-size: 0.85rem;
+  transition: all 0.2s;
+}
+
+.sort-btn:hover {
+  background: #f8f9fa;
+  border-color: #3498db;
+  color: #3498db;
+}
+
+.refresh-btn {
+  background: #34495e;
+  color: white;
+  border: none;
+  padding: 0 15px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+/* 排序按鈕組 */
+.sort-group {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto; /* 手機版可橫向滑動 */
+  padding-bottom: 5px;
+}
+
+.sort-btn {
+  padding: 6px 15px;
+  border: 1px solid #eee;
+  background: white;
+  border-radius: 20px; /* 膠囊狀更美觀 */
+  cursor: pointer;
+  color: #666;
+  font-size: 0.85rem;
+  white-space: nowrap;
+  transition: all 0.2s;
+}
+
+.sort-btn:hover {
+  background: #3498db;
+  color: white;
+  border-color: #3498db;
+}
+
+/* 封面與內容併排控制 */
+.item-main {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+}
+
+/* 左側封面區 */
+.book-cover-side {
+  width: 100px;
+  height: 140px;
+  min-width: 100px; /* 防止被擠壓 */
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #eee;
+  margin-right: 15px;
+}
+
+.book-cover-side img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+/* 封面容器與圖片縮放 */
+.book-cover-side {
+  width: 90px;
+  height: 125px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #eee;
+}
+
+.book-cover-side img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* 確保圖片填滿不變形 */
+}
+
+/* 無封面時的樣式 */
+.no-cover {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: #bdc3c7;
+  font-size: 0.8rem;
+  width: 100%;
+  height: 100%;
+}
+
+.no-cover button {
+  padding: 4px 8px;
+  font-size: 11px;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.no-cover button:hover {
+  background: #3498db;
+  color: white;
+  border-color: #3498db;
+}
+/* 右側資訊區 */
+.item-info {
+  flex: 1;
+}
+
+.title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.title {
+  margin: 0;
+  font-size: 1.25rem;
+  color: #2c3e50;
+  flex-grow: 1;
+}
+
+/* 編輯書籍按鈕 (齒輪) */
+.edit-book-btn {
+  background: #f8f9fa;
+  border: 1px solid #eee;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: #bdc3c7;
+}
+
+.edit-book-btn:hover {
+  background: #ebf5fb;
+  color: #3498db;
+  border-color: #3498db;
+  transform: rotate(45deg);
+}
+
+/* 評分與標籤 */
+.avg-score {
+  font-size: 1.3rem;
+  font-weight: 900;
+  margin-left: auto;
+}
+
+.author {
+  font-size: 0.95rem;
+  color: #555;
+  margin: 0 0 10px 0;
+}
+
+.jp-title {
+  color: #95a5a6;
+  font-size: 0.85rem;
+  font-weight: normal;
+}
+
+.tags span {
+  display: inline-block;
+  background: #f0f2f5;
+  color: #7f8c8d;
+  font-size: 0.8rem;
+  padding: 3px 10px;
+  border-radius: 6px;
+  margin-right: 6px;
+  margin-bottom: 6px;
+}
+
+/* 連結按鈕 */
+.item-links {
+  display: flex;
+  gap: 10px;
+  margin: 12px 0;
+}
+
+.link-icon {
+  text-decoration: none;
+  font-size: 0.8rem;
+  padding: 6px 12px;
+  border-radius: 8px;
+  color: white;
+  font-weight: bold;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.ebook {
+  background: #27ae60;
+}
+.chil {
+  background: #e91e63;
+}
+
+/* --- 評語區塊 --- */
+.item-reviews {
+  margin-top: 15px;
+  padding-top: 15px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.mini-review {
+  position: relative;
+  padding: 12px 45px 12px 12px;
+  background: #fafafa;
+  border-radius: 10px;
+  margin-bottom: 10px;
+  border: 1px solid #f5f5f5;
+}
+
+.rev-name {
+  font-weight: bold;
+  color: #3498db;
+}
+.rev-score {
+  margin: 0 8px;
+}
+.rev-comment {
+  display: block;
+  margin-top: 4px;
+  color: #666;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+/* 評語編輯鈕 (鉛筆) */
+.small-edit-btn {
+  position: absolute;
+  right: 12px;
+  top: 12px;
+  background: white;
+  border: 1px solid #eee;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #ccc;
+  transition: all 0.2s;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.mini-review:hover .small-edit-btn {
+  color: #3498db;
+  border-color: #3498db;
+  opacity: 1;
+}
+
+/* --- 手機版優化 --- */
+@media (max-width: 600px) {
+  .item-main {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .book-cover-side {
+    width: 80px;
+    height: 110px;
+    margin: 0 auto; /* 封面居中 */
+  }
+
+  .item-info {
+    width: 100%;
+  }
+
+  .title {
+    font-size: 1.1rem;
+  }
+
+  .item-links {
+    flex-wrap: wrap;
+  }
+
+  .link-icon {
+    flex: 1;
+    justify-content: center;
+  }
+
+  .small-edit-btn {
+    opacity: 1;
+  }
+}
+
+/* --- 彈出視窗 (Modal) 基礎設定 --- */
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5); /* 遮罩背景 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(4px); /* 背景模糊感 */
+}
+
+.modal.hidden {
+  display: none !important;
+}
+
+/* --- 視窗本體 --- */
+.modal-content {
+  background: #fff;
+  width: 90%;
+  max-width: 480px;
+  padding: 30px;
+  border-radius: 24px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+
+  /* --- 加入以下屬性解決無法滑動的問題 --- */
+  max-height: 90vh; /* 設定最大高度為螢幕高度的 90% */
+  overflow-y: auto; /* 當內容超過高度時，自動顯示垂直捲軸 */
+  position: relative; /* 確保定位正確 */
+}
+
+/* 為了讓滑動更順暢 (適用於手機端) */
+.modal-content::-webkit-scrollbar {
+  width: 6px;
+}
+.modal-content::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 10px;
+}
+
+@keyframes modalPop {
+  from {
+    transform: scale(0.9);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.modal-content h3 {
+  margin: 0 0 20px 0;
+  text-align: center;
+  font-size: 1.4rem;
+  color: #2c3e50;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 15px;
+}
+
+/* --- 表單內部編排 --- */
+.modal-content label {
+  display: block;
+  margin: 15px 0 8px 0;
+  font-weight: 600;
+  color: #7f8c8d;
+  font-size: 0.95rem;
+}
+
+.modal-content input,
+.modal-content select,
+.modal-content textarea {
+  width: 100%;
+  padding: 14px;
+  border: 1.5px solid #eee;
+  resize: none;
+  border-radius: 12px;
+  background: #fdfdfd;
+  font-size: 1rem;
+  transition: all 0.2s;
+  box-sizing: border-box; /* 確保寬度包含內邊距 */
+}
+
+.modal-content input:focus,
+.modal-content textarea:focus {
+  border-color: #3498db;
+  outline: none;
+  background: #fff;
+}
+
+/* --- 按鈕編排 --- */
+.modal-btns {
+  display: flex;
+  gap: 15px;
+  margin-top: 30px;
+}
+
+.modal-btns button {
+  flex: 1;
+  padding: 15px;
+  border-radius: 12px;
+  font-weight: bold;
+  font-size: 1rem;
+  cursor: pointer;
+  border: none;
+  transition: 0.2s;
+}
+
+.save-btn {
+  background: #3498db;
+  color: white;
+}
+
+.save-btn:hover {
+  background: #2980b9;
+}
+
+.cancel-btn {
+  background: #ecf0f1;
+  color: #7f8c8d;
+}
+
+.cancel-btn:hover {
+  background: #bdc3c7;
+}
+
+/* 隱藏邏輯 */
+.hidden {
+  display: none !important;
+}
+
+/* 修正搜尋列變形 */
+.search-bar {
+  display: flex !important;
+  gap: 10px;
+  width: 100%;
+}
+
+#searchInput {
+  flex: 1 !important; /* 強制搜尋框撐開 */
+  height: 42px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+}
+
+/* 封面區域排版優化 */
+.book-cover-side {
+  width: 90px !important;
+  height: 125px !important;
+  flex-shrink: 0;
+  border-radius: 8px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f8f9fa;
+  border: 1px solid #eee;
+}
+
+.book-cover-side img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* 移除超連結外觀，改為低調的點擊效果 */
+.author-link {
+  cursor: pointer; /* 滑鼠移上去顯示手指，暗示可以點擊 */
+  color: inherit; /* 繼承父層顏色，不顯示藍色 */
+  text-decoration: none; /* 絕對不要底線 */
+  transition: color 0.2s; /* 讓顏色變換平滑一點 */
+}
+
+/* 只有滑鼠移上去時才輕微變色 (例如變成深一點的灰色或原本的深藍) */
+.author-link:hover {
+  color: #3498db; /* 或是您喜歡的任何顏色，不改顏色也可以 */
+  /* text-decoration: none; (確保 hover 時也不會出現底線) */
+}
+
+.tag-badge {
+  cursor: pointer;
+  background: #f0f7ff;
+  color: #3498db;
+  padding: 2px 10px;
+  border-radius: 15px;
+  font-size: 0.85em;
+  margin-right: 5px;
+  border: 1px solid #d0e7ff;
+  display: inline-block;
+  transition: 0.2s;
+}
+.tag-badge:hover {
+  background: #3498db;
+  color: white;
+}
+
+.filter-select {
+  padding: 6px 12px;
+  border-radius: 20px;
+  border: 1px solid #ddd;
+  outline: none;
+  font-size: 0.9em;
+}
+
+/* 顏色定義與原本一致... */
+.text-green {
+  color: #2ecc71;
+  font-weight: bold;
+}
+.text-blue {
+  color: #3498db;
+  font-weight: bold;
+}
+.text-red {
+  color: #e74c3c;
+  font-weight: bold;
+}
+.badge {
+  font-size: 0.75rem;
+  padding: 2px 8px;
+  border-radius: 6px;
+  color: white;
+}
+.red {
+  background: #e74c3c;
+}
+.blue {
+  background: #3498db;
+}
+.green {
+  background: #2ecc71;
+}
+.hidden {
+  display: none;
+}

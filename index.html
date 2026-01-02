@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>漫畫書庫 - 系統</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <nav class="top-nav">
+      <a href="index.html" class="nav-item active">➕ 新增書籍</a>
+      <a href="list.html" class="nav-item">🔍 查詢書庫</a>
+    </nav>
+
+    <div class="container">
+      <header class="form-header">
+        <h2>📚 新增漫畫書籍</h2>
+        <p class="subtitle">同步資訊至雲端資料庫</p>
+      </header>
+
+      <form id="bookForm">
+        <div class="form-group">
+          <label for="title">中文書名</label>
+          <input type="text" id="title" name="title" required />
+        </div>
+
+        <div class="form-group">
+          <label for="jpTitle">日文書名</label>
+          <input type="text" id="jpTitle" name="jpTitle" />
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="author">作者</label>
+            <input type="text" id="author" name="author" required />
+          </div>
+          <div class="form-group">
+            <label for="level">分級</label>
+            <select id="level" name="level">
+              <option value="肉多">🥩 肉多</option>
+              <option value="正常">🍛 正常</option>
+              <option value="肉少">🥗 肉少</option>
+              <option value="清水">💧 清水</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="twStatus">🇹🇼 台灣連載狀態</label>
+            <input type="text" id="twStatus" name="twStatus" />
+          </div>
+          <div class="form-group">
+            <label for="jpStatus">🇯🇵 日本連載狀態</label>
+            <input type="text" id="jpStatus" name="jpStatus" />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>評論者</label>
+            <div class="reviewer-buttons">
+              <button type="button" class="rev-btn" data-name="Reno">
+                Reno
+              </button>
+              <button type="button" class="rev-btn" data-name="茶壺">
+                茶壺
+              </button>
+            </div>
+            <input
+              type="hidden"
+              id="reviewer"
+              name="reviewer"
+              value=""
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label for="rating">評分 (1-10)</label>
+            <div style="position: relative">
+              <input
+                type="number"
+                id="rating"
+                name="rating"
+                min="1"
+                max="10"
+                step="0.5"
+                value="5.0"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="tags">標籤</label>
+          <input type="text" id="tags" name="tags" />
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="ebookUrl">電子書網站</label>
+            <input type="url" id="ebookUrl" name="ebookUrl" />
+          </div>
+          <div class="form-group">
+            <label for="chilUrl">ちるちる</label>
+            <input type="url" id="chilUrl" name="chilUrl" />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="comment">評語內容</label>
+          <textarea id="comment" name="comment" rows="3"></textarea>
+        </div>
+
+        <button type="submit" id="submitBtn">確認送出資料</button>
+      </form>
+
+      <div id="message" class="hidden"></div>
+    </div>
+
+    <script>
+      // 取得評分輸入框
+      const ratingInput = document.getElementById("rating");
+
+      // 1. 先定義所有需要的變數
+      const scriptURL =
+        "https://script.google.com/macros/s/AKfycbwqnfCjBq_BYZSWAOU6TnVj2O6YvFF2jan4dY0smm3waf9xP-wOLmz2_4B_L3MND7PK9A/exec";
+      let allBooks = []; // 用來存放抓取回來的資料
+
+      // 2. 定義抓取資料的函數
+      async function fetchExistingData() {
+        // 這裡現在可以正確讀取到 scriptURL 了
+        const fetchURL = scriptURL + "?action=read";
+        try {
+          const response = await fetch(fetchURL);
+          const data = await response.json();
+          allBooks = data;
+          console.log("資料庫已同步，共有 " + allBooks.length + " 筆資料");
+        } catch (error) {
+          console.error("無法讀取資料庫:", error);
+        }
+      }
+
+      // 3. 執行抓取動作
+      fetchExistingData();
+
+      // 定義顏色切換函數
+      function updateRatingColor(value) {
+        const val = parseFloat(value);
+
+        // 先移除所有顏色類別
+        ratingInput.classList.remove("rating-low", "rating-mid", "rating-high");
+
+        if (val < 5) {
+          ratingInput.classList.add("rating-low");
+        } else if (val >= 5 && val <= 7) {
+          ratingInput.classList.add("rating-mid");
+        } else if (val > 7) {
+          ratingInput.classList.add("rating-high");
+        }
+      }
+      // 在 index.html 的 script 區塊新增
+      document.getElementById("ebookUrl").addEventListener("blur", function () {
+        const url = this.value.trim();
+        if (url.includes("bookwalker.com.tw")) {
+          const msg = document.getElementById("message");
+          msg.innerHTML = "正在抓取 BookWalker 封面...";
+          msg.className = "info";
+          msg.classList.remove("hidden");
+
+          fetch(`${scriptURL}?action=fetchCover&url=${encodeURIComponent(url)}`)
+            .then((res) => res.json())
+            .then((data) => {
+              if (data.coverUrl) {
+                // 假設您在表單中加了一個隱藏欄位 <input type="hidden" id="coverUrl" name="coverUrl">
+                if (document.getElementById("coverUrl")) {
+                  document.getElementById("coverUrl").value = data.coverUrl;
+                }
+                msg.innerHTML = "✅ 封面抓取成功！";
+                setTimeout(() => msg.classList.add("hidden"), 2000);
+              }
+            })
+            .catch((err) => console.error("抓取失敗", err));
+        }
+      });
+      // 監聽輸入事件 (打字或按上下鈕都會觸發)
+      ratingInput.addEventListener("input", (e) => {
+        updateRatingColor(e.target.value);
+      });
+
+      const tagsInput = document.getElementById("tags");
+
+      tagsInput.addEventListener("input", function (e) {
+        let val = this.value;
+
+        // 1. 如果輸入的是空白，立即將其替換為逗號
+        // 使用正則表達式把「空白」或「連續空白」替換成一個逗號
+        if (val.includes(" ")) {
+          this.value = val.replace(/\s+/g, ",");
+        }
+
+        // 2. 防止出現連續逗號（例如輸入了空白後又手動輸入逗號）
+        this.value = this.value.replace(/,+/g, ",");
+      });
+
+      // 表單送出前的最終清理
+      document.getElementById("bookForm").onsubmit = function () {
+        let rawTags = tagsInput.value;
+        // 將所有逗號分割、去空白、過濾掉空的，最後再用「逗號+空白」組合
+        tagsInput.value = rawTags
+          .split(",")
+          .map((t) => t.trim())
+          .filter((t) => t !== "")
+          .join(", ");
+      };
+      // 初始化顏色 (頁面載入時先執行一次，預設 5.0 會是藍色)
+      updateRatingColor(ratingInput.value);
+
+      const form = document.getElementById("bookForm");
+      const btn = document.getElementById("submitBtn");
+      const msg = document.getElementById("message");
+
+      const revButtons = document.querySelectorAll(".rev-btn");
+      const reviewerInput = document.getElementById("reviewer");
+
+      revButtons.forEach((button) => {
+        button.addEventListener("click", () => {
+          revButtons.forEach((b) => b.classList.remove("active"));
+          button.classList.add("active");
+          reviewerInput.value = button.getAttribute("data-name");
+        });
+      });
+
+      // --- 替換成這個版本：新增時自動抓取封面 ---
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        if (!reviewerInput.value) {
+          alert("請選擇一位評論者！");
+          return;
+        }
+
+        btn.disabled = true;
+        btn.innerHTML = "正在抓取封面並寫入...";
+        msg.className = "info show";
+        msg.classList.remove("hidden");
+
+        const formData = new FormData(form);
+        const data = Object.fromEntries(formData.entries());
+
+        try {
+          // 1. 自動抓取封面邏輯：如果有 BookWalker 網址且目前沒有封面
+          if (data.ebookUrl && data.ebookUrl.includes("bookwalker.com.tw")) {
+            try {
+              const coverRes = await fetch(
+                `${scriptURL}?action=fetchCover&url=${encodeURIComponent(
+                  data.ebookUrl
+                )}`
+              );
+              const coverJson = await coverRes.json();
+              if (coverJson.coverUrl) {
+                formData.append("coverUrl", coverJson.coverUrl); // 將抓到的封面網址塞進去
+              }
+            } catch (err) {
+              console.error("封面自動抓取失敗，將僅上傳資料", err);
+            }
+          }
+
+          // 2. 傳送資料到 GAS
+          await fetch(scriptURL, {
+            method: "POST",
+            body: formData,
+            mode: "no-cors", // 由於 Google Apps Script 的特性，必須使用 no-cors
+          });
+
+          // 3. 成功後的處理
+          msg.innerHTML =
+            "✅ 資料已成功同步！" +
+            (formData.get("coverUrl") ? " (封面已自動抓取)" : "");
+          msg.className = "success show";
+          form.reset();
+          revButtons.forEach((b) => b.classList.remove("active"));
+          reviewerInput.value = "";
+          btn.disabled = false;
+          btn.innerHTML = "確認送出資料";
+          window.scrollTo(0, 0);
+        } catch (error) {
+          console.error("傳送失敗:", error);
+          msg.innerHTML = "❌ 傳送失敗，請檢查網路。";
+          msg.className = "error show";
+          btn.disabled = false;
+          btn.innerHTML = "再試一次";
+        }
+      });
+
+      // 取得書名輸入框
+      const titleInput = document.getElementById("title");
+
+      titleInput.addEventListener("blur", function () {
+        const inputTitle = this.value.trim();
+        if (!inputTitle || allBooks.length === 0) return; // 如果還沒抓到資料就跳過
+
+        // 檢查是否有相同書名
+        const existingBook = allBooks.find(
+          (b) => String(b.title).trim() === inputTitle
+        );
+
+        if (existingBook) {
+          const confirmLoad = confirm(
+            `📢 發現重複！\n「${inputTitle}」已經在書庫中了。\n是否要自動填入已有的資料？`
+          );
+
+          if (confirmLoad) {
+            // 自動填入 (對應您 index.html 的 id)
+            document.getElementById("jpTitle").value =
+              existingBook.jpTitle || "";
+            document.getElementById("author").value = existingBook.author || "";
+            document.getElementById("level").value =
+              existingBook.level || "正常";
+            document.getElementById("ebookUrl").value =
+              existingBook.ebookUrl || "";
+            document.getElementById("chilUrl").value =
+              existingBook.chilUrl || "";
+            document.getElementById("tags").value = existingBook.tags || "";
+
+            alert("✅ 資料已帶入，請填寫評語後送出。");
+          }
+        }
+      });
+    </script>
+  </body>
+</html>

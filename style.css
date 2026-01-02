@@ -1,0 +1,219 @@
+/* 全域設定 */
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent; /* 移除手機點擊藍框 */
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+  background-color: #f8f9fa;
+  color: #333;
+  margin: 0;
+  padding-bottom: 40px;
+}
+
+/* 導覽列 */
+.top-nav {
+  display: flex;
+  justify-content: center;
+  background: #fff;
+  padding: 10px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  margin-bottom: 20px;
+}
+
+.nav-item {
+  text-decoration: none;
+  color: #7f8c8d;
+  padding: 10px 20px;
+  font-weight: bold;
+  font-size: 0.95rem;
+  border-radius: 20px;
+}
+
+.nav-item.active {
+  color: #3498db;
+  background: #ebf5fb;
+}
+
+/* 容器樣式 */
+.container {
+  max-width: 500px; /* 手機端建議寬度 */
+  margin: 0 auto;
+  background: #fff;
+  padding: 25px;
+  border-radius: 15px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+@media (max-width: 600px) {
+  .container {
+    width: 95%;
+    padding: 20px;
+  }
+}
+
+h2 {
+  margin: 0;
+  color: #2c3e50;
+  text-align: center;
+}
+.subtitle {
+  text-align: center;
+  color: #95a5a6;
+  margin: 8px 0 25px 0;
+  font-size: 0.85rem;
+}
+
+/* 表單佈局 */
+/* 找到 .form-row 確保它在手機和電腦都有正確比例 */
+.form-row {
+  display: flex;
+  gap: 15px;
+  align-items: flex-end; /* 讓標籤與輸入框對齊 */
+}
+
+/* 讓評分區域與評論者區域平分寬度 */
+.form-row .form-group {
+  flex: 1;
+}
+
+/* 針對評分輸入框特別優化 */
+/* 移除原本 #rating 裡的 color: #3498db */
+#rating {
+  text-align: center;
+  font-weight: bold;
+  transition: color 0.3s, border-color 0.3s; /* 增加顏色變換的平滑感 */
+}
+
+/* 定義評分顏色規律 */
+.rating-low {
+  color: #2ecc71 !important; /* 1-4 綠色 */
+  border-color: #2ecc71 !important;
+}
+
+.rating-mid {
+  color: #3498db !important; /* 5-7 藍色 */
+  border-color: #3498db !important;
+}
+
+.rating-high {
+  color: #e74c3c !important; /* 7以上 紅色 */
+  border-color: #e74c3c !important;
+}
+
+/* 確保評論者按鈕也填滿空間 */
+.reviewer-buttons {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+}
+
+.rev-btn {
+  flex: 1; /* 讓 Reno 和 茶壺 兩個按鈕一樣大 */
+}
+
+@media (max-width: 480px) {
+  .form-row {
+    flex-direction: column;
+    gap: 0;
+  }
+}
+
+label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 6px;
+  font-size: 0.9rem;
+  color: #444;
+}
+
+input,
+select,
+textarea {
+  width: 100%;
+  padding: 12px;
+  border: 1.5px solid #eee;
+  border-radius: 8px;
+  font-size: 1rem;
+  background: #fdfdfd;
+  transition: all 0.2s;
+  resize: none;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: #3498db;
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+}
+
+/* 評論者按鈕 */
+.reviewer-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.rev-btn {
+  flex: 1;
+  padding: 10px;
+  background: #f8f9fa;
+  border: 1.5px solid #eee;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  color: #666;
+  transition: 0.2s;
+}
+
+.rev-btn.active {
+  background: #3498db;
+  color: #fff;
+  border-color: #3498db;
+}
+
+/* 送出按鈕 */
+button[type="submit"] {
+  width: 100%;
+  padding: 15px;
+  background: #2c3e50;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 1.1rem;
+  font-weight: bold;
+  cursor: pointer;
+  margin-top: 15px;
+  transition: 0.3s;
+}
+
+button[type="submit"]:active {
+  transform: scale(0.98);
+}
+
+/* 訊息提示 */
+#message {
+  margin-top: 20px;
+  padding: 12px;
+  border-radius: 8px;
+  text-align: center;
+  font-size: 0.9rem;
+}
+
+.success {
+  background: #d4edda;
+  color: #155724;
+}
+.error {
+  background: #f8d7da;
+  color: #721c24;
+}
+.hidden {
+  display: none;
+}
