@@ -5,7 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>漫畫書庫 - 查詢系統</title>
     <link rel="stylesheet" href="list-style.css" />
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect x=%2215%22 y=%2220%22 width=%2220%22 height=%2260%22 fill=%22%23e74c3c%22 rx=%222%22/><rect x=%2240%22 y=%2210%22 width=%2220%22 height=%2270%22 fill=%22%233498db%22 rx=%222%22/><rect x=%2265%22 y=%2225%22 width=%2220%22 height=%2255%22 fill=%22%23f1c40f%22 rx=%222%22/></svg>">
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect x=%2215%22 y=%2220%22 width=%2220%22 height=%2260%22 fill=%22%23e74c3c%22 rx=%222%22/><rect x=%2240%22 y=%2210%22 width=%2220%22 height=%2270%22 fill=%22%233498db%22 rx=%222%22/><rect x=%2265%22 y=%2225%22 width=%2220%22 height=%2255%22 fill=%22%23f1c40f%22 rx=%222%22/></svg>"
+    />
   </head>
   <body>
     <nav class="top-nav">
@@ -278,7 +281,7 @@
 
                     
 
-              <p class="author" style="margin: 8px 0;">
+              <p class="author" style="margin: 8px 0; margin-top:-2px">
                   👤 <span class="author-link" onclick="quickSearch('${book.author.replace(
                     /'/g,
                     "\\'"
@@ -287,7 +290,7 @@
                     book.jpTitle || ""
                   }</span>
                 </p>
-<div class="status-row" style="display: flex; gap: 8px; margin-bottom: 4px; font-size: 0.82em;">
+<div class="status-row" style="margin-top: 12px;display: flex; gap: 8px; margin-bottom: 4px; font-size: 0.82em;">
     <span style="background: #fff5f5; color: #c53030; padding: 2px 8px; border-radius: 4px; border: 1px solid #fed7d7;">
         🇹🇼 台：${book.twStatus || "-"}
     </span>
@@ -295,7 +298,7 @@
         🇯🇵 日：${book.jpStatus || "-"}
     </span>
 </div>
-              <div class="tags" style="margin-top: 12px; margin-bottom: 12px; display: flex; flex-wrap: wrap; gap: 2px;">
+              <div class="tags" style="margin-top: 8px; margin-bottom: 5px; display: flex; flex-wrap: wrap; gap: 2px;">
                   ${
                     book.tags
                       ? String(book.tags)
@@ -726,4 +729,3 @@
     </script>
   </body>
 </html>
-
