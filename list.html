@@ -244,14 +244,14 @@
           // 封面 HTML 邏輯修正
           const coverUrl = book.coverUrl || "";
           const coverHTML =
-            coverUrl && coverUrl !== ""
-              ? `<img src="${coverUrl}" alt="封面">`
+            book.coverUrl && book.coverUrl !== ""
+              ? `<img src="${book.coverUrl}" alt="封面">`
               : `<div class="no-cover">
-         <span>無封面</span>
-         <button onclick="reFetchCover('${book.title.replace(/'/g, "\\'")}', '${
-                  book.ebookUrl
-                }')">🔍 抓取</button>
-       </div>`;
+       <span>無封面</span>
+       <button onclick="reFetchCover('${book.title.replace(/'/g, "\\'")}', '${
+                  book.ebookUrl || ""
+                }', '${book.chilUrl || ""}')">🔍 抓取</button>
+     </div>`;
 
           row.innerHTML = `
             <div class="item-main" style="display: flex; gap: 15px; align-items: flex-start;">
@@ -355,48 +355,55 @@
         });
       }
       // 1. 抓取封面的補救功能
-      async function reFetchCover(title, url) {
-        if (!url || url === "undefined") {
-          alert("❌ 此書籍沒有電子書網址，請先編輯書籍資訊。");
+      async function reFetchCover(title, bwUrl, chilUrl) {
+        // 優先順序：BookWalker > Chil-Chil
+        // 檢查網址是否有效 (排除空字串或 "undefined" 字串)
+        let urlToFetch =
+          bwUrl && bwUrl !== "" && bwUrl !== "undefined" ? bwUrl : null;
+
+        if (!urlToFetch) {
+          urlToFetch =
+            chilUrl && chilUrl !== "" && chilUrl !== "undefined"
+              ? chilUrl
+              : null;
+        }
+
+        if (!urlToFetch) {
+          alert("❌ 缺少 BookWalker 或 Chil-Chil 網址，請先編輯書籍資訊。");
           return;
         }
 
-        // 取得當前點擊的按鈕與外層容器
         const btn = event.target;
-        const coverContainer = btn.closest(".book-cover-side"); // 確保您 CSS 有這個類別
+        const coverContainer = btn.closest(".book-cover-side");
         const originalContent = coverContainer.innerHTML;
-
         coverContainer.innerHTML = "<span>⌛ 抓取中...</span>";
 
         try {
-          // Step 1: 請求 GAS 抓取封面網址
           const fetchUrl = `${scriptURL}?action=fetchCover&url=${encodeURIComponent(
-            url
+            urlToFetch
           )}`;
           const res = await fetch(fetchUrl);
           const data = await res.json();
 
           if (data.coverUrl) {
-            // Step 2: 抓取成功，立即更新畫面
             coverContainer.innerHTML = `<img src="${data.coverUrl}" alt="封面">`;
 
-            // Step 3: 將網址同步回 Google Sheet (避免下次重新整理又消失)
-            // 這裡我們調用您原本的編輯 API，只更新封面欄位
+            // 同步更新回試算表
             const formData = new FormData();
-            formData.append("title", title); // 用書名當 Key 找到那一行
-            formData.append("coverUrl", data.coverUrl); // 傳送新圖片網址
-            formData.append("action", "updateCoverOnly"); // 告訴 GAS 只要更新封面
+            formData.append("title", title);
+            formData.append("coverUrl", data.coverUrl);
+            formData.append("action", "updateCoverOnly");
 
             fetch(scriptURL, { method: "POST", body: formData });
-
-            alert("✅ 封面已更新並同步至雲端！");
+            alert("✅ 封面抓取成功！");
           } else {
             coverContainer.innerHTML = originalContent;
             alert("❌ 抓取失敗：" + (data.error || "找不到圖片"));
           }
         } catch (e) {
           coverContainer.innerHTML = originalContent;
-          alert("❌ 連線錯誤，請確認 GAS 部署網址是否正確。");
+          console.error("抓取錯誤:", e);
+          alert("❌ 連線錯誤，請檢查網路或 GAS 狀態。");
         }
       }
 
