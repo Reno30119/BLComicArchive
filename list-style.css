@@ -161,46 +161,39 @@ body {
   align-items: flex-start;
 }
 
-/* 左側封面區 */
+/* 確保容器有固定比例 (例如 3:4)，這樣排版才會整齊 */
 .book-cover-side {
-  width: 100px;
-  height: 140px;
-  min-width: 100px; /* 防止被擠壓 */
-  background-color: #f9f9f9;
-  border-radius: 8px;
-  overflow: hidden;
+  width: 120px; /* 從 120px 增加到 150px (可依喜好調整) */
+  height: 180px; /* 依照漫畫約 1:1.4 的比例設定高度 */
+  flex-shrink: 0;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  border: 1px solid #eee;
-  margin-right: 15px;
+  overflow: hidden;
+  background-color: #f8f9fa;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  position: relative;
+  border-left: 3px solid rgba(0, 0, 0, 0.05); /* 模擬書脊陰影 */
 }
 
 .book-cover-side img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
-}
-/* 封面容器與圖片縮放 */
-.book-cover-side {
-  width: 90px;
-  height: 125px;
-  background: #f8f9fa;
-  border-radius: 8px;
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid #eee;
+  /* 關鍵修正：從 cover 改成 contain */
+  object-fit: contain;
+  /* 如果你不喜歡 contain 產生的白邊，可以加上背景色 */
+  background-color: #f0f0f0;
+  border-radius: 5px;
 }
 
-.book-cover-side img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover; /* 確保圖片填滿不變形 */
+/* 3. 調整手機版的封面大小 */
+@media (max-width: 600px) {
+  .book-cover-side {
+    width: 130px; /* 手機版不要太大，以免文字空間不夠 */
+    height: 182px;
+    margin: 0 auto 15px; /* 手機版居中並留點下邊距 */
+  }
 }
-
 /* 無封面時的樣式 */
 .no-cover {
   display: flex;
@@ -229,9 +222,12 @@ body {
   color: white;
   border-color: #3498db;
 }
-/* 右側資訊區 */
 .item-info {
   flex: 1;
+  min-width: 200px; /* 確保文字區至少有一定寬度 */
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
 }
 
 .title-row {
@@ -563,26 +559,6 @@ body {
   height: 42px;
   border: 1px solid #ddd;
   border-radius: 8px;
-}
-
-/* 封面區域排版優化 */
-.book-cover-side {
-  width: 90px !important;
-  height: 125px !important;
-  flex-shrink: 0;
-  border-radius: 8px;
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #f8f9fa;
-  border: 1px solid #eee;
-}
-
-.book-cover-side img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
 }
 
 /* 移除超連結外觀，改為低調的點擊效果 */
