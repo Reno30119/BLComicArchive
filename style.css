@@ -70,16 +70,14 @@ h2 {
 }
 
 /* 表單佈局 */
-/* 找到 .form-row 確保它在手機和電腦都有正確比例 */
 .form-row {
   display: flex;
   gap: 15px;
-  align-items: flex-end; /* 讓標籤與輸入框對齊 */
+  width: 100%;
 }
 
-/* 讓評分區域與評論者區域平分寬度 */
 .form-row .form-group {
-  flex: 1;
+  flex: 1; /* 讓內部元素等寬 */
 }
 
 /* 針對評分輸入框特別優化 */
@@ -209,44 +207,55 @@ button[type="submit"]:active {
 /* 當螢幕寬度小於 600px 時執行 */
 @media (max-width: 600px) {
   .container {
-    width: 95%; /* 讓容器佔滿螢幕寬度 */
-    padding: 15px; /* 減少內邊距 */
-    margin: 10px auto;
+    width: 92%; /* 稍微留白，不要貼死邊緣 */
+    padding: 20px;
+    margin: 15px auto;
   }
 
   .form-row {
-    flex-direction: column; /* 讓原本橫向並排的輸入框改成上下堆疊 */
+    flex-direction: column; /* 重要：手機上改為垂直堆疊 */
     gap: 0; /* 移除橫向間距 */
   }
 
   .form-group {
-    width: 100%; /* 確保輸入框佔滿整行 */
-    margin-bottom: 15px; /* 增加一點垂直間距 */
+    width: 100%; /* 寬度佔滿 */
+    margin-bottom: 15px;
   }
 
+  /* 讓標籤(Label)大一點，手指比較好對準 */
+  label {
+    font-size: 1rem;
+    margin-bottom: 8px;
+  }
+
+  /* 防止 iOS 輸入時自動放大畫面，並增加點擊靈敏度 */
   input[type="text"],
   input[type="url"],
+  input[type="number"],
   select,
   textarea {
-    font-size: 16px; /* 防止 iOS 手機自動放大畫面 (iOS 16px 以下會放大) */
-    padding: 12px; /* 增加點擊區域，方便手指操作 */
+    font-size: 16px !important;
+    padding: 12px;
+    border-radius: 8px;
   }
 
-  button {
-    width: 100%; /* 讓按鈕在手機上變大，好按 */
-    padding: 15px;
-    font-size: 1.1rem;
+  /* 分級按鈕(Rating Buttons)在手機上自動換行 */
+  .rating-group {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr); /* 5格一排 */
+    gap: 5px;
   }
 
-  /* 導覽列優化 */
-  .top-nav {
-    flex-direction: row; /* 維持橫向，但讓字小一點點 */
-    padding: 5px;
+  .rating-btn {
+    padding: 10px 0;
+    font-size: 0.9rem;
   }
 
-  .nav-item {
-    padding: 10px;
-    font-size: 0.85rem;
+  /* 底部按鈕加大，符合拇指操作 */
+  button[type="submit"] {
+    padding: 18px;
+    font-size: 1.2rem;
+    margin-top: 20px;
   }
 }
 .success {
