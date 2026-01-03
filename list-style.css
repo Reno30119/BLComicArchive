@@ -628,6 +628,9 @@ body {
 .green {
   background: #2ecc71;
 }
+.orange {
+  background: #f39c12;
+}
 .hidden {
   display: none;
 }
