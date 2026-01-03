@@ -201,13 +201,14 @@
 
       // 2. 同時綁定監聽器給兩個輸入框
       // 不論哪一個填完離開游標（blur），都會觸發抓取
-      document
-        .getElementById("ebookUrl")
-        .addEventListener("blur", autoFetchCover);
-      document
-        .getElementById("chilUrl")
-        .addEventListener("blur", autoFetchCover);
-
+      ["blur", "change"].forEach((evt) => {
+        document
+          .getElementById("ebookUrl")
+          .addEventListener(evt, autoFetchCover);
+        document
+          .getElementById("chilUrl")
+          .addEventListener(evt, autoFetchCover);
+      });
       // 監聽輸入事件 (打字或按上下鈕都會觸發)
       ratingInput.addEventListener("input", (e) => {
         updateRatingColor(e.target.value);
@@ -333,39 +334,57 @@
       // 取得書名輸入框
       const titleInput = document.getElementById("title");
 
-      titleInput.addEventListener("blur", function () {
-        const inputTitle = this.value.trim();
-        if (!inputTitle || allBooks.length === 0) return; // 如果還沒抓到資料就跳過
+      ["blur", "change"].forEach((evt) => {
+        titleInput.addEventListener(evt, function () {
+          const inputTitle = this.value.trim();
 
-        // 檢查是否有相同書名
-        const existingBook = allBooks.find(
-          (b) => String(b.title).trim() === inputTitle
-        );
+          // 如果資料庫還沒同步完，先顯示提示或不執行
+          if (!inputTitle) return;
+          if (allBooks.length === 0) {
+            console.log("資料庫同步中，請稍候...");
+            return;
+          }
 
-        if (existingBook) {
-          const confirmLoad = confirm(
-            `📢 發現重複！\n「${inputTitle}」已經在書庫中了。\n是否要自動填入已有的資料？`
+          const existingBook = allBooks.find(
+            (b) => String(b.title).trim() === inputTitle
           );
 
-          if (confirmLoad) {
-            // 自動填入 (對應您 index.html 的 id)
-            document.getElementById("jpTitle").value =
-              existingBook.jpTitle || "";
-            document.getElementById("author").value = existingBook.author || "";
-            document.getElementById("level").value =
-              existingBook.level || "正常";
-            document.getElementById("ebookUrl").value =
-              existingBook.ebookUrl || "";
-            document.getElementById("chilUrl").value =
-              existingBook.chilUrl || "";
-            document.getElementById("tags").value = existingBook.tags || "";
-            document.getElementById("twStatus").value =
-              existingBook.twStatus || "";
-            document.getElementById("jpStatus").value =
-              existingBook.jpStatus || "";
-            alert("✅ 資料已帶入，請填寫評語後送出。");
+          if (existingBook) {
+            // 避免重複跳出 confirm，檢查是否已經填入過資料
+            if (document.getElementById("author").value !== "") return;
+
+            const confirmLoad = confirm(
+              `📢 發現重複！\n「${inputTitle}」已在書庫中。是否填入資料？`
+            );
+
+            if (confirmLoad) {
+              document.getElementById("jpTitle").value =
+                existingBook.jpTitle || "";
+              document.getElementById("author").value =
+                existingBook.author || "";
+              document.getElementById("level").value =
+                existingBook.level || "正常";
+              document.getElementById("twStatus").value =
+                existingBook.twStatus || ""; // 補上連載狀態
+              document.getElementById("jpStatus").value =
+                existingBook.jpStatus || ""; // 補上連載狀態
+              document.getElementById("ebookUrl").value =
+                existingBook.ebookUrl || "";
+              document.getElementById("chilUrl").value =
+                existingBook.chilUrl || "";
+              document.getElementById("tags").value = existingBook.tags || "";
+
+              if (
+                existingBook.coverUrl &&
+                document.getElementById("coverUrl")
+              ) {
+                document.getElementById("coverUrl").value =
+                  existingBook.coverUrl;
+              }
+              alert("✅ 資料已成功帶入。");
+            }
           }
-        }
+        });
       });
     </script>
   </body>
