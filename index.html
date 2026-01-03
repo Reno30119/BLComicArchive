@@ -97,7 +97,7 @@
           <label for="tags">標籤</label>
           <input type="text" id="tags" name="tags" />
         </div>
-
+        <input type="hidden" id="coverUrl" name="coverUrl" value="" />
         <div class="form-row">
           <div class="form-group">
             <label for="ebookUrl">電子書網站</label>
@@ -167,20 +167,21 @@
         const bwUrl = document.getElementById("ebookUrl").value.trim();
         const chilUrl = document.getElementById("chilUrl").value.trim();
         const msg = document.getElementById("message");
-        const coverInput = document.getElementById("coverUrl");
+        const coverInput = document.getElementById("coverUrl"); // 確保上面有加隱藏欄位
 
-        // 優先序：有台版就抓台版，沒台版就抓日版
         const targetUrl = bwUrl || chilUrl;
-
-        // 如果兩個都沒填，就不執行
         if (!targetUrl) return;
+
+        // 如果找不到 coverUrl 欄位，在控制台提醒但不要崩潰
+        if (!coverInput) {
+          console.warn("找不到 id='coverUrl' 的隱藏欄位，封面網址將無法存入。");
+        }
 
         msg.innerHTML = "⌛ 正在嘗試抓取封面圖...";
         msg.className = "info show";
         msg.classList.remove("hidden");
 
         try {
-          // 移除網址過濾，直接交給 GAS 判斷是哪一家的網址
           const res = await fetch(
             `${scriptURL}?action=fetchCover&url=${encodeURIComponent(
               targetUrl
@@ -191,15 +192,10 @@
           if (data.coverUrl) {
             if (coverInput) coverInput.value = data.coverUrl;
             msg.innerHTML = "✅ 封面自動預抓成功！";
-            msg.style.color = "#27ae60";
             setTimeout(() => msg.classList.add("hidden"), 2000);
-          } else {
-            msg.innerHTML = "⚠️ 找不到封面，請確認網址是否正確。";
-            msg.style.color = "#e67e22";
           }
         } catch (err) {
-          console.error("抓取連線失敗", err);
-          msg.innerHTML = "❌ 封面抓取失敗";
+          console.error("抓取失敗", err);
         }
       }
 
@@ -363,7 +359,10 @@
             document.getElementById("chilUrl").value =
               existingBook.chilUrl || "";
             document.getElementById("tags").value = existingBook.tags || "";
-
+            document.getElementById("twStatus").value =
+              existingBook.twStatus || "";
+            document.getElementById("jpStatus").value =
+              existingBook.jpStatus || "";
             alert("✅ 資料已帶入，請填寫評語後送出。");
           }
         }
