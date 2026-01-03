@@ -593,7 +593,12 @@
       }
 
       function getLevelColor(level) {
-        const mapping = { 肉多: "red", 正常: "blue", 肉少: "green" };
+        const mapping = {
+          肉多: "red",
+          正常: "blue",
+          肉少: "orange",
+          清水: "green",
+        };
         return mapping[level] || "green";
       }
 
