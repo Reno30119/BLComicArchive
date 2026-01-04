@@ -50,22 +50,40 @@
           </button>
         </div>
         <div class="sort-group">
-          <button class="sort-btn" onclick="sortData('rating')">按分數</button>
-          <button class="sort-btn" onclick="sortData('author')">按作者</button>
-          <button class="sort-btn" onclick="sortData('title')">按書名</button>
-          <button class="sort-btn" onclick="sortData('date')">
-            按建檔日期
-          </button>
-          <select
-            id="ratingFilter"
-            class="filter-select"
-            onchange="applyFilters()"
-          >
-            <option value="all">所有分數</option>
-            <option value="8">8 分以上</option>
-            <option value="6">6-7 分</option>
-            <option value="0">5 分以下</option>
-          </select>
+          <div class="filter-row">
+            <span class="filter-label">排序方式：</span>
+            <button class="sort-btn" onclick="sortData('rating')">
+              ⭐ 分數
+            </button>
+            <button class="sort-btn" onclick="sortData('author')">
+              🖋️ 作者
+            </button>
+            <button class="sort-btn" onclick="sortData('title')">
+              📖 書名
+            </button>
+            <button class="sort-btn" onclick="sortData('date')">📅 日期</button>
+
+            <span class="filter-label" style="margin-left: 10px"
+              >評分區間：</span
+            >
+            <select
+              id="ratingFilter"
+              class="filter-select"
+              onchange="applyFilters()"
+            >
+              <option value="all">所有分數</option>
+              <option value="8">8 分以上</option>
+              <option value="6">6-7 分</option>
+              <option value="0">5 分以下</option>
+            </select>
+          </div>
+
+          <div class="filter-row">
+            <span class="filter-label">評論者：</span>
+            <button class="filter-btn active" data-reviewer="all">全部</button>
+            <button class="filter-btn" data-reviewer="Reno">Reno</button>
+            <button class="filter-btn" data-reviewer="茶壺">茶壺</button>
+          </div>
         </div>
       </header>
 
@@ -228,6 +246,23 @@
 
         document.getElementById("editModal").classList.remove("hidden");
       }
+
+      let currentReviewer = "all";
+
+      // 2. 綁定按鈕點擊事件
+      document.querySelectorAll(".filter-btn").forEach((btn) => {
+        btn.addEventListener("click", function () {
+          // 切換按鈕樣式
+          document
+            .querySelectorAll(".filter-btn")
+            .forEach((b) => b.classList.remove("active"));
+          this.classList.add("active");
+
+          // 更新篩選狀態並重新渲染
+          currentReviewer = this.getAttribute("data-reviewer");
+          applyFilters();
+        });
+      });
 
       function renderBooks(data) {
         const grid = document.getElementById("bookGrid");
@@ -643,17 +678,18 @@
         .getElementById("searchInput")
         .addEventListener("input", applyFilters);
 
-      // 核心過濾邏輯：先合併所有評語，再計算平均分進行篩選
+      // 核心過濾邏輯：先合併所有評語，再執行搜尋、分數與評論者的篩選
       function applyFilters() {
         const searchTerm = document
           .getElementById("searchInput")
           .value.toLowerCase();
         const ratingThreshold = document.getElementById("ratingFilter").value;
 
-        // 1. 合併邏輯：按書名分組，收集「所有」評語
+        // 1. 合併邏輯：按書名分組，收集所有評論
         const validData = allBooks.filter(
           (item) => item.title && String(item.title).trim() !== ""
         );
+
         const merged = validData.reduce((acc, curr) => {
           const bookTitle = String(curr.title).trim();
           if (!acc[bookTitle]) {
@@ -683,25 +719,31 @@
           return book;
         });
 
-        // 3. 執行過濾 (搜尋框 + 平均分區間)
+        // 3. 執行過濾 (搜尋框 + 平均分區間 + 評論者)
         let filtered = processedBooks.filter((book) => {
+          // A. 搜尋文字過濾
           const matchSearch =
             book.title.toLowerCase().includes(searchTerm) ||
             book.author.toLowerCase().includes(searchTerm) ||
             book.tags.toLowerCase().includes(searchTerm);
 
+          // B. 分數區間過濾
           let matchRating = true;
           const score = book.avgRating;
-
           if (ratingThreshold === "8") matchRating = score >= 8;
           else if (ratingThreshold === "6")
-            matchRating = score >= 6 && score < 8; // 包含 7.5
+            matchRating = score >= 6 && score < 8;
           else if (ratingThreshold === "0") matchRating = score < 6;
 
-          return matchSearch && matchRating;
+          // C. 評論者篩選邏輯 (核心新增)
+          const matchReviewer =
+            currentReviewer === "all" ||
+            book.reviews.some((r) => r.reviewer === currentReviewer);
+
+          return matchSearch && matchRating && matchReviewer;
         });
 
-        // 4. 排序
+        // 4. 排序邏輯 (維持原樣)
         filtered.sort((a, b) => {
           if (currentSortType === "rating") return b.avgRating - a.avgRating;
           if (currentSortType === "author")
