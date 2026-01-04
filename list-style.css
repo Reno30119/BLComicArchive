@@ -106,13 +106,19 @@ body {
 
 /* 容器排版優化 */
 .sort-group {
+  background: #f8f9fa;
+  padding: 20px;
+  border-radius: 12px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  background: #f8f9fa;
-  padding: 16px;
-  border-radius: 12px;
-  margin-bottom: 20px;
+  gap: 12px; /* 縮小行與行之間的間距 */
+  max-width: 800px; /* 限制寬度防止電腦版拉得太開 */
+}
+
+.filter-item {
+  display: flex;
+  align-items: center; /* 確保標籤與按鈕垂直置中 */
+  gap: 15px;
 }
 
 /* 列佈局 */
@@ -123,27 +129,14 @@ body {
   gap: 12px;
 }
 
+/* 讓標題文字變大 */
 .filter-label {
-  font-size: 0.85em;
-  color: #555;
-  font-weight: 600;
-  min-width: 80px;
-}
-
-/* 通用按鈕樣式升級 */
-.sort-btn,
-.filter-btn {
-  padding: 6px 14px;
-  border: 1px solid #e0e0e0;
-  background: white;
-  border-radius: 8px;
-  font-size: 0.9em;
+  font-size: 1.1em; /* 加大文字 */
+  font-weight: bold;
   color: #444;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+  min-width: 100px; /* 固定寬度讓右側對齊 */
+  flex-shrink: 0;
 }
-
 .sort-btn:hover,
 .filter-btn:hover {
   border-color: #3498db;
@@ -159,14 +152,30 @@ body {
   box-shadow: 0 4px 10px rgba(52, 152, 219, 0.3);
 }
 
-/* 下拉選單美化 */
+/* 統一所有篩選元件的基礎樣式 */
+.sort-btn,
+.filter-btn,
+.type-btn,
 .filter-select {
-  padding: 6px 10px;
+  /* 1. 統一高度 */
+  height: 38px;
+
+  /* 2. 統一盒模型計算方式（關鍵） */
+  box-sizing: border-box;
+
+  /* 3. 統一對齊方式 */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  vertical-align: middle;
+
+  /* 4. 重置內距與邊框 */
+  margin: 0;
+  padding: 0 15px;
+  border: 1px solid #ddd;
   border-radius: 8px;
-  border: 1px solid #e0e0e0;
-  outline: none;
-  background-color: white;
-  cursor: pointer;
+  background-color: #fff;
+  font-size: 14px;
 }
 
 /* 封面與內容併排控制 */
@@ -607,41 +616,47 @@ body {
   color: white;
 }
 
-.filter-select {
-  padding: 6px 12px;
-  border-radius: 20px;
-  border: 1px solid #ddd;
-  outline: none;
-  font-size: 0.9em;
-}
+@media screen and (max-width: 768px) {
+  .sort-group {
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px; /* 每行之間的間隔 */
+  }
 
-.filter-group {
-  margin-top: 15px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-}
+  .filter-item {
+    display: flex;
+    align-items: center; /* 改為置中對齊，讓標籤與單行選單更整齊 */
+    gap: 10px;
+  }
 
-.filter-btn {
-  padding: 6px 16px;
-  border: 1px solid #ddd;
-  background: white;
-  border-radius: 20px;
-  cursor: pointer;
-  font-size: 0.9em;
-  transition: all 0.3s;
-}
+  .filter-label {
+    min-width: 65px;
+    font-size: 0.9em;
+    font-weight: bold;
+    flex-shrink: 0;
+    color: #555;
+  }
 
-.filter-btn:hover {
-  background: #f0f7ff;
-  border-color: #3498db;
-}
+  .btn-group {
+    display: flex;
+    flex-wrap: wrap; /* 若按鈕過多仍會自動換行 */
+    gap: 8px;
+    flex: 1;
+  }
 
-.filter-btn.active {
-  background: #3498db;
-  color: white;
-  border-color: #3498db;
+  /* 針對獨立出來的下拉選單美化 */
+  .filter-select {
+    width: 100%; /* 在自己的行內佔滿剩餘空間 */
+    max-width: 200px; /* 但不要太寬，以免在寬螢幕手機上太難看 */
+    height: 36px;
+    padding: 0 30px 0 12px !important; /* 確保右側箭頭空間充足 */
+    border-radius: 8px;
+    border: 1px solid #ddd;
+    font-size: 0.9em;
+    background-color: #fff;
+    cursor: pointer;
+  }
 }
 
 /* 顏色定義與原本一致... */
