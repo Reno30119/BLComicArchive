@@ -91,30 +91,6 @@ body {
   box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
 }
 
-/* 排序按鈕組美化 */
-.sort-group {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap; /* 手機版自動換行 */
-}
-
-.sort-btn {
-  padding: 8px 16px;
-  border: 1px solid #eee;
-  background: white;
-  border-radius: 20px;
-  cursor: pointer;
-  color: #666;
-  font-size: 0.85rem;
-  transition: all 0.2s;
-}
-
-.sort-btn:hover {
-  background: #f8f9fa;
-  border-color: #3498db;
-  color: #3498db;
-}
-
 .refresh-btn {
   background: #34495e;
   color: white;
@@ -128,30 +104,69 @@ body {
   gap: 5px;
 }
 
-/* 排序按鈕組 */
+/* 容器排版優化 */
 .sort-group {
   display: flex;
-  gap: 10px;
-  overflow-x: auto; /* 手機版可橫向滑動 */
-  padding-bottom: 5px;
+  flex-direction: column;
+  gap: 16px;
+  background: #f8f9fa;
+  padding: 16px;
+  border-radius: 12px;
+  margin-bottom: 20px;
 }
 
-.sort-btn {
-  padding: 6px 15px;
-  border: 1px solid #eee;
+/* 列佈局 */
+.filter-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.filter-label {
+  font-size: 0.85em;
+  color: #555;
+  font-weight: 600;
+  min-width: 80px;
+}
+
+/* 通用按鈕樣式升級 */
+.sort-btn,
+.filter-btn {
+  padding: 6px 14px;
+  border: 1px solid #e0e0e0;
   background: white;
-  border-radius: 20px; /* 膠囊狀更美觀 */
+  border-radius: 8px;
+  font-size: 0.9em;
+  color: #444;
   cursor: pointer;
-  color: #666;
-  font-size: 0.85rem;
-  white-space: nowrap;
-  transition: all 0.2s;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
 }
 
-.sort-btn:hover {
-  background: #3498db;
-  color: white;
+.sort-btn:hover,
+.filter-btn:hover {
   border-color: #3498db;
+  color: #3498db;
+  background: #f0f7ff;
+}
+
+/* 啟動狀態 */
+.filter-btn.active {
+  background: #3498db !important;
+  color: white !important;
+  border-color: #3498db !important;
+  box-shadow: 0 4px 10px rgba(52, 152, 219, 0.3);
+}
+
+/* 下拉選單美化 */
+.filter-select {
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+  outline: none;
+  background-color: white;
+  cursor: pointer;
 }
 
 /* 封面與內容併排控制 */
@@ -598,6 +613,35 @@ body {
   border: 1px solid #ddd;
   outline: none;
   font-size: 0.9em;
+}
+
+.filter-group {
+  margin-top: 15px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.filter-btn {
+  padding: 6px 16px;
+  border: 1px solid #ddd;
+  background: white;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 0.9em;
+  transition: all 0.3s;
+}
+
+.filter-btn:hover {
+  background: #f0f7ff;
+  border-color: #3498db;
+}
+
+.filter-btn.active {
+  background: #3498db;
+  color: white;
+  border-color: #3498db;
 }
 
 /* 顏色定義與原本一致... */
