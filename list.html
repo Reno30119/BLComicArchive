@@ -50,39 +50,49 @@
           </button>
         </div>
         <div class="sort-group">
-          <div class="filter-row">
-            <span class="filter-label">排序方式：</span>
-            <button class="sort-btn" onclick="sortData('rating')">
-              ⭐ 分數
-            </button>
-            <button class="sort-btn" onclick="sortData('author')">
-              🖋️ 作者
-            </button>
-            <button class="sort-btn" onclick="sortData('title')">
-              📖 書名
-            </button>
-            <button class="sort-btn" onclick="sortData('date')">📅 日期</button>
-
-            <span class="filter-label" style="margin-left: 10px"
-              >評分區間：</span
-            >
-            <select
-              id="ratingFilter"
-              class="filter-select"
-              onchange="applyFilters()"
-            >
-              <option value="all">所有分數</option>
-              <option value="8">8 分以上</option>
-              <option value="6">6-7 分</option>
-              <option value="0">5 分以下</option>
-            </select>
+          <div class="filter-item">
+            <span class="filter-label">🛠️ 排序</span>
+            <div class="btn-group">
+              <button class="sort-btn" onclick="sortData('rating')">
+                ⭐ 分數
+              </button>
+              <button class="sort-btn" onclick="sortData('author')">
+                🖋️ 作者
+              </button>
+              <button class="sort-btn" onclick="sortData('title')">
+                📜 書名
+              </button>
+              <button class="sort-btn" onclick="sortData('date')">
+                📅 日期
+              </button>
+            </div>
           </div>
 
-          <div class="filter-row">
-            <span class="filter-label">評論者：</span>
-            <button class="filter-btn active" data-reviewer="all">全部</button>
-            <button class="filter-btn" data-reviewer="Reno">Reno</button>
-            <button class="filter-btn" data-reviewer="茶壺">茶壺</button>
+          <div class="filter-item">
+            <span class="filter-label">💎 評分</span>
+            <div class="btn-group">
+              <select
+                id="ratingFilter"
+                class="filter-select"
+                onchange="applyFilters()"
+              >
+                <option value="all">所有分數區間</option>
+                <option value="8">8 分以上 (推薦)</option>
+                <option value="6">6-7 分 (一般)</option>
+                <option value="0">5 分以下 (避雷)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="filter-item">
+            <span class="filter-label">🎨 評論者</span>
+            <div class="btn-group">
+              <button class="filter-btn active" data-reviewer="all">
+                全部
+              </button>
+              <button class="filter-btn" data-reviewer="Reno">Reno</button>
+              <button class="filter-btn" data-reviewer="茶壺">茶壺</button>
+            </div>
           </div>
         </div>
       </header>
