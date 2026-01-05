@@ -111,6 +111,29 @@
               <button class="filter-btn" data-reviewer="茶壺">茶壺</button>
             </div>
           </div>
+
+          <div
+            class="reset-container"
+            style="text-align: right; margin-top: 10px"
+          >
+            <button
+              id="resetAllBtn"
+              class="reset-btn"
+              onclick="resetAllFilters()"
+              style="
+                padding: 8px 16px;
+                background: #f1f3f5;
+                border: 1px solid #dee2e6;
+                border-radius: 8px;
+                cursor: pointer;
+                color: #666;
+                font-size: 0.9em;
+                transition: 0.2s;
+              "
+            >
+              🧹 重置所有條件
+            </button>
+          </div>
         </div>
       </header>
 
@@ -768,10 +791,10 @@
           book.avgRating = totalRating / book.reviews.length;
 
           // B. 💡 關鍵新增：讓該書的評論依照評論者名字排序 (Reno, 茶壺...)
-          book.reviews.sort((a, b) => 
+          book.reviews.sort((a, b) =>
             String(a.reviewer).localeCompare(String(b.reviewer), "zh-Hant")
           );
-          
+
           return book;
         });
 
@@ -833,7 +856,38 @@
         sInput.focus();
         applyFilters();
       });
+
+      function resetAllFilters() {
+        // 1. 重置搜尋框
+        const searchInput = document.getElementById("searchInput");
+        const clearBtn = document.getElementById("clearSearch");
+        searchInput.value = "";
+        if (clearBtn) clearBtn.style.display = "none";
+
+        // 2. 重置下拉選單 (評分與分級)
+        document.getElementById("ratingFilter").value = "all";
+        if (document.getElementById("levelFilter")) {
+          document.getElementById("levelFilter").value = "all";
+        }
+
+        // 3. 重置評論者按鈕
+        currentReviewer = "all";
+        document.querySelectorAll(".filter-btn").forEach((btn) => {
+          btn.classList.remove("active");
+          if (btn.getAttribute("data-reviewer") === "all") {
+            btn.classList.add("active");
+          }
+        });
+
+        // 4. 重置排序類型 (預設改回日期)
+        currentSortType = "date";
+
+        // 5. 執行過濾更新畫面
+        applyFilters();
+
+        // 視覺反饋：捲動回頂部
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
     </script>
   </body>
 </html>
-
