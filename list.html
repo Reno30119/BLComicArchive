@@ -766,6 +766,12 @@
             0
           );
           book.avgRating = totalRating / book.reviews.length;
+
+          // B. 💡 關鍵新增：讓該書的評論依照評論者名字排序 (Reno, 茶壺...)
+          book.reviews.sort((a, b) => 
+            String(a.reviewer).localeCompare(String(b.reviewer), "zh-Hant")
+          );
+          
           return book;
         });
 
@@ -830,3 +836,4 @@
     </script>
   </body>
 </html>
+
