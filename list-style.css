@@ -137,6 +137,7 @@ body {
   min-width: 100px; /* 固定寬度讓右側對齊 */
   flex-shrink: 0;
 }
+
 .sort-btn:hover,
 .filter-btn:hover {
   border-color: #3498db;
@@ -617,11 +618,24 @@ body {
 }
 
 @media screen and (max-width: 768px) {
+  .reset-container {
+    text-align: center; /* 手機版居中 */
+    width: 100%;
+    margin-top: 15px;
+  }
+
+  .reset-btn {
+    width: 100%; /* 手機版按鈕撐滿比較好點擊 */
+    height: 40px;
+  }
+
   .sort-group {
     padding: 15px;
     display: flex;
     flex-direction: column;
     gap: 12px; /* 每行之間的間隔 */
+    position: relative; /* 讓重置按鈕可以相對於此框定位 */
+    padding-bottom: 0px; /* 為右下角按鈕預留空間 */
   }
 
   .filter-item {
@@ -657,6 +671,24 @@ body {
     background-color: #fff;
     cursor: pointer;
   }
+}
+
+@media screen and (min-width: 769px) {
+  .reset-container {
+    position: absolute;
+    right: 25px;
+    bottom: 20px;
+  }
+
+  .sort-group {
+    position: relative; /* 讓重置按鈕可以相對於此框定位 */
+    padding-bottom: 20px; /* 為右下角按鈕預留空間 */
+  }
+}
+
+.reset-btn:hover {
+  background-color: #e9ecef !important;
+  color: #333 !important;
 }
 
 /* 顏色定義與原本一致... */
