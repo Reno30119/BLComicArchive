@@ -69,6 +69,23 @@
           </div>
 
           <div class="filter-item">
+            <span class="filter-label">🍙 分級</span>
+            <div class="btn-group">
+              <select
+                id="levelFilter"
+                class="filter-select"
+                onchange="applyFilters()"
+              >
+                <option value="all">所有分級</option>
+                <option value="肉多">🥩 肉多</option>
+                <option value="正常">🍛 正常</option>
+                <option value="肉少">🥗 肉少</option>
+                <option value="清水">💧 清水</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="filter-item">
             <span class="filter-label">💎 評分</span>
             <div class="btn-group">
               <select
@@ -500,7 +517,7 @@
         document.getElementById("editChilUrl").value = book.chilUrl || "";
 
         // 即使在齒輪模式，也要填入分數和評語，防止 GAS 寫入空值
-        document.getElementById("editRating").value = book.rating || "";
+        document.getElementById("editRating").value = book.rating || 5;
         document.getElementById("editComment").value = book.comment || "";
 
         document.getElementById("editModal").classList.remove("hidden");
@@ -543,9 +560,11 @@
         // --- 補上這兩行，確保編輯時狀態不會不見 ---
         document.getElementById("editTwStatus").value = row.twStatus || ""; // 填入台灣狀態
         document.getElementById("editJpStatus").value = row.jpStatus || ""; // 填入日本狀態
-        // ------------------------------------------
+
         document.getElementById("editEbookUrl").value = row.ebookUrl || ""; // 防止網址消失
         document.getElementById("editChilUrl").value = row.chilUrl || ""; // 防止網址消失
+
+        // 即使在齒輪模式，也要填入分數和評語，防止 GAS 寫入空值
         document.getElementById("editRating").value = row.rating || 5;
         document.getElementById("editComment").value = row.comment || "";
 
@@ -714,6 +733,7 @@
           .getElementById("searchInput")
           .value.toLowerCase();
         const ratingThreshold = document.getElementById("ratingFilter").value;
+        const levelThreshold = document.getElementById("levelFilter").value;
 
         // 1. 合併邏輯：按書名分組，收集所有評論
         const validData = allBooks.filter(
@@ -765,12 +785,16 @@
             matchRating = score >= 6 && score < 8;
           else if (ratingThreshold === "0") matchRating = score < 6;
 
-          // C. 評論者篩選邏輯 (核心新增)
+          // C. 評論者篩選邏輯
           const matchReviewer =
             currentReviewer === "all" ||
             book.reviews.some((r) => r.reviewer === currentReviewer);
 
-          return matchSearch && matchRating && matchReviewer;
+          // D. 分級過濾邏輯
+          const matchLevel =
+            levelThreshold === "all" || book.level === levelThreshold;
+
+          return matchSearch && matchRating && matchReviewer && matchLevel;
         });
 
         // 4. 排序邏輯 (維持原樣)
