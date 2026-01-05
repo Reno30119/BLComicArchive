@@ -225,7 +225,7 @@
 
       // 2. 同時綁定監聽器給兩個輸入框
       // 不論哪一個填完離開游標（blur），都會觸發抓取
-      ["blur", "change"].forEach((evt) => {
+      ["change"].forEach((evt) => {
         document
           .getElementById("ebookUrl")
           .addEventListener(evt, autoFetchCover);
@@ -358,7 +358,7 @@
       // 取得書名輸入框
       const titleInput = document.getElementById("title");
 
-      ["blur", "change"].forEach((evt) => {
+      ["change"].forEach((evt) => {
         titleInput.addEventListener(evt, function () {
           const inputTitle = this.value.trim();
 
@@ -437,3 +437,4 @@
     </script>
   </body>
 </html>
+
