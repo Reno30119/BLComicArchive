@@ -319,9 +319,10 @@
                         <span class="avg-score ${getScoreColor(
                           avgRating
                         )}">${avgRating}</span>
-                        <button class="edit-book-btn" onclick="openBookInfoModal('${
-                          book.title
-                        }')" title="編輯書籍基本資訊" style="background:none; border:none; color:#3498db; cursor:pointer; font-size:16px; padding:0 5px;">⚙️</button>
+                        
+<button class="edit-book-btn" onclick="openBookInfoModal('${
+            book.reviews[0].timestamp
+          }')" title="編輯書籍基本資訊" style="background:none; border:none; color:#3498db; cursor:pointer; font-size:16px; padding:0 5px;">⚙️</button>
                     </div>
 
                     
@@ -457,11 +458,17 @@
       }
 
       // 1. 點擊齒輪：編輯基本資訊
-      function openBookInfoModal(title) {
-        const book = allBooks.find(
-          (b) => String(b.title).trim() === String(title).trim()
-        );
-        if (!book) return;
+      function openBookInfoModal(ts) {
+        console.log("當前點擊的時間戳 TS:", ts); // 除錯點 1
+
+        const book = allBooks.find((b) => String(b.timestamp) === String(ts));
+
+        console.log("抓到的書本原始資料:", book); // 除錯點 2
+
+        if (!book) {
+          console.error("❌ 找不到資料！請檢查 allBooks 陣列中是否有這個 TS");
+          return;
+        }
 
         // --- 關鍵：恢復顯示所有基本欄位 ---
         document.getElementById("infoFieldsGroup").style.display = "block";
@@ -500,8 +507,16 @@
       }
 
       function openCommentModal(ts) {
+        console.log("當前點擊的時間戳 TS:", ts); // 除錯點 1
+
         const row = allBooks.find((b) => String(b.timestamp) === String(ts));
-        if (!row) return;
+
+        console.log("抓到的書本原始資料:", row); // 除錯點 2
+
+        if (!row) {
+          console.error("❌ 找不到資料！請檢查 allBooks 陣列中是否有這個 TS");
+          return;
+        }
 
         // 1. 切換 UI 顯示：隱藏基本資訊，顯示評語區
         document.getElementById("infoFieldsGroup").style.display = "none";
@@ -521,6 +536,10 @@
         document.getElementById("oldTitle").value = row.title || ""; // 同步更新書名的關鍵
         document.getElementById("editTimestamp").value = row.timestamp || "";
         document.getElementById("editTitle").value = row.title || ""; // 新書名暫時維持原狀
+        document.getElementById("editJpTitle").value = row.jpTitle || "";
+        document.getElementById("editAuthor").value = row.author || "";
+        document.getElementById("editLevel").value = row.level || "正常";
+        document.getElementById("editTags").value = row.tags || "";
         // --- 補上這兩行，確保編輯時狀態不會不見 ---
         document.getElementById("editTwStatus").value = row.twStatus || ""; // 填入台灣狀態
         document.getElementById("editJpStatus").value = row.jpStatus || ""; // 填入日本狀態
@@ -596,6 +615,7 @@
 
       function closeModal() {
         document.getElementById("editModal").classList.add("hidden");
+        document.getElementById("editForm").reset();
       }
 
       document.getElementById("editForm").onsubmit = async (e) => {
