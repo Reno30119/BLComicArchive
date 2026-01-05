@@ -114,7 +114,31 @@
           <textarea id="comment" name="comment" rows="3"></textarea>
         </div>
 
-        <button type="submit" id="submitBtn">確認送出資料</button>
+        <div class="form-actions-row">
+          <button type="submit" id="submitBtn">確認送出資料</button>
+          <button
+            type="button"
+            class="icon-clear-btn"
+            onclick="clearFullForm()"
+            title="清空資料"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M3 6h18"></path>
+              <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+              <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+            </svg>
+          </button>
+        </div>
       </form>
 
       <div id="message" class="hidden"></div>
@@ -386,6 +410,30 @@
           }
         });
       });
+
+      function clearFullForm() {
+        if (confirm("確定要清空目前填寫的所有資料嗎？")) {
+          // 修正這裡：你的 form ID 是 bookForm
+          const form = document.getElementById("bookForm");
+
+          form.reset();
+
+          // 額外重置隱藏欄位與按鈕狀態
+          document.getElementById("coverUrl").value = "";
+          document.getElementById("reviewer").value = "";
+
+          // 移除評論者按鈕的選中狀態
+          document
+            .querySelectorAll(".rev-btn")
+            .forEach((b) => b.classList.remove("active"));
+
+          form.reset();
+          // 回復預設評分顏色
+          updateRatingColor(5.0);
+
+          console.log("表單已完全清空");
+        }
+      }
     </script>
   </body>
 </html>
