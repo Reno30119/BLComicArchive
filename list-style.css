@@ -127,6 +127,7 @@ body {
   align-items: center;
   flex-wrap: wrap;
   gap: 12px;
+  flex-wrap: nowrap;
 }
 
 /* 讓標題文字變大 */
@@ -136,6 +137,13 @@ body {
   color: #444;
   min-width: 100px; /* 固定寬度讓右側對齊 */
   flex-shrink: 0;
+}
+
+.reset-container {
+  display: flex;
+  align-items: center; /* 改為置中對齊，讓標籤與單行選單更整齊 */
+  gap: 10px;
+  margin-left: auto;
 }
 
 .sort-btn:hover,
@@ -209,15 +217,6 @@ body {
   /* 如果你不喜歡 contain 產生的白邊，可以加上背景色 */
   background-color: #f0f0f0;
   border-radius: 5px;
-}
-
-/* 3. 調整手機版的封面大小 */
-@media (max-width: 600px) {
-  .book-cover-side {
-    width: 130px; /* 手機版不要太大，以免文字空間不夠 */
-    height: 182px;
-    margin: 0 auto 15px; /* 手機版居中並留點下邊距 */
-  }
 }
 /* 無封面時的樣式 */
 .no-cover {
@@ -394,38 +393,6 @@ body {
   color: #3498db;
   border-color: #3498db;
   opacity: 1;
-}
-
-/* --- 手機版優化 --- */
-@media (max-width: 600px) {
-  .item-main {
-    flex-direction: column;
-    gap: 12px;
-  }
-
-  .book-cover-side {
-    width: 80px;
-    height: 110px;
-    margin: 0 auto; /* 封面居中 */
-  }
-
-  .item-info {
-    width: 100%;
-  }
-
-  .title {
-    font-size: 1.1rem;
-  }
-
-
-  .link-icon {
-    flex: 1;
-    justify-content: center;
-  }
-
-  .small-edit-btn {
-    opacity: 1;
-  }
 }
 
 /* --- 彈出視窗 (Modal) 基礎設定 --- */
@@ -607,11 +574,46 @@ body {
   color: white;
 }
 
-@media screen and (max-width: 768px) {
-  .reset-container {
-    text-align: center; /* 手機版居中 */
+@media screen and (max-width: 600px) {
+  .book-cover-side {
+    width: 130px; /* 手機版不要太大，以免文字空間不夠 */
+    height: 182px;
+    margin: 0 auto 15px; /* 手機版居中並留點下邊距 */
+  }
+  .item-main {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .book-cover-side {
+    width: 80px;
+    height: 110px;
+    margin: 0 auto; /* 封面居中 */
+  }
+
+  .item-info {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .add-review-action-area {
     width: 100%;
-    margin-top: 15px;
+    justify-content: center; /* 手機版居中 */
+    margin-bottom: -12px;
+    margin-top: -10px;
+  }
+
+  .title {
+    font-size: 1.1rem;
+  }
+
+  .link-icon {
+    flex: 1;
+    justify-content: center;
+  }
+
+  .small-edit-btn {
+    opacity: 1;
   }
 
   .reset-btn {
@@ -632,6 +634,10 @@ body {
     display: flex;
     align-items: center; /* 改為置中對齊，讓標籤與單行選單更整齊 */
     gap: 10px;
+  }
+
+  .reviewer-filter-item {
+    flex-wrap: wrap;
   }
 
   .filter-label {
@@ -661,13 +667,16 @@ body {
     background-color: #fff;
     cursor: pointer;
   }
-}
 
-@media screen and (min-width: 769px) {
   .reset-container {
-    position: absolute;
-    right: 25px;
-    bottom: 20px;
+    display: flex;
+    align-items: center; /* 改為置中對齊，讓標籤與單行選單更整齊 */
+    gap: 10px;
+    width: 100%;
+    justify-content: center;
+    margin-left: 0;
+    margin-top: 10px;
+    flex-basis: 100%;
   }
 
   .sort-group {
@@ -679,16 +688,16 @@ body {
     display: flex;
     flex-direction: row; /* 維持橫向排列但允許換行 */
     justify-content: flex-start;
+    flex-wrap: wrap;
   }
 
   .add-review-btn.mobile-up-btn {
-    order: -1;          /* 關鍵：強制排在所有連結之前 (最左/最上) */
-    margin-left: 0;     /* 取消靠右 */ /* 與下方連結保持距離 */
-    width: 100%;        /* 讓它在手機版變成長條狀，更好點擊 */
+    order: -1; /* 關鍵：強制排在所有連結之前 (最左/最上) */
+    margin-left: 0; /* 取消靠右 */ /* 與下方連結保持距離 */
+    width: 100%; /* 讓它在手機版變成長條狀，更好點擊 */
     text-align: center;
     background: #ebf5fb; /* 換個顯眼的背景色 */
   }
-
 }
 
 /* 電腦版預設樣式 */
@@ -701,9 +710,10 @@ body {
 }
 
 .add-review-action-area {
-    margin-left: auto; /* 電腦版靠右 */
-    display: flex;
-    justify-content: flex-end; /* 靠右對齊 (黃色位置) */
+  margin-left: auto; /* 電腦版靠右 */
+  display: flex;
+  justify-content: flex-end; /* 靠右對齊 (黃色位置) */
+  padding: 10px 0;
 }
 
 .add-review-btn.mobile-up-btn {
@@ -851,21 +861,21 @@ body {
 /* 評分顏色類別 */
 /* 綠色 - 避雷 (低分) */
 .rating-low {
-    border-color: #27ae60 !important;
-    color: #27ae60 !important;
-    box-shadow: 0 0 5px rgba(39, 174, 96, 0.2);
+  border-color: #27ae60 !important;
+  color: #27ae60 !important;
+  box-shadow: 0 0 5px rgba(39, 174, 96, 0.2);
 }
 
 /* 藍色 - 一般 (中分) */
 .rating-mid {
-    border-color: #3498db !important;
-    color: #3498db !important;
-    box-shadow: 0 0 5px rgba(52, 152, 219, 0.2);
+  border-color: #3498db !important;
+  color: #3498db !important;
+  box-shadow: 0 0 5px rgba(52, 152, 219, 0.2);
 }
 
 /* 紅色 - 推薦 (高分) */
 .rating-high {
-    border-color: #e74c3c !important;
-    color: #e74c3c !important;
-    box-shadow: 0 0 5px rgba(231, 76, 60, 0.2);
+  border-color: #e74c3c !important;
+  color: #e74c3c !important;
+  box-shadow: 0 0 5px rgba(231, 76, 60, 0.2);
 }
