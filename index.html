@@ -335,6 +335,7 @@
           msg.innerHTML = "✅ 資料已成功同步！";
           msg.className = "success show";
           form.reset();
+          fetchExistingData();
           updateRatingColor(5.0); // 讓評分顏色回歸預設
           revButtons.forEach((b) => b.classList.remove("active"));
           reviewerInput.value = "";
@@ -435,4 +436,5 @@
     </script>
   </body>
 </html>
+
 
