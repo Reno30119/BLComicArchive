@@ -357,7 +357,7 @@
       // 取得書名輸入框
       const titleInput = document.getElementById("title");
 
-      ["change"].forEach((evt) => {
+      ["change", "paste"].forEach((evt) => {
         titleInput.addEventListener(evt, function () {
           const inputTitle = this.value.trim();
 
@@ -436,5 +436,6 @@
     </script>
   </body>
 </html>
+
 
 
