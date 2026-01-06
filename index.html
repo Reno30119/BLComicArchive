@@ -243,25 +243,24 @@
       tagsInput.addEventListener("input", function (e) {
         let val = this.value;
 
-        // 1. 如果輸入的是空白，立即將其替換為逗號
-        // 使用正則表達式把「空白」或「連續空白」替換成一個逗號
-        if (val.includes(" ")) {
-          this.value = val.replace(/\s+/g, ",");
+        // 將「空白」或「全形頓號」即時替換為半形逗號
+        if (val.includes(" ") || val.includes("、")) {
+          this.value = val.replace(/[ 、]+/g, ",");
         }
 
-        // 2. 防止出現連續逗號（例如輸入了空白後又手動輸入逗號）
+        // 防止出現連續逗號
         this.value = this.value.replace(/,+/g, ",");
       });
 
       // 表單送出前的最終清理
       document.getElementById("bookForm").onsubmit = function () {
         let rawTags = tagsInput.value;
-        // 將所有逗號分割、去空白、過濾掉空的，最後再用「逗號+空白」組合
+        // 使用正規表達式 /[ ,、]+/ 同時匹配：半形逗號、空格、全形頓號
         tagsInput.value = rawTags
-          .split(",")
+          .split(/[ ,、]+/) // 這裡會把 逗號、空格、頓號 都當作分隔符號
           .map((t) => t.trim())
           .filter((t) => t !== "")
-          .join(", ");
+          .join(", "); // 最後統一格式化為「逗號+空白」
       };
       // 初始化顏色 (頁面載入時先執行一次，預設 5.0 會是藍色)
       updateRatingColor(ratingInput.value);
@@ -437,4 +436,3 @@
     </script>
   </body>
 </html>
-
