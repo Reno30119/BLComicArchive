@@ -321,13 +321,6 @@ body {
   margin-bottom: 6px;
 }
 
-/* 連結按鈕 */
-.item-links {
-  display: flex;
-  gap: 10px;
-  margin: 12px 0;
-}
-
 .link-icon {
   text-decoration: none;
   font-size: 0.8rem;
@@ -424,9 +417,6 @@ body {
     font-size: 1.1rem;
   }
 
-  .item-links {
-    flex-wrap: wrap;
-  }
 
   .link-icon {
     flex: 1;
@@ -684,11 +674,143 @@ body {
     position: relative; /* 讓重置按鈕可以相對於此框定位 */
     padding-bottom: 20px; /* 為右下角按鈕預留空間 */
   }
+
+  .item-links {
+    display: flex;
+    flex-direction: row; /* 維持橫向排列但允許換行 */
+    justify-content: flex-start;
+  }
+
+  .add-review-btn.mobile-up-btn {
+    order: -1;          /* 關鍵：強制排在所有連結之前 (最左/最上) */
+    margin-left: 0;     /* 取消靠右 */ /* 與下方連結保持距離 */
+    width: 100%;        /* 讓它在手機版變成長條狀，更好點擊 */
+    text-align: center;
+    background: #ebf5fb; /* 換個顯眼的背景色 */
+  }
+
+}
+
+/* 電腦版預設樣式 */
+.item-links {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+.add-review-action-area {
+    margin-left: auto; /* 電腦版靠右 */
+    display: flex;
+    justify-content: flex-end; /* 靠右對齊 (黃色位置) */
+}
+
+.add-review-btn.mobile-up-btn {
+  background: #fff;
+  border: 1.5px solid #3498db;
+  color: #3498db;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: bold;
+  cursor: pointer;
+  white-space: nowrap;
 }
 
 .reset-btn:hover {
   background-color: #e9ecef !important;
   color: #333 !important;
+}
+
+/* --- Modal 內部按鈕與輸入框美化 --- */
+
+/* 評論者選擇按鈕 (Reno / 茶壺) */
+.reviewer-options {
+  display: flex;
+  gap: 12px;
+  margin: 10px 0 20px 0;
+}
+
+.rev-select-btn {
+  flex: 1;
+  padding: 12px;
+  border: 2px solid #edf2f7;
+  background: #fff;
+  color: #4a5568;
+  border-radius: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-size: 0.95rem;
+}
+
+.rev-select-btn:hover {
+  background: #f7fafc;
+  border-color: #cbd5e0;
+}
+
+.rev-select-btn.active {
+  background: #3498db;
+  color: white;
+  border-color: #3498db;
+  box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
+  transform: translateY(-2px);
+}
+
+/* Modal 底部動作按鈕容器 */
+.modal-footer {
+  display: flex;
+  gap: 12px;
+  margin-top: 30px;
+}
+
+/* 取消按鈕 */
+.cancel-btn {
+  flex: 1;
+  padding: 12px;
+  border: none;
+  background: #edf2f7;
+  color: #718096;
+  border-radius: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.cancel-btn:hover {
+  background: #e2e8f0;
+  color: #4a5568;
+}
+
+/* 確認建立按鈕 (主要的送出按鈕) */
+.save-review-btn {
+  flex: 2; /* 讓確認按鈕寬一點，視覺重點 */
+  padding: 12px;
+  border: none;
+  background: linear-gradient(135deg, #3498db, #2980b9);
+  color: white;
+  border-radius: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
+  transition: all 0.2s;
+  letter-spacing: 1px;
+}
+
+.save-review-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(52, 152, 219, 0.4);
+}
+
+.save-review-btn:active {
+  transform: translateY(0);
+}
+
+.save-review-btn:disabled {
+  background: #cbd5e0;
+  box-shadow: none;
+  cursor: not-allowed;
 }
 
 /* 顏色定義與原本一致... */
@@ -724,4 +846,26 @@ body {
 }
 .hidden {
   display: none;
+}
+
+/* 評分顏色類別 */
+/* 綠色 - 避雷 (低分) */
+.rating-low {
+    border-color: #27ae60 !important;
+    color: #27ae60 !important;
+    box-shadow: 0 0 5px rgba(39, 174, 96, 0.2);
+}
+
+/* 藍色 - 一般 (中分) */
+.rating-mid {
+    border-color: #3498db !important;
+    color: #3498db !important;
+    box-shadow: 0 0 5px rgba(52, 152, 219, 0.2);
+}
+
+/* 紅色 - 推薦 (高分) */
+.rating-high {
+    border-color: #e74c3c !important;
+    color: #e74c3c !important;
+    box-shadow: 0 0 5px rgba(231, 76, 60, 0.2);
 }
