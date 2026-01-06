@@ -101,7 +101,7 @@
             </div>
           </div>
 
-          <div class="filter-item">
+          <div class="filter-item reviewer-filter-item">
             <span class="filter-label">🎨 評論者</span>
             <div class="btn-group">
               <button class="filter-btn active" data-reviewer="all">
@@ -110,29 +110,28 @@
               <button class="filter-btn" data-reviewer="Reno">Reno</button>
               <button class="filter-btn" data-reviewer="茶壺">茶壺</button>
             </div>
-          </div>
-
-          <div
-            class="reset-container"
-            style="text-align: right; margin-top: 10px"
-          >
-            <button
-              id="resetAllBtn"
-              class="reset-btn"
-              onclick="resetAllFilters()"
-              style="
-                padding: 8px 16px;
-                background: #f1f3f5;
-                border: 1px solid #dee2e6;
-                border-radius: 8px;
-                cursor: pointer;
-                color: #666;
-                font-size: 0.9em;
-                transition: 0.2s;
-              "
+            <div
+              class="reset-container"
+              style="text-align: center; margin-top: 10px"
             >
-              🧹 重置所有條件
-            </button>
+              <button
+                id="resetAllBtn"
+                class="reset-btn"
+                onclick="resetAllFilters()"
+                style="
+                  padding: 8px 18px;
+                  background: #f1f3f5;
+                  border: 1px solid #dee2e6;
+                  border-radius: 8px;
+                  cursor: pointer;
+                  color: #666;
+                  font-size: 0.9em;
+                  transition: 0.2s;
+                "
+              >
+                🧹 重置所有條件
+              </button>
+            </div>
           </div>
         </div>
       </header>
@@ -1142,4 +1141,3 @@
     </script>
   </body>
 </html>
-
