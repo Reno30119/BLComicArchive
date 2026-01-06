@@ -249,17 +249,13 @@ textarea:focus {
     width: 95%;
     padding: 20px;
   }
-}
 
-@media (max-width: 480px) {
-  .form-row {
+    .form-row {
     flex-direction: column;
     gap: 0;
   }
-}
 
-@media (max-width: 768px) {
-  .container {
+    .container {
     width: 92%; /* 稍微留白，不要貼死邊緣 */
     padding: 20px;
     margin: 15px auto;
