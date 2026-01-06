@@ -127,7 +127,6 @@ body {
   align-items: center;
   flex-wrap: wrap;
   gap: 12px;
-  flex-wrap: nowrap;
 }
 
 /* 讓標題文字變大 */
@@ -853,9 +852,6 @@ body {
 }
 .orange {
   background: #f39c12;
-}
-.hidden {
-  display: none;
 }
 
 /* 評分顏色類別 */
