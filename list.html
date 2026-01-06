@@ -236,6 +236,92 @@
       </div>
     </div>
 
+    <div id="addCommentModal" class="modal hidden">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3 id="addCommentModalTitle">✍️ 建立新評論</h3>
+        </div>
+        <form id="addCommentForm">
+          <input type="hidden" id="addCommentTargetTitle" name="title" />
+          <input type="hidden" id="addCommentJpTitle" name="jpTitle" />
+          <input type="hidden" id="addCommentAuthor" name="author" />
+          <input type="hidden" id="addCommentLevel" name="level" />
+          <input type="hidden" id="addCommentTags" name="tags" />
+          <input type="hidden" id="addCommentEbookUrl" name="ebookUrl" />
+          <input type="hidden" id="addCommentChilUrl" name="chilUrl" />
+          <input type="hidden" id="addCommentCoverUrl" name="coverUrl" />
+          <input type="hidden" id="addCommentTwStatus" name="twStatus" />
+          <input type="hidden" id="addCommentJpStatus" name="jpStatus" />
+
+          <div class="form-group">
+            <label>評論者</label>
+            <div class="reviewer-options">
+              <button
+                type="button"
+                class="rev-select-btn"
+                onclick="setAddReviewer('Reno', this)"
+              >
+                Reno
+              </button>
+              <button
+                type="button"
+                class="rev-select-btn"
+                onclick="setAddReviewer('茶壺', this)"
+              >
+                茶壺
+              </button>
+            </div>
+            <input
+              type="hidden"
+              id="addCommentReviewer"
+              name="reviewer"
+              required
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="addCommentRating">評分 (0.0 - 10.0)</label>
+            <input
+              type="number"
+              id="addCommentRating"
+              name="rating"
+              min="0"
+              max="10"
+              step="0.5"
+              value="5.0"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="addCommentContent">評語內容</label>
+            <textarea
+              id="addCommentContent"
+              name="comment"
+              rows="4"
+              required
+            ></textarea>
+          </div>
+
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="cancel-btn"
+              onclick="closeAddCommentModal()"
+            >
+              取消
+            </button>
+            <button
+              type="submit"
+              class="save-review-btn"
+              id="addCommentSaveBtn"
+            >
+              確認送出
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
     <script>
       /**
        * ⚠️ 重要提示：
@@ -328,9 +414,6 @@
           row.className = "book-list-item";
           const avgRating = parseFloat(book.avgRating || 0).toFixed(1);
 
-          // 封面 HTML 邏輯
-          // 在 renderBooks 裡面
-          // 封面 HTML 邏輯修正
           const coverUrl = book.coverUrl || "";
           const coverHTML =
             book.coverUrl && book.coverUrl !== ""
@@ -412,7 +495,16 @@
                             ? `<a href="${book.chilUrl}" target="_blank" class="link-icon chil">🍒 ちるちる</a>`
                             : ""
                         }
+                      <div class="add-review-action-area">
+<button class="add-review-btn mobile-up-btn" onclick="openAddCommentModal('${
+            book.reviews[0].timestamp
+          }')">
+  📝 建立評論
+</button>
+                        </div>
+                            
                     </div>
+
 
                     <div class="item-reviews" style="border-top: 1px solid #f0f0f0; padding-top: 10px;">
                         ${book.reviews
@@ -437,6 +529,8 @@
                         `
                           )
                           .join("")}
+
+
                     </div>
                 </div>
             </div>
@@ -592,6 +686,7 @@
         document.getElementById("editComment").value = row.comment || "";
 
         document.getElementById("editModal").classList.remove("hidden");
+        document.getElementById("editRating").dispatchEvent(new Event("input"));
       }
 
       // 統一設定 Modal 顯示哪些欄位
@@ -888,6 +983,162 @@
         // 視覺反饋：捲動回頂部
         window.scrollTo({ top: 0, behavior: "smooth" });
       }
+
+      // 開啟 Modal
+      function openAddCommentModal(ts) {
+        console.log("正在搜尋 TS:", ts);
+
+        const bookData = allBooks.find(
+          (b) => String(b.timestamp) === String(ts)
+        );
+
+        console.log("抓到的書本原始資料:", bookData); // 除錯點 2
+
+        if (!bookData) {
+          console.error("❌ 找不到資料！請檢查 allBooks 陣列中是否有這個 TS");
+          alert("系統錯誤：找不到書籍資訊");
+          return;
+        }
+
+        // 安全填值工具：如果找不到 ID，就不會報錯
+        const safeSetVal = (id, val) => {
+          const el = document.getElementById(id);
+          if (el) {
+            el.value = val || "";
+          } else {
+            console.warn(`找不到 ID: ${id}，請檢查 HTML 是否有此隱藏欄位`);
+          }
+        };
+
+        // 填入資料
+        safeSetVal("addCommentTargetTitle", bookData.title);
+        safeSetVal("addCommentJpTitle", bookData.jpTitle);
+        safeSetVal("addCommentAuthor", bookData.author);
+        safeSetVal("addCommentLevel", bookData.level);
+        safeSetVal("addCommentTags", bookData.tags);
+        safeSetVal("addCommentEbookUrl", bookData.ebookUrl);
+        safeSetVal("addCommentChilUrl", bookData.chilUrl);
+        safeSetVal("addCommentCoverUrl", bookData.coverUrl);
+        safeSetVal("addCommentTwStatus", bookData.twStatus);
+        safeSetVal("addCommentJpStatus", bookData.jpStatus);
+
+        // 顯示 Modal
+        document.getElementById(
+          "addCommentModalTitle"
+        ).innerText = `✍️ 為《${bookData.title}》建立新評論`;
+        document.getElementById("addCommentModal").classList.remove("hidden");
+        document
+          .getElementById("addCommentRating")
+          .dispatchEvent(new Event("input"));
+      }
+
+      // 關閉 Modal
+      function closeAddCommentModal() {
+        document.getElementById("addCommentModal").classList.add("hidden");
+        document.getElementById("addCommentForm").reset();
+        document
+          .querySelectorAll(".rev-select-btn")
+          .forEach((b) => b.classList.remove("active"));
+        document.getElementById("addCommentReviewer").value = "";
+      }
+
+      // 評論者選擇切換
+      function setAddReviewer(name, btn) {
+        document.getElementById("addCommentReviewer").value = name;
+        document
+          .querySelectorAll(".rev-select-btn")
+          .forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+      }
+
+      // 處理表單送出
+      document.getElementById("addCommentForm").onsubmit = async function (e) {
+        e.preventDefault();
+
+        const reviewer = document.getElementById("addCommentReviewer").value;
+        if (!reviewer) {
+          alert("請選擇評論者 (Reno 或 茶壺)！");
+          return;
+        }
+
+        const btn = document.getElementById("addCommentSaveBtn");
+        btn.disabled = true;
+        btn.innerText = "儲存中...";
+
+        // 1. 封裝表單數據
+        const formData = new FormData(this);
+        // 必須加入 action 參數，讓 GAS 後端的 doPost 知道這是要執行 processForm
+        formData.append("action", "processForm");
+
+        try {
+          // 2. 改用 fetch 送出資料到 scriptURL
+          await fetch(scriptURL, {
+            method: "POST",
+            body: formData,
+            mode: "no-cors", // 避免跨域阻擋
+          });
+
+          // 由於 no-cors 模式無法讀取回應，我們直接假設成功並給予提示
+          alert("✅ 評論已成功建立！(資料同步可能需要幾秒鐘)");
+          closeAddCommentModal();
+
+          // 3. 延遲一下再重新讀取，確保 Google 試算表已寫入完畢
+          setTimeout(fetchData, 1500);
+        } catch (err) {
+          console.error("儲存失敗:", err);
+          alert("❌ 儲存失敗：" + err.message);
+        } finally {
+          btn.disabled = false;
+          btn.innerText = "確認送出";
+        }
+      };
+
+      document
+        .getElementById("addCommentRating")
+        .addEventListener("input", function () {
+          const val = parseFloat(this.value);
+          const ratingInput = this;
+
+          // 先清除所有顏色類別
+          ratingInput.classList.remove(
+            "rating-low",
+            "rating-mid",
+            "rating-high"
+          );
+
+          // 根據分數套用類別 (邏輯同 Index)
+          if (val < 5) {
+            ratingInput.classList.add("rating-low");
+          } else if (val <= 7.5) {
+            ratingInput.classList.add("rating-mid");
+          } else {
+            ratingInput.classList.add("rating-high");
+          }
+        });
+
+      // 為「編輯評論」的分數欄位綁定變色邏輯
+      document
+        .getElementById("editRating")
+        .addEventListener("input", function () {
+          const val = parseFloat(this.value);
+          const ratingInput = this;
+
+          // 清除舊類別
+          ratingInput.classList.remove(
+            "rating-low",
+            "rating-mid",
+            "rating-high"
+          );
+
+          // 套用新類別
+          if (val < 5) {
+            ratingInput.classList.add("rating-low");
+          } else if (val <= 7.5) {
+            ratingInput.classList.add("rating-mid");
+          } else {
+            ratingInput.classList.add("rating-high");
+          }
+        });
     </script>
   </body>
 </html>
