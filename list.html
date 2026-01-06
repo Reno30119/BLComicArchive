@@ -239,7 +239,7 @@
     <div id="addCommentModal" class="modal hidden">
       <div class="modal-content">
         <div class="modal-header">
-          <h3 id="addCommentModalTitle">✍️ 建立新評論</h3>
+          <h3 id="addCommentModalTitle">✍️ 新增新評論</h3>
         </div>
         <form id="addCommentForm">
           <input type="hidden" id="addCommentTargetTitle" name="title" />
@@ -499,7 +499,7 @@
 <button class="add-review-btn mobile-up-btn" onclick="openAddCommentModal('${
             book.reviews[0].timestamp
           }')">
-  📝 建立評論
+  📝 新增評論
 </button>
                         </div>
                             
@@ -1025,7 +1025,7 @@
         // 顯示 Modal
         document.getElementById(
           "addCommentModalTitle"
-        ).innerText = `✍️ 為《${bookData.title}》建立新評論`;
+        ).innerText = `✍️ 為《${bookData.title}》新增新評論`;
         document.getElementById("addCommentModal").classList.remove("hidden");
         document
           .getElementById("addCommentRating")
@@ -1142,3 +1142,4 @@
     </script>
   </body>
 </html>
+
