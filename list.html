@@ -195,7 +195,7 @@
               </div>
             </div>
 
-            <label>標籤 (以逗號分隔)</label>
+            <label>標籤 (以逗號 / 空白鍵分隔)</label>
             <input type="text" id="editTags" name="tags" />
 
             <label>電子書網址</label>
@@ -1138,6 +1138,18 @@
             ratingInput.classList.add("rating-high");
           }
         });
+
+      editTags.addEventListener("input", function (e) {
+        let val = this.value;
+
+        // 將「空白」或「全形頓號」即時替換為半形逗號
+        if (val.includes(" ") || val.includes("、")) {
+          this.value = val.replace(/[ 、]+/g, ",");
+        }
+
+        // 防止出現連續逗號
+        this.value = this.value.replace(/,+/g, ",");
+      });
     </script>
   </body>
 </html>
