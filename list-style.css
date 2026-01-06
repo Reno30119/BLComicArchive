@@ -626,7 +626,7 @@ body {
     flex-direction: column;
     gap: 12px; /* 每行之間的間隔 */
     position: relative; /* 讓重置按鈕可以相對於此框定位 */
-    padding-bottom: 0px; /* 為右下角按鈕預留空間 */
+    padding-bottom: 20px; /* 為右下角按鈕預留空間 */
   }
 
   .filter-item {
@@ -678,11 +678,6 @@ body {
     flex-basis: 100%;
   }
 
-  .sort-group {
-    position: relative; /* 讓重置按鈕可以相對於此框定位 */
-    padding-bottom: 20px; /* 為右下角按鈕預留空間 */
-  }
-
   .item-links {
     display: flex;
     flex-direction: row; /* 維持橫向排列但允許換行 */
@@ -725,11 +720,6 @@ body {
   font-weight: bold;
   cursor: pointer;
   white-space: nowrap;
-}
-
-.reset-btn:hover {
-  background-color: #e9ecef !important;
-  color: #333 !important;
 }
 
 /* --- Modal 內部按鈕與輸入框美化 --- */
