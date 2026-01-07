@@ -11,182 +11,73 @@
     />
   </head>
   <body>
-    <nav class="top-nav">
-      <a href="index.html" class="nav-item">➕ 新增書籍</a>
-      <a href="list.html" class="nav-item active">🔍 查詢書庫</a>
-    </nav>
+    <div class="page">
+      <nav class="top-nav">
+        <a href="index.html" class="nav-item">➕ 新增書籍</a>
+        <a href="list.html" class="nav-item active">🔍 查詢書庫</a>
+      </nav>
 
-    <div class="list-container">
-      <header class="list-header">
-        <div class="search-bar">
-          <div
-            style="
-              position: relative;
-              flex: 1;
-              display: flex;
-              align-items: center;
-            "
-          >
-            <input
-              type="text"
-              id="searchInput"
-              placeholder="搜尋書名、作者或標籤..."
-              style="width: 100%; padding-right: 30px"
-            />
-            <span
-              id="clearSearch"
-              style="
-                position: absolute;
-                right: 20px;
-                cursor: pointer;
-                color: #ccc;
-                display: none;
-              "
-              >✖</span
-            >
-          </div>
-          <button id="refreshBtn" class="refresh-btn" onclick="fetchData()">
-            🔄 更新數據
-          </button>
-        </div>
-        <div class="sort-group">
-          <div class="filter-item">
-            <span class="filter-label">🛠️ 排序</span>
-            <div class="btn-group">
-              <button class="sort-btn" onclick="sortData('rating')">
-                ⭐ 分數
-              </button>
-              <button class="sort-btn" onclick="sortData('author')">
-                🖋️ 作者
-              </button>
-              <button class="sort-btn" onclick="sortData('title')">
-                📜 書名
-              </button>
-              <button class="sort-btn" onclick="sortData('date')">
-                📅 日期
-              </button>
-            </div>
-          </div>
-
-          <div class="filter-item">
-            <span class="filter-label">🍙 分級</span>
-            <div class="btn-group">
-              <select
-                id="levelFilter"
-                class="filter-select"
-                onchange="applyFilters()"
-              >
-                <option value="all">所有分級</option>
-                <option value="肉多">🥩 肉多</option>
-                <option value="正常">🍛 正常</option>
-                <option value="肉少">🥗 肉少</option>
-                <option value="清水">💧 清水</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="filter-item">
-            <span class="filter-label">💎 評分</span>
-            <div class="btn-group">
-              <select
-                id="ratingFilter"
-                class="filter-select"
-                onchange="applyFilters()"
-              >
-                <option value="all">所有分數區間</option>
-                <option value="8">8 分以上 (推薦)</option>
-                <option value="6">6-7 分 (一般)</option>
-                <option value="0">5 分以下 (避雷)</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="filter-item reviewer-filter-item">
-            <span class="filter-label">🎨 評論者</span>
-            <div class="btn-group">
-              <button class="filter-btn active" data-reviewer="all">
-                全部
-              </button>
-              <button class="filter-btn" data-reviewer="Reno">Reno</button>
-              <button class="filter-btn" data-reviewer="茶壺">茶壺</button>
-            </div>
+      <div class="list-container">
+        <header class="list-header">
+          <div class="search-bar">
             <div
-              class="reset-container"
-              style="text-align: center; margin-top: 10px"
+              style="
+                position: relative;
+                flex: 1;
+                display: flex;
+                align-items: center;
+              "
             >
-              <button
-                id="resetAllBtn"
-                class="reset-btn"
-                onclick="resetAllFilters()"
+              <input
+                type="text"
+                id="searchInput"
+                placeholder="搜尋書名、作者或標籤..."
+                style="width: 100%; padding-right: 30px"
+              />
+              <span
+                id="clearSearch"
                 style="
-                  padding: 8px 18px;
-                  background: #f1f3f5;
-                  border: 1px solid #dee2e6;
-                  border-radius: 8px;
+                  position: absolute;
+                  right: 20px;
                   cursor: pointer;
-                  color: #666;
-                  font-size: 0.9em;
-                  transition: 0.2s;
+                  color: #ccc;
+                  display: none;
                 "
+                >✖</span
               >
-                🧹 重置所有條件
-              </button>
             </div>
+            <button id="refreshBtn" class="refresh-btn" onclick="fetchData()">
+              🔄 更新數據
+            </button>
           </div>
-        </div>
-      </header>
-
-      <div id="loading">讀取書庫中...</div>
-      <div class="book-grid" id="bookGrid"></div>
-    </div>
-
-    <div id="editModal" class="modal hidden">
-      <div class="modal-content">
-        <h3 id="modalTitle">📝 編輯書籍資訊</h3>
-        <form id="editForm">
-          <input type="hidden" id="editTimestamp" name="timestamp" />
-          <input type="hidden" id="oldTitle" name="oldTitle" />
-          <input type="hidden" name="action" value="update" />
-
-          <div id="infoFieldsGroup">
-            <label>中文書名</label>
-            <input type="text" id="editTitle" name="title" required />
-
-            <label>日文書名</label>
-            <input type="text" id="editJpTitle" name="jpTitle" />
-
-            <label>作者</label>
-            <input type="text" id="editAuthor" name="author" />
-            <div style="display: flex; gap: 10px; margin-bottom: 15px">
-              <div style="flex: 1">
-                <label
-                  style="display: block; font-size: 0.9em; margin-bottom: 5px"
-                  >🇹🇼 台灣狀態</label
-                >
-                <input
-                  type="text"
-                  id="editTwStatus"
-                  name="twStatus"
-                  placeholder="台版進度"
-                />
-              </div>
-              <div style="flex: 1">
-                <label
-                  style="display: block; font-size: 0.9em; margin-bottom: 5px"
-                  >🇯🇵 日本狀態</label
-                >
-                <input
-                  type="text"
-                  id="editJpStatus"
-                  name="jpStatus"
-                  placeholder="日版進度"
-                />
+          <div class="sort-group">
+            <div class="filter-item">
+              <span class="filter-label">🛠️ 排序</span>
+              <div class="btn-group">
+                <button class="sort-btn" onclick="sortData('rating')">
+                  ⭐ 分數
+                </button>
+                <button class="sort-btn" onclick="sortData('author')">
+                  🖋️ 作者
+                </button>
+                <button class="sort-btn" onclick="sortData('title')">
+                  📜 書名
+                </button>
+                <button class="sort-btn" onclick="sortData('date')">
+                  📅 日期
+                </button>
               </div>
             </div>
-            <div style="display: flex; gap: 15px">
-              <div style="flex: 1">
-                <label>分級</label>
-                <select id="editLevel" name="level">
+
+            <div class="filter-item">
+              <span class="filter-label">🍙 分級</span>
+              <div class="btn-group">
+                <select
+                  id="levelFilter"
+                  class="filter-select"
+                  onchange="applyFilters()"
+                >
+                  <option value="all">所有分級</option>
                   <option value="肉多">🥩 肉多</option>
                   <option value="正常">🍛 正常</option>
                   <option value="肉少">🥗 肉少</option>
@@ -195,236 +86,346 @@
               </div>
             </div>
 
-            <label>標籤 (以逗號 / 空白鍵分隔)</label>
-            <input type="text" id="editTags" name="tags" />
+            <div class="filter-item">
+              <span class="filter-label">💎 評分</span>
+              <div class="btn-group">
+                <select
+                  id="ratingFilter"
+                  class="filter-select"
+                  onchange="applyFilters()"
+                >
+                  <option value="all">所有分數區間</option>
+                  <option value="8">8 分以上 (推薦)</option>
+                  <option value="6">6-7 分 (一般)</option>
+                  <option value="0">5 分以下 (避雷)</option>
+                </select>
+              </div>
+            </div>
 
-            <label>電子書網址</label>
-            <input type="url" id="editEbookUrl" name="ebookUrl" />
-
-            <label>ちるちる網址</label>
-            <input type="url" id="editChilUrl" name="chilUrl" />
+            <div class="filter-item reviewer-filter-item">
+              <span class="filter-label">🎨 評論者</span>
+              <div class="btn-group">
+                <button class="filter-btn active" data-reviewer="all">
+                  全部
+                </button>
+                <button class="filter-btn" data-reviewer="Reno">Reno</button>
+                <button class="filter-btn" data-reviewer="茶壺">茶壺</button>
+              </div>
+              <div
+                class="reset-container"
+                style="text-align: center; margin-top: 10px"
+              >
+                <button
+                  id="resetAllBtn"
+                  class="reset-btn"
+                  onclick="resetAllFilters()"
+                  style="
+                    padding: 8px 18px;
+                    background: #f1f3f5;
+                    border: 1px solid #dee2e6;
+                    border-radius: 8px;
+                    cursor: pointer;
+                    color: #666;
+                    font-size: 0.9em;
+                    transition: 0.2s;
+                  "
+                >
+                  🧹 重置所有條件
+                </button>
+              </div>
+            </div>
           </div>
+        </header>
 
-          <div id="commentFieldsGroup">
-            <label>評分 (1-10)</label>
-            <input
-              type="number"
-              id="editRating"
-              name="rating"
-              step="0.5"
-              min="1"
-              max="10"
-            />
-
-            <label>我的評語</label>
-            <textarea
-              id="editComment"
-              name="comment"
-              rows="6"
-              placeholder="分享你的讀後感..."
-            ></textarea>
-          </div>
-
-          <div class="modal-btns">
-            <button type="submit" class="save-btn">儲存修改</button>
-            <button type="button" onclick="closeModal()" class="cancel-btn">
-              取消
-            </button>
-          </div>
-        </form>
+        <div id="loading">讀取書庫中...</div>
+        <div class="book-grid" id="bookGrid"></div>
       </div>
-    </div>
 
-    <div id="addCommentModal" class="modal hidden">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h3 id="addCommentModalTitle">✍️ 新增新評論</h3>
-        </div>
-        <form id="addCommentForm">
-          <input type="hidden" id="addCommentTargetTitle" name="title" />
-          <input type="hidden" id="addCommentJpTitle" name="jpTitle" />
-          <input type="hidden" id="addCommentAuthor" name="author" />
-          <input type="hidden" id="addCommentLevel" name="level" />
-          <input type="hidden" id="addCommentTags" name="tags" />
-          <input type="hidden" id="addCommentEbookUrl" name="ebookUrl" />
-          <input type="hidden" id="addCommentChilUrl" name="chilUrl" />
-          <input type="hidden" id="addCommentCoverUrl" name="coverUrl" />
-          <input type="hidden" id="addCommentTwStatus" name="twStatus" />
-          <input type="hidden" id="addCommentJpStatus" name="jpStatus" />
+      <div id="editModal" class="modal hidden">
+        <div class="modal-content">
+          <h3 id="modalTitle">📝 編輯書籍資訊</h3>
+          <form id="editForm">
+            <input type="hidden" id="editTimestamp" name="timestamp" />
+            <input type="hidden" id="oldTitle" name="oldTitle" />
+            <input type="hidden" name="action" value="update" />
 
-          <div class="form-group">
-            <label>評論者</label>
-            <div class="reviewer-options">
-              <button
-                type="button"
-                class="rev-select-btn"
-                onclick="setAddReviewer('Reno', this)"
-              >
-                Reno
-              </button>
-              <button
-                type="button"
-                class="rev-select-btn"
-                onclick="setAddReviewer('茶壺', this)"
-              >
-                茶壺
+            <div id="infoFieldsGroup">
+              <label>中文書名</label>
+              <input type="text" id="editTitle" name="title" required />
+
+              <label>日文書名</label>
+              <input type="text" id="editJpTitle" name="jpTitle" />
+
+              <label>作者</label>
+              <input type="text" id="editAuthor" name="author" />
+              <div style="display: flex; gap: 10px; margin-bottom: 15px">
+                <div style="flex: 1">
+                  <label
+                    style="display: block; font-size: 0.9em; margin-bottom: 5px"
+                    >🇹🇼 台灣狀態</label
+                  >
+                  <input
+                    type="text"
+                    id="editTwStatus"
+                    name="twStatus"
+                    placeholder="台版進度"
+                  />
+                </div>
+                <div style="flex: 1">
+                  <label
+                    style="display: block; font-size: 0.9em; margin-bottom: 5px"
+                    >🇯🇵 日本狀態</label
+                  >
+                  <input
+                    type="text"
+                    id="editJpStatus"
+                    name="jpStatus"
+                    placeholder="日版進度"
+                  />
+                </div>
+              </div>
+              <div style="display: flex; gap: 15px">
+                <div style="flex: 1">
+                  <label>分級</label>
+                  <select id="editLevel" name="level">
+                    <option value="肉多">🥩 肉多</option>
+                    <option value="正常">🍛 正常</option>
+                    <option value="肉少">🥗 肉少</option>
+                    <option value="清水">💧 清水</option>
+                  </select>
+                </div>
+              </div>
+
+              <label>標籤 (以逗號 / 空白鍵分隔)</label>
+              <input type="text" id="editTags" name="tags" />
+
+              <label>電子書網址</label>
+              <input type="url" id="editEbookUrl" name="ebookUrl" />
+
+              <label>ちるちる網址</label>
+              <input type="url" id="editChilUrl" name="chilUrl" />
+            </div>
+
+            <div id="commentFieldsGroup">
+              <label>評分 (1-10)</label>
+              <input
+                type="number"
+                id="editRating"
+                name="rating"
+                step="0.5"
+                min="1"
+                max="10"
+              />
+
+              <label>我的評語</label>
+              <textarea
+                id="editComment"
+                name="comment"
+                rows="6"
+                placeholder="分享你的讀後感..."
+              ></textarea>
+            </div>
+
+            <div class="modal-btns">
+              <button type="submit" class="save-btn">儲存修改</button>
+              <button type="button" onclick="closeModal()" class="cancel-btn">
+                取消
               </button>
             </div>
-            <input
-              type="hidden"
-              id="addCommentReviewer"
-              name="reviewer"
-              required
-            />
-          </div>
-
-          <div class="form-group">
-            <label for="addCommentRating">評分 (0.0 - 10.0)</label>
-            <input
-              type="number"
-              id="addCommentRating"
-              name="rating"
-              min="0"
-              max="10"
-              step="0.5"
-              value="5.0"
-            />
-          </div>
-
-          <div class="form-group">
-            <label for="addCommentContent">評語內容</label>
-            <textarea
-              id="addCommentContent"
-              name="comment"
-              rows="4"
-              required
-            ></textarea>
-          </div>
-
-          <div class="modal-footer">
-            <button
-              type="button"
-              class="cancel-btn"
-              onclick="closeAddCommentModal()"
-            >
-              取消
-            </button>
-            <button
-              type="submit"
-              class="save-review-btn"
-              id="addCommentSaveBtn"
-            >
-              確認送出
-            </button>
-          </div>
-        </form>
+          </form>
+        </div>
       </div>
-    </div>
 
-    <script>
-      /**
-       * ⚠️ 重要提示：
-       * 每次修改 GAS 程式碼後，請點擊「部署」->「管理部署」->「編輯」->「版本：新版本」
-       * 這樣才能確保 scriptURL 維持不變。
-       */
-      const scriptURL =
-        "https://script.google.com/macros/s/AKfycbwqnfCjBq_BYZSWAOU6TnVj2O6YvFF2jan4dY0smm3waf9xP-wOLmz2_4B_L3MND7PK9A/exec";
+      <div id="addCommentModal" class="modal hidden">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h3 id="addCommentModalTitle">✍️ 新增新評論</h3>
+          </div>
+          <form id="addCommentForm">
+            <input type="hidden" id="addCommentTargetTitle" name="title" />
+            <input type="hidden" id="addCommentJpTitle" name="jpTitle" />
+            <input type="hidden" id="addCommentAuthor" name="author" />
+            <input type="hidden" id="addCommentLevel" name="level" />
+            <input type="hidden" id="addCommentTags" name="tags" />
+            <input type="hidden" id="addCommentEbookUrl" name="ebookUrl" />
+            <input type="hidden" id="addCommentChilUrl" name="chilUrl" />
+            <input type="hidden" id="addCommentCoverUrl" name="coverUrl" />
+            <input type="hidden" id="addCommentTwStatus" name="twStatus" />
+            <input type="hidden" id="addCommentJpStatus" name="jpStatus" />
 
-      let allBooks = [];
+            <div class="form-group">
+              <label>評論者</label>
+              <div class="reviewer-options">
+                <button
+                  type="button"
+                  class="rev-select-btn"
+                  onclick="setAddReviewer('Reno', this)"
+                >
+                  Reno
+                </button>
+                <button
+                  type="button"
+                  class="rev-select-btn"
+                  onclick="setAddReviewer('茶壺', this)"
+                >
+                  茶壺
+                </button>
+              </div>
+              <input
+                type="hidden"
+                id="addCommentReviewer"
+                name="reviewer"
+                required
+              />
+            </div>
 
-      window.addEventListener("DOMContentLoaded", fetchData);
+            <div class="form-group">
+              <label for="addCommentRating">評分 (0.0 - 10.0)</label>
+              <input
+                type="number"
+                id="addCommentRating"
+                name="rating"
+                min="0"
+                max="10"
+                step="0.5"
+                value="5.0"
+              />
+            </div>
 
-      async function fetchData() {
-        const loadingEl = document.getElementById("loading");
-        try {
-          if (loadingEl) {
-            loadingEl.style.display = "block";
-            loadingEl.innerHTML = "正在同步最新書庫...";
+            <div class="form-group">
+              <label for="addCommentContent">評語內容</label>
+              <textarea
+                id="addCommentContent"
+                name="comment"
+                rows="4"
+                required
+              ></textarea>
+            </div>
+
+            <div class="modal-footer">
+              <button
+                type="button"
+                class="cancel-btn"
+                onclick="closeAddCommentModal()"
+              >
+                取消
+              </button>
+              <button
+                type="submit"
+                class="save-review-btn"
+                id="addCommentSaveBtn"
+              >
+                確認送出
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <script>
+        /**
+         * ⚠️ 重要提示：
+         * 每次修改 GAS 程式碼後，請點擊「部署」->「管理部署」->「編輯」->「版本：新版本」
+         * 這樣才能確保 scriptURL 維持不變。
+         */
+        const scriptURL =
+          "https://script.google.com/macros/s/AKfycbwqnfCjBq_BYZSWAOU6TnVj2O6YvFF2jan4dY0smm3waf9xP-wOLmz2_4B_L3MND7PK9A/exec";
+
+        let allBooks = [];
+
+        window.addEventListener("DOMContentLoaded", fetchData);
+
+        async function fetchData() {
+          const loadingEl = document.getElementById("loading");
+          try {
+            if (loadingEl) {
+              loadingEl.style.display = "block";
+              loadingEl.innerHTML = "正在同步最新書庫...";
+            }
+            const response = await fetch(
+              `${scriptURL}?action=read&t=${new Date().getTime()}`
+            );
+            if (!response.ok) throw new Error("網路回應錯誤");
+
+            allBooks = await response.json();
+
+            if (allBooks && allBooks.length > 0) {
+              // ⚠️ 關鍵修正：初始讀取改為呼叫 applyFilters，它會處理合併邏輯並呼叫 renderBooks
+              applyFilters();
+              if (loadingEl) loadingEl.style.display = "none";
+            } else {
+              if (loadingEl) loadingEl.innerHTML = "📭 目前書庫中沒有資料。";
+            }
+          } catch (error) {
+            console.error("讀取失敗:", error);
+            if (loadingEl)
+              loadingEl.innerHTML =
+                "❌ 讀取失敗，請確認 GAS 部署為「所有人」且網址正確";
           }
-          const response = await fetch(
-            `${scriptURL}?action=read&t=${new Date().getTime()}`
-          );
-          if (!response.ok) throw new Error("網路回應錯誤");
-
-          allBooks = await response.json();
-
-          if (allBooks && allBooks.length > 0) {
-            // ⚠️ 關鍵修正：初始讀取改為呼叫 applyFilters，它會處理合併邏輯並呼叫 renderBooks
-            applyFilters();
-            if (loadingEl) loadingEl.style.display = "none";
-          } else {
-            if (loadingEl) loadingEl.innerHTML = "📭 目前書庫中沒有資料。";
-          }
-        } catch (error) {
-          console.error("讀取失敗:", error);
-          if (loadingEl)
-            loadingEl.innerHTML =
-              "❌ 讀取失敗，請確認 GAS 部署為「所有人」且網址正確";
         }
-      }
-      function openEditModal(ts) {
-        // 找尋對應時間戳記的原始資料
-        const book = allBooks.find((b) => String(b.timestamp) === String(ts));
-        if (!book) return;
+        function openEditModal(ts) {
+          // 找尋對應時間戳記的原始資料
+          const book = allBooks.find((b) => String(b.timestamp) === String(ts));
+          if (!book) return;
 
-        // 將所有欄位填入表單，避免更新時漏掉資料
-        document.getElementById("editTimestamp").value = book.timestamp || "";
-        document.getElementById("editTitle").value = book.title || "";
-        document.getElementById("editJpTitle").value = book.jpTitle || "";
-        document.getElementById("editAuthor").value = book.author || "";
-        document.getElementById("editLevel").value = book.level || "正常";
-        document.getElementById("editRating").value = book.rating || 5;
-        document.getElementById("editTags").value = book.tags || "";
-        document.getElementById("editEbookUrl").value = book.ebookUrl || "";
-        document.getElementById("editChilUrl").value = book.chilUrl || "";
-        document.getElementById("editComment").value = book.comment || "";
+          // 將所有欄位填入表單，避免更新時漏掉資料
+          document.getElementById("editTimestamp").value = book.timestamp || "";
+          document.getElementById("editTitle").value = book.title || "";
+          document.getElementById("editJpTitle").value = book.jpTitle || "";
+          document.getElementById("editAuthor").value = book.author || "";
+          document.getElementById("editLevel").value = book.level || "正常";
+          document.getElementById("editRating").value = book.rating || 5;
+          document.getElementById("editTags").value = book.tags || "";
+          document.getElementById("editEbookUrl").value = book.ebookUrl || "";
+          document.getElementById("editChilUrl").value = book.chilUrl || "";
+          document.getElementById("editComment").value = book.comment || "";
 
-        document.getElementById("editModal").classList.remove("hidden");
-      }
+          document.getElementById("editModal").classList.remove("hidden");
+        }
 
-      let currentReviewer = "all";
+        let currentReviewer = "all";
 
-      // 2. 綁定按鈕點擊事件
-      document.querySelectorAll(".filter-btn").forEach((btn) => {
-        btn.addEventListener("click", function () {
-          // 切換按鈕樣式
-          document
-            .querySelectorAll(".filter-btn")
-            .forEach((b) => b.classList.remove("active"));
-          this.classList.add("active");
+        // 2. 綁定按鈕點擊事件
+        document.querySelectorAll(".filter-btn").forEach((btn) => {
+          btn.addEventListener("click", function () {
+            // 切換按鈕樣式
+            document
+              .querySelectorAll(".filter-btn")
+              .forEach((b) => b.classList.remove("active"));
+            this.classList.add("active");
 
-          // 更新篩選狀態並重新渲染
-          currentReviewer = this.getAttribute("data-reviewer");
-          applyFilters();
+            // 更新篩選狀態並重新渲染
+            currentReviewer = this.getAttribute("data-reviewer");
+            applyFilters();
+          });
         });
-      });
 
-      function renderBooks(data) {
-        const grid = document.getElementById("bookGrid");
-        if (!grid) return;
-        grid.innerHTML = "";
+        function renderBooks(data) {
+          const grid = document.getElementById("bookGrid");
+          if (!grid) return;
+          grid.innerHTML = "";
 
-        const validData = data.filter(
-          (item) => item.title && String(item.title).trim() !== ""
-        );
+          const validData = data.filter(
+            (item) => item.title && String(item.title).trim() !== ""
+          );
 
-        data.forEach((book) => {
-          const row = document.createElement("div");
-          row.className = "book-list-item";
-          const avgRating = parseFloat(book.avgRating || 0).toFixed(1);
+          data.forEach((book) => {
+            const row = document.createElement("div");
+            row.className = "book-list-item";
+            const avgRating = parseFloat(book.avgRating || 0).toFixed(1);
 
-          const coverUrl = book.coverUrl || "";
-          const coverHTML =
-            book.coverUrl && book.coverUrl !== ""
-              ? `<img src="${book.coverUrl}" alt="封面">`
-              : `<div class="no-cover">
+            const coverUrl = book.coverUrl || "";
+            const coverHTML =
+              book.coverUrl && book.coverUrl !== ""
+                ? `<img src="${book.coverUrl}" alt="封面">`
+                : `<div class="no-cover">
        <span>無封面</span>
        <button onclick="reFetchCover('${book.title.replace(/'/g, "\\'")}', '${
-                  book.ebookUrl || ""
-                }', '${book.chilUrl || ""}')">🔍 抓取</button>
+                    book.ebookUrl || ""
+                  }', '${book.chilUrl || ""}')">🔍 抓取</button>
      </div>`;
 
-          row.innerHTML = `
+            row.innerHTML = `
             <div class="item-main" style="display: flex; gap: 15px; align-items: flex-start;">
                 <div class="book-cover-side" style=" background: #eee; border-radius: 8px; flex-shrink: 0; overflow: hidden; border: 1px solid #f0f0f0;">
                     ${coverHTML}
@@ -433,8 +434,8 @@
                 <div class="item-info" style="flex: 1;">
                     <div class="title-row" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                         <span class="badge ${getLevelColor(book.level)}">${
-            book.level
-          }</span>
+              book.level
+            }</span>
                         <h3 class="title" style="margin: 0; flex: 1;">${
                           book.title
                         }</h3>
@@ -443,8 +444,8 @@
                         )}">${avgRating}</span>
                         
 <button class="edit-book-btn" onclick="openBookInfoModal('${
-            book.reviews[0].timestamp
-          }')" title="編輯書籍基本資訊" style="background:none; border:none; color:#3498db; cursor:pointer; font-size:16px; padding:0 5px;">⚙️</button>
+              book.reviews[0].timestamp
+            }')" title="編輯書籍基本資訊" style="background:none; border:none; color:#3498db; cursor:pointer; font-size:16px; padding:0 5px;">⚙️</button>
                     </div>
 
                     
@@ -496,8 +497,8 @@
                         }
                       <div class="add-review-action-area">
 <button class="add-review-btn mobile-up-btn" onclick="openAddCommentModal('${
-            book.reviews[0].timestamp
-          }')">
+              book.reviews[0].timestamp
+            }')">
   📝 新增評論
 </button>
                         </div>
@@ -534,622 +535,665 @@
                 </div>
             </div>
         `;
-          grid.appendChild(row);
-        });
-      }
-      // 1. 抓取封面的補救功能
-      async function reFetchCover(title, bwUrl, chilUrl) {
-        // 優先順序：BookWalker > Chil-Chil
-        // 檢查網址是否有效 (排除空字串或 "undefined" 字串)
-        let urlToFetch =
-          bwUrl && bwUrl !== "" && bwUrl !== "undefined" ? bwUrl : null;
-
-        if (!urlToFetch) {
-          urlToFetch =
-            chilUrl && chilUrl !== "" && chilUrl !== "undefined"
-              ? chilUrl
-              : null;
+            grid.appendChild(row);
+          });
         }
+        // 1. 抓取封面的補救功能
+        async function reFetchCover(title, bwUrl, chilUrl) {
+          // 優先順序：BookWalker > Chil-Chil
+          // 檢查網址是否有效 (排除空字串或 "undefined" 字串)
+          let urlToFetch =
+            bwUrl && bwUrl !== "" && bwUrl !== "undefined" ? bwUrl : null;
 
-        if (!urlToFetch) {
-          alert("❌ 缺少 BookWalker 或 Chil-Chil 網址，請先編輯書籍資訊。");
-          return;
-        }
+          if (!urlToFetch) {
+            urlToFetch =
+              chilUrl && chilUrl !== "" && chilUrl !== "undefined"
+                ? chilUrl
+                : null;
+          }
 
-        const btn = event.target;
-        const coverContainer = btn.closest(".book-cover-side");
-        const originalContent = coverContainer.innerHTML;
-        coverContainer.innerHTML = "<span>⌛ 抓取中...</span>";
+          if (!urlToFetch) {
+            alert("❌ 缺少 BookWalker 或 Chil-Chil 網址，請先編輯書籍資訊。");
+            return;
+          }
 
-        try {
-          const fetchUrl = `${scriptURL}?action=fetchCover&url=${encodeURIComponent(
-            urlToFetch
-          )}`;
-          const res = await fetch(fetchUrl);
-          const data = await res.json();
+          const btn = event.target;
+          const coverContainer = btn.closest(".book-cover-side");
+          const originalContent = coverContainer.innerHTML;
+          coverContainer.innerHTML = "<span>⌛ 抓取中...</span>";
 
-          if (data.coverUrl) {
-            coverContainer.innerHTML = `<img src="${data.coverUrl}" alt="封面">`;
+          try {
+            const fetchUrl = `${scriptURL}?action=fetchCover&url=${encodeURIComponent(
+              urlToFetch
+            )}`;
+            const res = await fetch(fetchUrl);
+            const data = await res.json();
 
-            // 同步更新回試算表
-            const formData = new FormData();
-            formData.append("title", title);
-            formData.append("coverUrl", data.coverUrl);
-            formData.append("action", "updateCoverOnly");
+            if (data.coverUrl) {
+              coverContainer.innerHTML = `<img src="${data.coverUrl}" alt="封面">`;
 
-            fetch(scriptURL, { method: "POST", body: formData });
-            alert("✅ 封面抓取成功！");
-          } else {
+              // 同步更新回試算表
+              const formData = new FormData();
+              formData.append("title", title);
+              formData.append("coverUrl", data.coverUrl);
+              formData.append("action", "updateCoverOnly");
+
+              fetch(scriptURL, { method: "POST", body: formData });
+              alert("✅ 封面抓取成功！");
+            } else {
+              coverContainer.innerHTML = originalContent;
+              alert("❌ 抓取失敗：" + (data.error || "找不到圖片"));
+            }
+          } catch (e) {
             coverContainer.innerHTML = originalContent;
-            alert("❌ 抓取失敗：" + (data.error || "找不到圖片"));
+            console.error("抓取錯誤:", e);
+            alert("❌ 連線錯誤，請檢查網路或 GAS 狀態。");
           }
-        } catch (e) {
-          coverContainer.innerHTML = originalContent;
-          console.error("抓取錯誤:", e);
-          alert("❌ 連線錯誤，請檢查網路或 GAS 狀態。");
-        }
-      }
-
-      // 1. 點擊齒輪：編輯基本資訊
-      function openBookInfoModal(ts) {
-        console.log("當前點擊的時間戳 TS:", ts); // 除錯點 1
-
-        const book = allBooks.find((b) => String(b.timestamp) === String(ts));
-
-        console.log("抓到的書本原始資料:", book); // 除錯點 2
-
-        if (!book) {
-          console.error("❌ 找不到資料！請檢查 allBooks 陣列中是否有這個 TS");
-          return;
         }
 
-        // --- 關鍵：恢復顯示所有基本欄位 ---
-        document.getElementById("infoFieldsGroup").style.display = "block";
-        document.getElementById("commentFieldsGroup").style.display = "none";
+        // 1. 點擊齒輪：編輯基本資訊
+        function openBookInfoModal(ts) {
+          console.log("當前點擊的時間戳 TS:", ts); // 除錯點 1
 
-        // 恢復書名與其標籤的顯示
-        const titleInput = document.getElementById("editTitle");
-        const titleLabel = titleInput.previousElementSibling;
-        titleInput.style.display = "block";
-        if (titleLabel && titleLabel.tagName === "LABEL")
-          titleLabel.style.display = "block";
+          const book = allBooks.find((b) => String(b.timestamp) === String(ts));
 
-        document.getElementById("modalTitle").innerText = "⚙️ 編輯書籍基本資訊";
+          console.log("抓到的書本原始資料:", book); // 除錯點 2
 
-        // 填充資料
-        // 關鍵填充：確保所有格子在提交時都有原本的內容
-        document.getElementById("oldTitle").value = book.title || "";
-        document.getElementById("editTimestamp").value = book.timestamp || "";
-        document.getElementById("editTitle").value = book.title || "";
-        document.getElementById("editJpTitle").value = book.jpTitle || "";
-        document.getElementById("editAuthor").value = book.author || "";
-        document.getElementById("editLevel").value = book.level || "正常";
-        document.getElementById("editTags").value = book.tags || "";
-        // 💡 補上連載狀態的填充
-        document.getElementById("editTwStatus").value = book.twStatus || "";
-        document.getElementById("editJpStatus").value = book.jpStatus || "";
-
-        document.getElementById("editEbookUrl").value = book.ebookUrl || "";
-        document.getElementById("editChilUrl").value = book.chilUrl || "";
-
-        // 即使在齒輪模式，也要填入分數和評語，防止 GAS 寫入空值
-        document.getElementById("editRating").value = book.rating || 5;
-        document.getElementById("editComment").value = book.comment || "";
-
-        document.getElementById("editModal").classList.remove("hidden");
-      }
-
-      function openCommentModal(ts) {
-        console.log("當前點擊的時間戳 TS:", ts); // 除錯點 1
-
-        const row = allBooks.find((b) => String(b.timestamp) === String(ts));
-
-        console.log("抓到的書本原始資料:", row); // 除錯點 2
-
-        if (!row) {
-          console.error("❌ 找不到資料！請檢查 allBooks 陣列中是否有這個 TS");
-          return;
-        }
-
-        // 1. 切換 UI 顯示：隱藏基本資訊，顯示評語區
-        document.getElementById("infoFieldsGroup").style.display = "none";
-        document.getElementById("commentFieldsGroup").style.display = "block";
-
-        // 2. 隱藏書名輸入框與標籤 (維持評語模式的簡潔)
-        const titleInput = document.getElementById("editTitle");
-        const titleLabel = titleInput.previousElementSibling;
-        titleInput.style.display = "none";
-        if (titleLabel && titleLabel.tagName === "LABEL") {
-          titleLabel.style.display = "none";
-        }
-
-        document.getElementById("modalTitle").innerText = "✍️ 編輯我的評語";
-
-        // 3. 填充所有資料 (關鍵：即使隱藏也要填，GAS 才拿得到資料)
-        document.getElementById("oldTitle").value = row.title || ""; // 同步更新書名的關鍵
-        document.getElementById("editTimestamp").value = row.timestamp || "";
-        document.getElementById("editTitle").value = row.title || ""; // 新書名暫時維持原狀
-        document.getElementById("editJpTitle").value = row.jpTitle || "";
-        document.getElementById("editAuthor").value = row.author || "";
-        document.getElementById("editLevel").value = row.level || "正常";
-        document.getElementById("editTags").value = row.tags || "";
-        // --- 補上這兩行，確保編輯時狀態不會不見 ---
-        document.getElementById("editTwStatus").value = row.twStatus || ""; // 填入台灣狀態
-        document.getElementById("editJpStatus").value = row.jpStatus || ""; // 填入日本狀態
-
-        document.getElementById("editEbookUrl").value = row.ebookUrl || ""; // 防止網址消失
-        document.getElementById("editChilUrl").value = row.chilUrl || ""; // 防止網址消失
-
-        // 即使在齒輪模式，也要填入分數和評語，防止 GAS 寫入空值
-        document.getElementById("editRating").value = row.rating || 5;
-        document.getElementById("editComment").value = row.comment || "";
-
-        document.getElementById("editModal").classList.remove("hidden");
-        document.getElementById("editRating").dispatchEvent(new Event("input"));
-      }
-
-      // 統一設定 Modal 顯示哪些欄位
-      function setupModal(mode, data) {
-        document.getElementById("oldTitle").value = data.title || "";
-        document.getElementById("editTimestamp").value = data.timestamp || "";
-        document.getElementById("editTitle").value = data.title || "";
-        const modalTitle = document.querySelector(".modal-content h3");
-        const form = document.getElementById("editForm");
-
-        // 1. 填入共用資料
-        document.getElementById("editTimestamp").value = data.timestamp || "";
-        document.getElementById("editTitle").value = data.title || "";
-
-        // 2. 根據模式顯示/隱藏欄位
-        const infoFields = [
-          "editJpTitle",
-          "editAuthor",
-          "editLevel",
-          "editEbookUrl",
-          "editChilUrl",
-          "editTags",
-        ];
-        const commentFields = ["editRating", "editComment"];
-
-        if (mode === "info") {
-          modalTitle.innerText = "⚙️ 編輯書籍基本資訊";
-          toggleFields(infoFields, true);
-          toggleFields(commentFields, false);
-          // 填充資訊類欄位
-          document.getElementById("editJpTitle").value = data.jpTitle || "";
-          document.getElementById("editAuthor").value = data.author || "";
-          document.getElementById("editLevel").value = data.level || "正常";
-          document.getElementById("editTags").value = data.tags || "";
-          document.getElementById("editEbookUrl").value = data.ebookUrl || "";
-          document.getElementById("editChilUrl").value = data.chilUrl || "";
-        } else {
-          modalTitle.innerText = "✍️ 編輯我的評語";
-          toggleFields(infoFields, false);
-          toggleFields(commentFields, true);
-          // 填充評語類欄位
-          document.getElementById("editRating").value = data.rating || 5;
-          document.getElementById("editComment").value = data.comment || "";
-        }
-
-        document.getElementById("editModal").classList.remove("hidden");
-      }
-
-      function toggleFields(fieldIds, isShow) {
-        fieldIds.forEach((id) => {
-          const input = document.getElementById(id);
-          const label = input.previousElementSibling;
-          // 處理包裹容器 (如果是 flex 佈局的 div)
-          const container = input.closest('div[style*="flex"]') || input;
-
-          if (label && label.tagName === "LABEL")
-            label.style.display = isShow ? "block" : "none";
-          input.style.display = isShow ? "block" : "none";
-          if (container !== input)
-            container.style.display = isShow ? "block" : "none";
-        });
-      }
-
-      function closeModal() {
-        document.getElementById("editModal").classList.add("hidden");
-        document.getElementById("editForm").reset();
-      }
-
-      document.getElementById("editForm").onsubmit = async (e) => {
-        e.preventDefault();
-        const formData = new FormData(e.target);
-
-        // 檢查看看這兩個值有沒有印出來
-        console.log("更新書名為:", formData.get("title"));
-        console.log("對應的時間戳:", formData.get("timestamp"));
-
-        const btn = e.target.querySelector(".save-btn");
-        btn.innerText = "💾 更新中...";
-        btn.disabled = true;
-
-        try {
-          await fetch(scriptURL, {
-            method: "POST",
-            body: formData,
-            mode: "no-cors",
-          });
-
-          alert("✅ 資料已提交更新！");
-          closeModal();
-          // 重新抓取資料以看到更新後的書名
-          setTimeout(fetchData, 1500);
-        } catch (err) {
-          alert("❌ 更新失敗：" + err.message);
-        } finally {
-          btn.innerText = "儲存修改";
-          btn.disabled = false;
-        }
-      };
-
-      // 顏色邏輯：與新增時一致
-      function getScoreColor(val) {
-        const s = parseFloat(val);
-        if (s < 5) return "text-green";
-        if (s <= 7) return "text-blue";
-        return "text-red";
-      }
-
-      function getLevelColor(level) {
-        const mapping = {
-          肉多: "red",
-          正常: "blue",
-          肉少: "orange",
-          清水: "green",
-        };
-        return mapping[level] || "green";
-      }
-
-      // 搜尋功能
-      // ✅ 替換成這行
-      document
-        .getElementById("searchInput")
-        .addEventListener("input", applyFilters);
-
-      // 排序功能
-      function sortData(type) {
-        if (type === "rating") {
-          allBooks.sort((a, b) => b.rating - a.rating);
-        } else {
-          allBooks.sort((a, b) =>
-            String(a[type]).localeCompare(String(b[type]), "zh-Hant")
-          );
-        }
-        renderBooks(allBooks);
-      }
-
-      // 點擊文字自動填入搜尋框
-      function quickSearch(text) {
-        const searchInput = document.getElementById("searchInput");
-        searchInput.value = text;
-        // 手動觸發 input 事件讓搜尋邏輯執行
-        searchInput.dispatchEvent(new Event("input"));
-        // 捲動到頂部方便查看
-        window.scrollTo({ top: 0, behavior: "smooth" });
-      }
-
-      let currentSortType = "date"; // 預設依日期
-
-      // 統一排序入口
-      function sortData(type) {
-        currentSortType = type;
-        applyFilters();
-      }
-
-      // 統一搜尋監聽
-      document
-        .getElementById("searchInput")
-        .addEventListener("input", applyFilters);
-
-      // 核心過濾邏輯：先合併所有評語，再執行搜尋、分數與評論者的篩選
-      function applyFilters() {
-        const searchTerm = document
-          .getElementById("searchInput")
-          .value.toLowerCase();
-        const ratingThreshold = document.getElementById("ratingFilter").value;
-        const levelThreshold = document.getElementById("levelFilter").value;
-
-        // 1. 合併邏輯：按書名分組，收集所有評論
-        const validData = allBooks.filter(
-          (item) => item.title && String(item.title).trim() !== ""
-        );
-
-        const merged = validData.reduce((acc, curr) => {
-          const bookTitle = String(curr.title).trim();
-          if (!acc[bookTitle]) {
-            acc[bookTitle] = {
-              ...curr,
-              title: bookTitle,
-              reviews: [],
-              tags: curr.tags || "",
-            };
+          if (!book) {
+            console.error("❌ 找不到資料！請檢查 allBooks 陣列中是否有這個 TS");
+            return;
           }
-          acc[bookTitle].reviews.push({
-            reviewer: curr.reviewer || "匿名",
-            rating: parseFloat(curr.rating) || 0,
-            comment: curr.comment || "",
-            timestamp: curr.timestamp,
-          });
-          return acc;
-        }, {});
 
-        // 2. 計算綜合平均分
-        let processedBooks = Object.values(merged).map((book) => {
-          const totalRating = book.reviews.reduce(
-            (sum, r) => sum + r.rating,
-            0
-          );
-          book.avgRating = totalRating / book.reviews.length;
+          // --- 關鍵：恢復顯示所有基本欄位 ---
+          document.getElementById("infoFieldsGroup").style.display = "block";
+          document.getElementById("commentFieldsGroup").style.display = "none";
 
-          // B. 💡 關鍵新增：讓該書的評論依照評論者名字排序 (Reno, 茶壺...)
-          book.reviews.sort((a, b) =>
-            String(a.reviewer).localeCompare(String(b.reviewer), "zh-Hant")
-          );
+          // 恢復書名與其標籤的顯示
+          const titleInput = document.getElementById("editTitle");
+          const titleLabel = titleInput.previousElementSibling;
+          titleInput.style.display = "block";
+          if (titleLabel && titleLabel.tagName === "LABEL")
+            titleLabel.style.display = "block";
 
-          return book;
-        });
+          document.getElementById("modalTitle").innerText =
+            "⚙️ 編輯書籍基本資訊";
 
-        // 3. 執行過濾 (搜尋框 + 平均分區間 + 評論者)
-        let filtered = processedBooks.filter((book) => {
-          // A. 搜尋文字過濾
-          const matchSearch =
-            book.title.toLowerCase().includes(searchTerm) ||
-            book.author.toLowerCase().includes(searchTerm) ||
-            book.tags.toLowerCase().includes(searchTerm);
+          // 填充資料
+          // 關鍵填充：確保所有格子在提交時都有原本的內容
+          document.getElementById("oldTitle").value = book.title || "";
+          document.getElementById("editTimestamp").value = book.timestamp || "";
+          document.getElementById("editTitle").value = book.title || "";
+          document.getElementById("editJpTitle").value = book.jpTitle || "";
+          document.getElementById("editAuthor").value = book.author || "";
+          document.getElementById("editLevel").value = book.level || "正常";
+          document.getElementById("editTags").value = book.tags || "";
+          // 💡 補上連載狀態的填充
+          document.getElementById("editTwStatus").value = book.twStatus || "";
+          document.getElementById("editJpStatus").value = book.jpStatus || "";
 
-          // B. 分數區間過濾
-          let matchRating = true;
-          const score = book.avgRating;
-          if (ratingThreshold === "8") matchRating = score >= 8;
-          else if (ratingThreshold === "6")
-            matchRating = score >= 6 && score < 8;
-          else if (ratingThreshold === "0") matchRating = score < 6;
+          document.getElementById("editEbookUrl").value = book.ebookUrl || "";
+          document.getElementById("editChilUrl").value = book.chilUrl || "";
 
-          // C. 評論者篩選邏輯
-          const matchReviewer =
-            currentReviewer === "all" ||
-            book.reviews.some((r) => r.reviewer === currentReviewer);
+          // 即使在齒輪模式，也要填入分數和評語，防止 GAS 寫入空值
+          document.getElementById("editRating").value = book.rating || 5;
+          document.getElementById("editComment").value = book.comment || "";
 
-          // D. 分級過濾邏輯
-          const matchLevel =
-            levelThreshold === "all" || book.level === levelThreshold;
-
-          return matchSearch && matchRating && matchReviewer && matchLevel;
-        });
-
-        // 4. 排序邏輯 (維持原樣)
-        filtered.sort((a, b) => {
-          if (currentSortType === "rating") return b.avgRating - a.avgRating;
-          if (currentSortType === "author")
-            return String(a.author).localeCompare(String(b.author), "zh-Hant");
-          if (currentSortType === "title")
-            return String(a.title).localeCompare(String(b.title), "zh-Hant");
-          if (currentSortType === "date")
-            return new Date(b.timestamp) - new Date(a.timestamp);
-          return 0;
-        });
-
-        renderBooks(filtered);
-      }
-
-      const sInput = document.getElementById("searchInput");
-      const cBtn = document.getElementById("clearSearch");
-
-      sInput.addEventListener("input", () => {
-        cBtn.style.display = sInput.value ? "block" : "inline";
-        if (!sInput.value) cBtn.style.display = "none";
-        applyFilters();
-      });
-
-      cBtn.addEventListener("click", () => {
-        sInput.value = "";
-        cBtn.style.display = "none";
-        sInput.focus();
-        applyFilters();
-      });
-
-      function resetAllFilters() {
-        // 1. 重置搜尋框
-        const searchInput = document.getElementById("searchInput");
-        const clearBtn = document.getElementById("clearSearch");
-        searchInput.value = "";
-        if (clearBtn) clearBtn.style.display = "none";
-
-        // 2. 重置下拉選單 (評分與分級)
-        document.getElementById("ratingFilter").value = "all";
-        if (document.getElementById("levelFilter")) {
-          document.getElementById("levelFilter").value = "all";
+          document.getElementById("editModal").classList.remove("hidden");
         }
 
-        // 3. 重置評論者按鈕
-        currentReviewer = "all";
-        document.querySelectorAll(".filter-btn").forEach((btn) => {
-          btn.classList.remove("active");
-          if (btn.getAttribute("data-reviewer") === "all") {
-            btn.classList.add("active");
+        function openCommentModal(ts) {
+          console.log("當前點擊的時間戳 TS:", ts); // 除錯點 1
+
+          const row = allBooks.find((b) => String(b.timestamp) === String(ts));
+
+          console.log("抓到的書本原始資料:", row); // 除錯點 2
+
+          if (!row) {
+            console.error("❌ 找不到資料！請檢查 allBooks 陣列中是否有這個 TS");
+            return;
           }
-        });
 
-        // 4. 重置排序類型 (預設改回日期)
-        currentSortType = "date";
+          // 1. 切換 UI 顯示：隱藏基本資訊，顯示評語區
+          document.getElementById("infoFieldsGroup").style.display = "none";
+          document.getElementById("commentFieldsGroup").style.display = "block";
 
-        // 5. 執行過濾更新畫面
-        applyFilters();
+          // 2. 隱藏書名輸入框與標籤 (維持評語模式的簡潔)
+          const titleInput = document.getElementById("editTitle");
+          const titleLabel = titleInput.previousElementSibling;
+          titleInput.style.display = "none";
+          if (titleLabel && titleLabel.tagName === "LABEL") {
+            titleLabel.style.display = "none";
+          }
 
-        // 視覺反饋：捲動回頂部
-        window.scrollTo({ top: 0, behavior: "smooth" });
-      }
+          document.getElementById("modalTitle").innerText = "✍️ 編輯我的評語";
 
-      // 開啟 Modal
-      function openAddCommentModal(ts) {
-        console.log("正在搜尋 TS:", ts);
+          // 3. 填充所有資料 (關鍵：即使隱藏也要填，GAS 才拿得到資料)
+          document.getElementById("oldTitle").value = row.title || ""; // 同步更新書名的關鍵
+          document.getElementById("editTimestamp").value = row.timestamp || "";
+          document.getElementById("editTitle").value = row.title || ""; // 新書名暫時維持原狀
+          document.getElementById("editJpTitle").value = row.jpTitle || "";
+          document.getElementById("editAuthor").value = row.author || "";
+          document.getElementById("editLevel").value = row.level || "正常";
+          document.getElementById("editTags").value = row.tags || "";
+          // --- 補上這兩行，確保編輯時狀態不會不見 ---
+          document.getElementById("editTwStatus").value = row.twStatus || ""; // 填入台灣狀態
+          document.getElementById("editJpStatus").value = row.jpStatus || ""; // 填入日本狀態
 
-        const bookData = allBooks.find(
-          (b) => String(b.timestamp) === String(ts)
-        );
+          document.getElementById("editEbookUrl").value = row.ebookUrl || ""; // 防止網址消失
+          document.getElementById("editChilUrl").value = row.chilUrl || ""; // 防止網址消失
 
-        console.log("抓到的書本原始資料:", bookData); // 除錯點 2
+          // 即使在齒輪模式，也要填入分數和評語，防止 GAS 寫入空值
+          document.getElementById("editRating").value = row.rating || 5;
+          document.getElementById("editComment").value = row.comment || "";
 
-        if (!bookData) {
-          console.error("❌ 找不到資料！請檢查 allBooks 陣列中是否有這個 TS");
-          alert("系統錯誤：找不到書籍資訊");
-          return;
+          document.getElementById("editModal").classList.remove("hidden");
+          document
+            .getElementById("editRating")
+            .dispatchEvent(new Event("input"));
         }
 
-        // 安全填值工具：如果找不到 ID，就不會報錯
-        const safeSetVal = (id, val) => {
-          const el = document.getElementById(id);
-          if (el) {
-            el.value = val || "";
+        // 統一設定 Modal 顯示哪些欄位
+        function setupModal(mode, data) {
+          document.getElementById("oldTitle").value = data.title || "";
+          document.getElementById("editTimestamp").value = data.timestamp || "";
+          document.getElementById("editTitle").value = data.title || "";
+          const modalTitle = document.querySelector(".modal-content h3");
+          const form = document.getElementById("editForm");
+
+          // 1. 填入共用資料
+          document.getElementById("editTimestamp").value = data.timestamp || "";
+          document.getElementById("editTitle").value = data.title || "";
+
+          // 2. 根據模式顯示/隱藏欄位
+          const infoFields = [
+            "editJpTitle",
+            "editAuthor",
+            "editLevel",
+            "editEbookUrl",
+            "editChilUrl",
+            "editTags",
+          ];
+          const commentFields = ["editRating", "editComment"];
+
+          if (mode === "info") {
+            modalTitle.innerText = "⚙️ 編輯書籍基本資訊";
+            toggleFields(infoFields, true);
+            toggleFields(commentFields, false);
+            // 填充資訊類欄位
+            document.getElementById("editJpTitle").value = data.jpTitle || "";
+            document.getElementById("editAuthor").value = data.author || "";
+            document.getElementById("editLevel").value = data.level || "正常";
+            document.getElementById("editTags").value = data.tags || "";
+            document.getElementById("editEbookUrl").value = data.ebookUrl || "";
+            document.getElementById("editChilUrl").value = data.chilUrl || "";
           } else {
-            console.warn(`找不到 ID: ${id}，請檢查 HTML 是否有此隱藏欄位`);
+            modalTitle.innerText = "✍️ 編輯我的評語";
+            toggleFields(infoFields, false);
+            toggleFields(commentFields, true);
+            // 填充評語類欄位
+            document.getElementById("editRating").value = data.rating || 5;
+            document.getElementById("editComment").value = data.comment || "";
+          }
+
+          document.getElementById("editModal").classList.remove("hidden");
+        }
+
+        function toggleFields(fieldIds, isShow) {
+          fieldIds.forEach((id) => {
+            const input = document.getElementById(id);
+            const label = input.previousElementSibling;
+            // 處理包裹容器 (如果是 flex 佈局的 div)
+            const container = input.closest('div[style*="flex"]') || input;
+
+            if (label && label.tagName === "LABEL")
+              label.style.display = isShow ? "block" : "none";
+            input.style.display = isShow ? "block" : "none";
+            if (container !== input)
+              container.style.display = isShow ? "block" : "none";
+          });
+        }
+
+        function closeModal() {
+          document.getElementById("editModal").classList.add("hidden");
+          document.getElementById("editForm").reset();
+        }
+
+        document.getElementById("editForm").onsubmit = async (e) => {
+          e.preventDefault();
+          const formData = new FormData(e.target);
+
+          // 檢查看看這兩個值有沒有印出來
+          console.log("更新書名為:", formData.get("title"));
+          console.log("對應的時間戳:", formData.get("timestamp"));
+
+          const btn = e.target.querySelector(".save-btn");
+          btn.innerText = "💾 更新中...";
+          btn.disabled = true;
+
+          try {
+            await fetch(scriptURL, {
+              method: "POST",
+              body: formData,
+              mode: "no-cors",
+            });
+
+            alert("✅ 資料已提交更新！");
+            closeModal();
+            // 重新抓取資料以看到更新後的書名
+            setTimeout(fetchData, 1500);
+          } catch (err) {
+            alert("❌ 更新失敗：" + err.message);
+          } finally {
+            btn.innerText = "儲存修改";
+            btn.disabled = false;
           }
         };
 
-        // 填入資料
-        safeSetVal("addCommentTargetTitle", bookData.title);
-        safeSetVal("addCommentJpTitle", bookData.jpTitle);
-        safeSetVal("addCommentAuthor", bookData.author);
-        safeSetVal("addCommentLevel", bookData.level);
-        safeSetVal("addCommentTags", bookData.tags);
-        safeSetVal("addCommentEbookUrl", bookData.ebookUrl);
-        safeSetVal("addCommentChilUrl", bookData.chilUrl);
-        safeSetVal("addCommentCoverUrl", bookData.coverUrl);
-        safeSetVal("addCommentTwStatus", bookData.twStatus);
-        safeSetVal("addCommentJpStatus", bookData.jpStatus);
+        // 顏色邏輯：與新增時一致
+        function getScoreColor(val) {
+          const s = parseFloat(val);
+          if (s < 5) return "text-green";
+          if (s <= 7) return "text-blue";
+          return "text-red";
+        }
 
-        // 顯示 Modal
-        document.getElementById(
-          "addCommentModalTitle"
-        ).innerText = `✍️ 為《${bookData.title}》新增新評論`;
-        document.getElementById("addCommentModal").classList.remove("hidden");
+        function getLevelColor(level) {
+          const mapping = {
+            肉多: "red",
+            正常: "blue",
+            肉少: "orange",
+            清水: "green",
+          };
+          return mapping[level] || "green";
+        }
+
+        // 搜尋功能
+        // ✅ 替換成這行
+        document
+          .getElementById("searchInput")
+          .addEventListener("input", applyFilters);
+
+        // 排序功能
+        function sortData(type) {
+          if (type === "rating") {
+            allBooks.sort((a, b) => b.rating - a.rating);
+          } else {
+            allBooks.sort((a, b) =>
+              String(a[type]).localeCompare(String(b[type]), "zh-Hant")
+            );
+          }
+          renderBooks(allBooks);
+        }
+
+        // 點擊文字自動填入搜尋框
+        function quickSearch(text) {
+          const searchInput = document.getElementById("searchInput");
+          searchInput.value = text;
+          // 手動觸發 input 事件讓搜尋邏輯執行
+          searchInput.dispatchEvent(new Event("input"));
+          // 捲動到頂部方便查看
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }
+
+        let currentSortType = "date"; // 預設依日期
+
+        // 統一排序入口
+        function sortData(type) {
+          currentSortType = type;
+          applyFilters();
+        }
+
+        // 統一搜尋監聽
+        document
+          .getElementById("searchInput")
+          .addEventListener("input", applyFilters);
+
+        // 核心過濾邏輯：先合併所有評語，再執行搜尋、分數與評論者的篩選
+        function applyFilters() {
+          const searchTerm = document
+            .getElementById("searchInput")
+            .value.toLowerCase();
+          const ratingThreshold = document.getElementById("ratingFilter").value;
+          const levelThreshold = document.getElementById("levelFilter").value;
+
+          // 1. 合併邏輯：按書名分組，收集所有評論
+          const validData = allBooks.filter(
+            (item) => item.title && String(item.title).trim() !== ""
+          );
+
+          const merged = validData.reduce((acc, curr) => {
+            const bookTitle = String(curr.title).trim();
+            if (!acc[bookTitle]) {
+              acc[bookTitle] = {
+                ...curr,
+                title: bookTitle,
+                reviews: [],
+                tags: curr.tags || "",
+              };
+            }
+            acc[bookTitle].reviews.push({
+              reviewer: curr.reviewer || "匿名",
+              rating: parseFloat(curr.rating) || 0,
+              comment: curr.comment || "",
+              timestamp: curr.timestamp,
+            });
+            return acc;
+          }, {});
+
+          // 2. 計算綜合平均分
+          let processedBooks = Object.values(merged).map((book) => {
+            const totalRating = book.reviews.reduce(
+              (sum, r) => sum + r.rating,
+              0
+            );
+            book.avgRating = totalRating / book.reviews.length;
+
+            // B. 💡 關鍵新增：讓該書的評論依照評論者名字排序 (Reno, 茶壺...)
+            book.reviews.sort((a, b) =>
+              String(a.reviewer).localeCompare(String(b.reviewer), "zh-Hant")
+            );
+
+            return book;
+          });
+
+          // 3. 執行過濾 (搜尋框 + 平均分區間 + 評論者)
+          let filtered = processedBooks.filter((book) => {
+            // A. 搜尋文字過濾
+            const matchSearch =
+              book.title.toLowerCase().includes(searchTerm) ||
+              book.author.toLowerCase().includes(searchTerm) ||
+              book.tags.toLowerCase().includes(searchTerm);
+
+            // B. 分數區間過濾
+            let matchRating = true;
+            const score = book.avgRating;
+            if (ratingThreshold === "8") matchRating = score >= 8;
+            else if (ratingThreshold === "6")
+              matchRating = score >= 6 && score < 8;
+            else if (ratingThreshold === "0") matchRating = score < 6;
+
+            // C. 評論者篩選邏輯
+            const matchReviewer =
+              currentReviewer === "all" ||
+              book.reviews.some((r) => r.reviewer === currentReviewer);
+
+            // D. 分級過濾邏輯
+            const matchLevel =
+              levelThreshold === "all" || book.level === levelThreshold;
+
+            return matchSearch && matchRating && matchReviewer && matchLevel;
+          });
+
+          // 4. 排序邏輯 (維持原樣)
+          filtered.sort((a, b) => {
+            if (currentSortType === "rating") return b.avgRating - a.avgRating;
+            if (currentSortType === "author")
+              return String(a.author).localeCompare(
+                String(b.author),
+                "zh-Hant"
+              );
+            if (currentSortType === "title")
+              return String(a.title).localeCompare(String(b.title), "zh-Hant");
+            if (currentSortType === "date")
+              return new Date(b.timestamp) - new Date(a.timestamp);
+            return 0;
+          });
+
+          renderBooks(filtered);
+        }
+
+        const sInput = document.getElementById("searchInput");
+        const cBtn = document.getElementById("clearSearch");
+
+        sInput.addEventListener("input", () => {
+          cBtn.style.display = sInput.value ? "block" : "inline";
+          if (!sInput.value) cBtn.style.display = "none";
+          applyFilters();
+        });
+
+        cBtn.addEventListener("click", () => {
+          sInput.value = "";
+          cBtn.style.display = "none";
+          sInput.focus();
+          applyFilters();
+        });
+
+        function resetAllFilters() {
+          // 1. 重置搜尋框
+          const searchInput = document.getElementById("searchInput");
+          const clearBtn = document.getElementById("clearSearch");
+          searchInput.value = "";
+          if (clearBtn) clearBtn.style.display = "none";
+
+          // 2. 重置下拉選單 (評分與分級)
+          document.getElementById("ratingFilter").value = "all";
+          if (document.getElementById("levelFilter")) {
+            document.getElementById("levelFilter").value = "all";
+          }
+
+          // 3. 重置評論者按鈕
+          currentReviewer = "all";
+          document.querySelectorAll(".filter-btn").forEach((btn) => {
+            btn.classList.remove("active");
+            if (btn.getAttribute("data-reviewer") === "all") {
+              btn.classList.add("active");
+            }
+          });
+
+          // 4. 重置排序類型 (預設改回日期)
+          currentSortType = "date";
+
+          // 5. 執行過濾更新畫面
+          applyFilters();
+
+          // 視覺反饋：捲動回頂部
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }
+
+        // 開啟 Modal
+        function openAddCommentModal(ts) {
+          console.log("正在搜尋 TS:", ts);
+
+          const bookData = allBooks.find(
+            (b) => String(b.timestamp) === String(ts)
+          );
+
+          console.log("抓到的書本原始資料:", bookData); // 除錯點 2
+
+          if (!bookData) {
+            console.error("❌ 找不到資料！請檢查 allBooks 陣列中是否有這個 TS");
+            alert("系統錯誤：找不到書籍資訊");
+            return;
+          }
+
+          // 安全填值工具：如果找不到 ID，就不會報錯
+          const safeSetVal = (id, val) => {
+            const el = document.getElementById(id);
+            if (el) {
+              el.value = val || "";
+            } else {
+              console.warn(`找不到 ID: ${id}，請檢查 HTML 是否有此隱藏欄位`);
+            }
+          };
+
+          // 填入資料
+          safeSetVal("addCommentTargetTitle", bookData.title);
+          safeSetVal("addCommentJpTitle", bookData.jpTitle);
+          safeSetVal("addCommentAuthor", bookData.author);
+          safeSetVal("addCommentLevel", bookData.level);
+          safeSetVal("addCommentTags", bookData.tags);
+          safeSetVal("addCommentEbookUrl", bookData.ebookUrl);
+          safeSetVal("addCommentChilUrl", bookData.chilUrl);
+          safeSetVal("addCommentCoverUrl", bookData.coverUrl);
+          safeSetVal("addCommentTwStatus", bookData.twStatus);
+          safeSetVal("addCommentJpStatus", bookData.jpStatus);
+
+          // 顯示 Modal
+          document.getElementById(
+            "addCommentModalTitle"
+          ).innerText = `✍️ 為《${bookData.title}》新增新評論`;
+          document.getElementById("addCommentModal").classList.remove("hidden");
+          document
+            .getElementById("addCommentRating")
+            .dispatchEvent(new Event("input"));
+        }
+
+        // 關閉 Modal
+        function closeAddCommentModal() {
+          document.getElementById("addCommentModal").classList.add("hidden");
+          document.getElementById("addCommentForm").reset();
+          document
+            .querySelectorAll(".rev-select-btn")
+            .forEach((b) => b.classList.remove("active"));
+          document.getElementById("addCommentReviewer").value = "";
+        }
+
+        // 評論者選擇切換
+        function setAddReviewer(name, btn) {
+          document.getElementById("addCommentReviewer").value = name;
+          document
+            .querySelectorAll(".rev-select-btn")
+            .forEach((b) => b.classList.remove("active"));
+          btn.classList.add("active");
+        }
+
+        // 處理表單送出
+        document.getElementById("addCommentForm").onsubmit = async function (
+          e
+        ) {
+          e.preventDefault();
+
+          const reviewer = document.getElementById("addCommentReviewer").value;
+          if (!reviewer) {
+            alert("請選擇評論者 (Reno 或 茶壺)！");
+            return;
+          }
+
+          const btn = document.getElementById("addCommentSaveBtn");
+          btn.disabled = true;
+          btn.innerText = "儲存中...";
+
+          // 1. 封裝表單數據
+          const formData = new FormData(this);
+          // 必須加入 action 參數，讓 GAS 後端的 doPost 知道這是要執行 processForm
+          formData.append("action", "processForm");
+
+          try {
+            // 2. 改用 fetch 送出資料到 scriptURL
+            await fetch(scriptURL, {
+              method: "POST",
+              body: formData,
+              mode: "no-cors", // 避免跨域阻擋
+            });
+
+            // 由於 no-cors 模式無法讀取回應，我們直接假設成功並給予提示
+            alert("✅ 評論已成功建立！(資料同步可能需要幾秒鐘)");
+            closeAddCommentModal();
+
+            // 3. 延遲一下再重新讀取，確保 Google 試算表已寫入完畢
+            setTimeout(fetchData, 1500);
+          } catch (err) {
+            console.error("儲存失敗:", err);
+            alert("❌ 儲存失敗：" + err.message);
+          } finally {
+            btn.disabled = false;
+            btn.innerText = "確認送出";
+          }
+        };
+
         document
           .getElementById("addCommentRating")
-          .dispatchEvent(new Event("input"));
-      }
+          .addEventListener("input", function () {
+            const val = parseFloat(this.value);
+            const ratingInput = this;
 
-      // 關閉 Modal
-      function closeAddCommentModal() {
-        document.getElementById("addCommentModal").classList.add("hidden");
-        document.getElementById("addCommentForm").reset();
-        document
-          .querySelectorAll(".rev-select-btn")
-          .forEach((b) => b.classList.remove("active"));
-        document.getElementById("addCommentReviewer").value = "";
-      }
+            // 先清除所有顏色類別
+            ratingInput.classList.remove(
+              "rating-low",
+              "rating-mid",
+              "rating-high"
+            );
 
-      // 評論者選擇切換
-      function setAddReviewer(name, btn) {
-        document.getElementById("addCommentReviewer").value = name;
-        document
-          .querySelectorAll(".rev-select-btn")
-          .forEach((b) => b.classList.remove("active"));
-        btn.classList.add("active");
-      }
-
-      // 處理表單送出
-      document.getElementById("addCommentForm").onsubmit = async function (e) {
-        e.preventDefault();
-
-        const reviewer = document.getElementById("addCommentReviewer").value;
-        if (!reviewer) {
-          alert("請選擇評論者 (Reno 或 茶壺)！");
-          return;
-        }
-
-        const btn = document.getElementById("addCommentSaveBtn");
-        btn.disabled = true;
-        btn.innerText = "儲存中...";
-
-        // 1. 封裝表單數據
-        const formData = new FormData(this);
-        // 必須加入 action 參數，讓 GAS 後端的 doPost 知道這是要執行 processForm
-        formData.append("action", "processForm");
-
-        try {
-          // 2. 改用 fetch 送出資料到 scriptURL
-          await fetch(scriptURL, {
-            method: "POST",
-            body: formData,
-            mode: "no-cors", // 避免跨域阻擋
+            // 根據分數套用類別 (邏輯同 Index)
+            if (val < 5) {
+              ratingInput.classList.add("rating-low");
+            } else if (val <= 7.5) {
+              ratingInput.classList.add("rating-mid");
+            } else {
+              ratingInput.classList.add("rating-high");
+            }
           });
 
-          // 由於 no-cors 模式無法讀取回應，我們直接假設成功並給予提示
-          alert("✅ 評論已成功建立！(資料同步可能需要幾秒鐘)");
-          closeAddCommentModal();
+        // 為「編輯評論」的分數欄位綁定變色邏輯
+        document
+          .getElementById("editRating")
+          .addEventListener("input", function () {
+            const val = parseFloat(this.value);
+            const ratingInput = this;
 
-          // 3. 延遲一下再重新讀取，確保 Google 試算表已寫入完畢
-          setTimeout(fetchData, 1500);
-        } catch (err) {
-          console.error("儲存失敗:", err);
-          alert("❌ 儲存失敗：" + err.message);
-        } finally {
-          btn.disabled = false;
-          btn.innerText = "確認送出";
-        }
-      };
+            // 清除舊類別
+            ratingInput.classList.remove(
+              "rating-low",
+              "rating-mid",
+              "rating-high"
+            );
 
-      document
-        .getElementById("addCommentRating")
-        .addEventListener("input", function () {
-          const val = parseFloat(this.value);
-          const ratingInput = this;
+            // 套用新類別
+            if (val < 5) {
+              ratingInput.classList.add("rating-low");
+            } else if (val <= 7.5) {
+              ratingInput.classList.add("rating-mid");
+            } else {
+              ratingInput.classList.add("rating-high");
+            }
+          });
 
-          // 先清除所有顏色類別
-          ratingInput.classList.remove(
-            "rating-low",
-            "rating-mid",
-            "rating-high"
-          );
+        editTags.addEventListener("input", function (e) {
+          let val = this.value;
 
-          // 根據分數套用類別 (邏輯同 Index)
-          if (val < 5) {
-            ratingInput.classList.add("rating-low");
-          } else if (val <= 7.5) {
-            ratingInput.classList.add("rating-mid");
-          } else {
-            ratingInput.classList.add("rating-high");
+          // 將「空白」或「全形頓號」即時替換為半形逗號
+          if (val.includes(" ") || val.includes("、")) {
+            this.value = val.replace(/[ 、]+/g, ",");
           }
+
+          // 防止出現連續逗號
+          this.value = this.value.replace(/,+/g, ",");
         });
 
-      // 為「編輯評論」的分數欄位綁定變色邏輯
-      document
-        .getElementById("editRating")
-        .addEventListener("input", function () {
-          const val = parseFloat(this.value);
-          const ratingInput = this;
-
-          // 清除舊類別
-          ratingInput.classList.remove(
-            "rating-low",
-            "rating-mid",
-            "rating-high"
-          );
-
-          // 套用新類別
-          if (val < 5) {
-            ratingInput.classList.add("rating-low");
-          } else if (val <= 7.5) {
-            ratingInput.classList.add("rating-mid");
-          } else {
-            ratingInput.classList.add("rating-high");
-          }
+        // 解決 iOS 鍵盤彈出導致的點擊座標偏移
+        document.querySelectorAll("input, textarea, select").forEach((el) => {
+          el.addEventListener("blur", () => {
+            // 當失去焦點（鍵盤收起）時，微調捲動位置強迫重繪
+            setTimeout(() => {
+              window.scrollTo(window.scrollX, window.scrollY + 1);
+              window.scrollTo(window.scrollX, window.scrollY - 1);
+            }, 10);
+          });
         });
 
-      editTags.addEventListener("input", function (e) {
-        let val = this.value;
-
-        // 將「空白」或「全形頓號」即時替換為半形逗號
-        if (val.includes(" ") || val.includes("、")) {
-          this.value = val.replace(/[ 、]+/g, ",");
+        // 針對 iOS 視窗高度變動的特殊處理
+        if (window.visualViewport) {
+          window.visualViewport.addEventListener("resize", () => {
+            const activeModal = document.querySelector(".modal:not(.hidden)");
+            if (activeModal) {
+              // 確保 Modal 的背景遮罩能覆蓋完整可視區域
+              activeModal.style.height = window.visualViewport.height + "px";
+            }
+          });
         }
 
-        // 防止出現連續逗號
-        this.value = this.value.replace(/,+/g, ",");
-      });
-    </script>
+        // 在 list.html 腳本末尾加入
+        document.addEventListener(
+          "blur",
+          (e) => {
+            if (["INPUT", "TEXTAREA"].includes(e.target.tagName)) {
+              // 當鍵盤收起時，微調捲動位置來校正 iOS 的點擊判定座標
+              window.scrollTo(window.scrollX, window.scrollY);
+            }
+          },
+          true
+        );
+      </script>
+    </div>
   </body>
 </html>
