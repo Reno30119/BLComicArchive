@@ -201,6 +201,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
   background-color: #f8f9fa;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
   position: relative;
@@ -406,10 +407,8 @@ body {
   justify-content: center;
   z-index: 1000;
   backdrop-filter: blur(4px); /* 背景模糊感 */
-}
-
-.modal.hidden {
-  display: none !important;
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
 }
 
 /* --- 視窗本體 --- */
@@ -423,6 +422,7 @@ body {
 
   /* --- 加入以下屬性解決無法滑動的問題 --- */
   max-height: 90vh; /* 設定最大高度為螢幕高度的 90% */
+  overflow-y: auto; /* 當內容超過高度時，自動顯示垂直捲軸 */
   position: relative; /* 確保定位正確 */
 }
 
