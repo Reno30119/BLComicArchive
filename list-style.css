@@ -7,6 +7,15 @@ body {
   padding: 0;
 }
 
+html,body,.page {
+  margin: 0;
+  height: 100%;
+}
+.page {
+  overflow: auto;
+  overscroll-behavior: none; /*阻止默认滚动行为*/
+}
+
 .top-nav {
   display: flex;
   justify-content: center;
