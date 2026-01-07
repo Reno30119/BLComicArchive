@@ -492,35 +492,6 @@ body {
   margin-top: 30px;
 }
 
-.modal-btns button {
-  flex: 1;
-  padding: 15px;
-  border-radius: 12px;
-  font-weight: bold;
-  font-size: 1rem;
-  cursor: pointer;
-  border: none;
-  transition: 0.2s;
-}
-
-.save-btn {
-  background: #3498db;
-  color: white;
-}
-
-.save-btn:hover {
-  background: #2980b9;
-}
-
-.cancel-btn {
-  background: #ecf0f1;
-  color: #7f8c8d;
-}
-
-.cancel-btn:hover {
-  background: #bdc3c7;
-}
-
 /* 隱藏邏輯 */
 .hidden {
   display: none !important;
@@ -771,6 +742,7 @@ body {
   color: #718096;
   border-radius: 12px;
   font-weight: 600;
+  font-size: 1rem;
   cursor: pointer;
   transition: background 0.2s;
 }
@@ -789,6 +761,7 @@ body {
   color: white;
   border-radius: 12px;
   font-weight: 600;
+  font-size: 1rem;
   cursor: pointer;
   box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
   transition: all 0.2s;
