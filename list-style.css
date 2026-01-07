@@ -7,15 +7,6 @@ body {
   padding: 0;
 }
 
-html,body,.page {
-  margin: 0;
-  height: 100%;
-}
-.page {
-  overflow: auto;
-  overscroll-behavior: none; /*阻止默认滚动行为*/
-}
-
 .top-nav {
   display: flex;
   justify-content: center;
@@ -210,7 +201,6 @@ html,body,.page {
   display: flex;
   align-items: center;
   justify-content: center;
-  overflow: hidden;
   background-color: #f8f9fa;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
   position: relative;
@@ -433,7 +423,6 @@ html,body,.page {
 
   /* --- 加入以下屬性解決無法滑動的問題 --- */
   max-height: 90vh; /* 設定最大高度為螢幕高度的 90% */
-  overflow-y: auto; /* 當內容超過高度時，自動顯示垂直捲軸 */
   position: relative; /* 確保定位正確 */
 }
 
