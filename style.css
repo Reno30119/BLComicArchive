@@ -165,10 +165,14 @@ textarea:focus {
 }
 
 #submitBtn {
+  display: flex;
+  justify-content: center; /* 水平置中 */
+  align-items: center; /* 垂直置中 */
+
+  /* 原有樣式 */
   flex: 1;
-  margin: 0; /* 移除原本可能的 margin */
   width: 100%;
-  padding: 15px;
+  padding: 0 15px; /* 垂直 padding 設為 0，交給 flex 處理 */
   background: #2c3e50;
   color: #fff;
   border: none;
@@ -314,3 +318,4 @@ textarea:focus {
     text-align: center;
   }
 }
+
