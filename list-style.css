@@ -246,11 +246,12 @@ body {
   border-color: #3498db;
 }
 .item-info {
-  flex: 1;
-  min-width: 200px; /* 確保文字區至少有一定寬度 */
+flex: 1;
+  min-width: 0; /* 關鍵：將 200px 改為 0，讓它在小螢幕能縮小而不掉行 */
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  justify-content: flex-start; /* 改為頂部對齊 */
+  overflow: hidden; /* 防止內容溢出 */
 }
 
 .title-row {
@@ -548,10 +549,6 @@ body {
     height: 182px;
     margin: 0 auto 15px; /* 手機版居中並留點下邊距 */
   }
-  .item-main {
-    flex-direction: column;
-    gap: 12px;
-  }
 
   .book-cover-side {
     width: 80px;
@@ -559,9 +556,26 @@ body {
     margin: 0 auto; /* 封面居中 */
   }
 
+  /* 保持封面與資訊並排，不切換成垂直排列 */
+  .item-main {
+    flex-direction: row !important; 
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  /* 針對 .item-info 內部文字大小微調，增加閱讀空間 */
   .item-info {
-    display: flex;
-    flex-direction: column;
+    padding-top: 0;
+  }
+
+  .title {
+    font-size: 1.05rem; /* 手機版書名稍微縮小 */
+    line-height: 1.3;
+  }
+
+  .tags span {
+    font-size: 0.75rem;
+    padding: 2px 6px;
   }
 
   .add-review-action-area {
@@ -569,10 +583,6 @@ body {
     justify-content: center; /* 手機版居中 */
     margin-bottom: -12px;
     margin-top: -10px;
-  }
-
-  .title {
-    font-size: 1.1rem;
   }
 
   .link-icon {
