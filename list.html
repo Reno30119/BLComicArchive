@@ -788,7 +788,7 @@
       // 顏色邏輯：與新增時一致
       function getScoreColor(val) {
         const s = parseFloat(val);
-        if (s < 5) return "text-green";
+        if (s <= 5) return "text-green";
         if (s <= 7) return "text-blue";
         return "text-red";
       }
@@ -1153,3 +1153,4 @@
     </script>
   </body>
 </html>
+
