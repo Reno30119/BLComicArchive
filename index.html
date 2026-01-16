@@ -354,33 +354,68 @@
         }
       });
 
+      // 定義異體字地圖
+      const variantMap = {
+        秘: "祕",
+        台: "臺",
+        裡: "里",
+        裏: "里",
+        搜: "蒐",
+        群: "羣",
+        線: "綫",
+        併: "並",
+        衛: "衞",
+        啟: "啓",
+        峰: "峯",
+        猫: "貓",
+      };
+
+      // 統一化文字的函式
+      function normalizeText(str) {
+        if (!str) return "";
+        let normalized = str.trim().toLowerCase();
+
+        // 遍歷地圖進行替換
+        for (let key in variantMap) {
+          normalized = normalized.split(key).join(variantMap[key]);
+        }
+        return normalized;
+      }
+
       // 取得書名輸入框
       const titleInput = document.getElementById("title");
+      let debounceTimer; // 用於防抖
 
-      ["change", "paste"].forEach((evt) => {
-        titleInput.addEventListener(evt, function () {
-          const inputTitle = this.value.trim();
+      // 使用 'input' 事件：只要文字變動（打字、刪除、貼上）就會即時偵測
+      titleInput.addEventListener("input", function () {
+        const inputTitle = this.value.trim();
 
-          // 如果資料庫還沒同步完，先顯示提示或不執行
-          if (!inputTitle) return;
-          if (allBooks.length === 0) {
-            console.log("資料庫同步中，請稍候...");
-            return;
-          }
+        // 1. 基本檢查
+        if (!inputTitle || allBooks.length === 0) return;
 
-          const existingBook = allBooks.find(
-            (b) => String(b.title).trim() === inputTitle
-          );
+        // 2. 使用「防抖 (Debounce)」：當使用者停止打字 500ms 後才執行搜尋
+        // 這樣不會因為打一個字就跳一次視窗，效能更好且不會干擾輸入
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => {
+          const normalizedInput = normalizeText(inputTitle);
+
+          const existingBook = allBooks.find((b) => {
+            // 將資料庫中的標題也進行統一化比對
+            const normalizedDBTitle = normalizeText(String(b.title || ""));
+            return normalizedDBTitle === normalizedInput;
+          });
 
           if (existingBook) {
-            // 避免重複跳出 confirm，檢查是否已經填入過資料
+            // 避免在欄位已經有資料時重複跳出視窗
+            // 我們檢查 author 欄位是否為空，代表這是一個「新填寫」的動作
             if (document.getElementById("author").value !== "") return;
 
             const confirmLoad = confirm(
-              `📢 發現重複！\n「${inputTitle}」已在書庫中。是否填入資料？`
+              `📢 發現重複！\n「${inputTitle}」已在書庫中。\n是否自動填入該書的歷史資料？`
             );
 
             if (confirmLoad) {
+              // 填入資料邏輯 (保持你原本的設定)
               document.getElementById("jpTitle").value =
                 existingBook.jpTitle || "";
               document.getElementById("author").value =
@@ -388,9 +423,9 @@
               document.getElementById("level").value =
                 existingBook.level || "正常";
               document.getElementById("twStatus").value =
-                existingBook.twStatus || ""; // 補上連載狀態
+                existingBook.twStatus || "";
               document.getElementById("jpStatus").value =
-                existingBook.jpStatus || ""; // 補上連載狀態
+                existingBook.jpStatus || "";
               document.getElementById("ebookUrl").value =
                 existingBook.ebookUrl || "";
               document.getElementById("chilUrl").value =
@@ -404,10 +439,10 @@
                 document.getElementById("coverUrl").value =
                   existingBook.coverUrl;
               }
-              alert("✅ 資料已成功帶入。");
+              alert("✅ 歷史資料已成功帶入。");
             }
           }
-        });
+        }, 500); // 這裡的 500 毫秒可以根據你的手感調整
       });
 
       function clearFullForm() {
@@ -436,6 +471,3 @@
     </script>
   </body>
 </html>
-
-
-
