@@ -425,8 +425,13 @@
       const feedback = document.getElementById("searchFeedback");
       let lastAlertedTitle = ""; // 避免針對同一個書名重複跳出 confirm
 
+      let searchTimeout; // 1. 用來存放計時器的變數
+
       titleInput.addEventListener("input", function () {
         const inputVal = this.value.trim();
+
+        // 2. 每次輸入就立刻清除「上一次」準備要彈出的視窗
+        clearTimeout(searchTimeout);
 
         if (!inputVal) {
           feedback.innerHTML = "";
@@ -435,25 +440,22 @@
           return;
         }
 
-        // 1. 顯示搜尋中
+        // 3. 顯示搜尋中
         feedback.innerHTML = "🔍 正在搜尋書庫...";
         feedback.className = "search-feedback active status-searching";
 
-        // 使用 debounce 思路，但為了反應靈敏，這裡直接進行記憶體內比對
         const normalizedInput = normalizeText(inputVal);
         const existingBook = allBooks.find(
           (b) => normalizeText(String(b.title)) === normalizedInput,
         );
 
         if (existingBook) {
-          // 2. 顯示已存在
           feedback.innerHTML = "⚠️ 書庫內已有此書";
           feedback.className = "search-feedback active status-found";
 
-          // 3. 判斷是否彈出提示 (只有在完全匹配且還沒問過這本書時才彈出)
+          // 4. 保留你要求的邏輯，但包在定時器內並確保只會執行最後一次輸入的判定
           if (lastAlertedTitle !== normalizedInput) {
-            // 稍微延遲讓使用者看清楚狀態文字
-            setTimeout(() => {
+            searchTimeout = setTimeout(() => {
               if (
                 confirm(
                   `📢 發現重複書籍！\n「${existingBook.title}」已存在。\n是否要自動填入書籍資料？`,
@@ -462,10 +464,9 @@
                 autoFillForm(existingBook);
               }
               lastAlertedTitle = normalizedInput;
-            }, 400);
+            }, 400); // 保留你要求的 400 毫秒延遲
           }
         } else {
-          // 4. 顯示新書籍
           feedback.innerHTML = "✨ 書庫內尚未有此書";
           feedback.className = "search-feedback active status-new";
           lastAlertedTitle = "";
@@ -474,6 +475,7 @@
 
       // 封裝自動填入邏輯
       function autoFillForm(book) {
+        document.getElementById("title").value = book.title || "";
         document.getElementById("jpTitle").value = book.jpTitle || "";
         document.getElementById("author").value = book.author || "";
         document.getElementById("level").value = book.level || "正常";
@@ -530,4 +532,3 @@
     </script>
   </body>
 </html>
-
