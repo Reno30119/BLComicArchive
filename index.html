@@ -475,7 +475,14 @@
 
       // 封裝自動填入邏輯
       function autoFillForm(book) {
-        document.getElementById("title").value = book.title || "";
+        const titleField = document.getElementById("title");
+
+        // 1. 強制填入中文書名
+        titleField.value = book.title || "";
+
+        // 2. 重要：立刻更新「最後警告過的書名」，防止 input 事件再次觸發導致判定重疊
+        lastAlertedTitle = normalizeText(book.title);
+
         document.getElementById("jpTitle").value = book.jpTitle || "";
         document.getElementById("author").value = book.author || "";
         document.getElementById("level").value = book.level || "正常";
