@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-TW">
   <head>
     <meta charset="UTF-8" />
@@ -19,13 +19,23 @@
     <div class="container">
       <header class="form-header">
         <h2>📚 新增漫畫書籍</h2>
-        <p class="subtitle">同步資訊至雲端資料庫</p>
+        <div class="db-status-bar">
+          <div id="dbCountBadge" class="status-badge">📊 書庫連線中...</div>
+          <div id="dbTimeBadge" class="status-badge">🕒 --:--</div>
+        </div>
       </header>
 
       <form id="bookForm">
         <div class="form-group">
           <label for="title">中文書名</label>
-          <input type="text" id="title" name="title" required />
+          <input
+            type="text"
+            id="title"
+            name="title"
+            required
+            placeholder="請輸入書名"
+          />
+          <div id="searchFeedback" class="search-feedback"></div>
         </div>
 
         <div class="form-group">
@@ -153,22 +163,41 @@
         "https://script.google.com/macros/s/AKfycbwqnfCjBq_BYZSWAOU6TnVj2O6YvFF2jan4dY0smm3waf9xP-wOLmz2_4B_L3MND7PK9A/exec";
       let allBooks = []; // 用來存放抓取回來的資料
 
-      // 2. 定義抓取資料的函數
-      async function fetchExistingData() {
-        // 這裡現在可以正確讀取到 scriptURL 了
-        const fetchURL = scriptURL + "?action=read";
+      // 統一的同步函式：負責抓資料、更新記憶體 (allBooks)、更新美化狀態欄
+      async function fetchAndRefreshStatus() {
+        const dbCountBadge = document.getElementById("dbCountBadge");
+        const dbTimeBadge = document.getElementById("dbTimeBadge");
+
         try {
-          const response = await fetch(fetchURL);
-          const data = await response.json();
-          allBooks = data;
-          console.log("資料庫已同步，共有 " + allBooks.length + " 筆資料");
+          // 1. 抓取資料庫
+          const response = await fetch(scriptURL + "?action=read");
+          allBooks = await response.json();
+
+          // 2. 計算「不重複書籍」數量 (使用你寫好的異體字標準化邏輯)
+          const uniqueTitles = new Set(
+            allBooks.map((book) => normalizeText(String(book.title || ""))),
+          );
+
+          // 3. 取得目前時間
+          const now = new Date();
+          const timeStr = `${now.getHours().toString().padStart(2, "0")}:${now.getMinutes().toString().padStart(2, "0")}`;
+
+          // 4. 更新畫面上的美化標籤
+          if (dbCountBadge) {
+            dbCountBadge.innerHTML = `📖 書籍：${uniqueTitles.size} 本 (共 ${allBooks.length} 筆評論)`;
+          }
+          if (dbTimeBadge) {
+            dbTimeBadge.innerHTML = `🕒 更新：${timeStr}`;
+          }
+
+          console.log(`同步完成：目前有 ${uniqueTitles.size} 本漫畫。`);
         } catch (error) {
-          console.error("無法讀取資料庫:", error);
+          if (dbCountBadge) dbCountBadge.innerHTML = "❌ 連線失敗";
+          console.error("資料讀取失敗:", error);
         }
       }
 
-      // 3. 執行抓取動作
-      fetchExistingData();
+      fetchAndRefreshStatus();
 
       // 定義顏色切換函數
       function updateRatingColor(value) {
@@ -204,8 +233,8 @@
         try {
           const res = await fetch(
             `${scriptURL}?action=fetchCover&url=${encodeURIComponent(
-              targetUrl
-            )}`
+              targetUrl,
+            )}`,
           );
           const data = await res.json();
 
@@ -310,8 +339,8 @@
             try {
               const coverRes = await fetch(
                 `${scriptURL}?action=fetchCover&url=${encodeURIComponent(
-                  targetUrl
-                )}`
+                  targetUrl,
+                )}`,
               );
               const coverJson = await coverRes.json();
 
@@ -331,19 +360,33 @@
             mode: "no-cors", // 由於 Google Apps Script 的特性，必須使用 no-cors
           });
 
+          // --- 在 form submit 的成功處理區段 ---
           // 3. 成功後的處理
           msg.innerHTML = "✅ 資料已成功同步！";
+
+          // 修正：確保移除所有可能阻擋顯示的類別
+          msg.classList.remove("hidden");
+          msg.style.display = "block"; // 強制讓元素佔據空間
+
+          // 確保套用正確的樣式
           msg.className = "success show";
+
           form.reset();
-          fetchExistingData();
-          updateRatingColor(5.0); // 讓評分顏色回歸預設
+          fetchAndRefreshStatus(); // 更新 📖 狀態欄
+          resetSearchFeedback(); // 清除「已有此書」提示
+          updateRatingColor(5.0);
           revButtons.forEach((b) => b.classList.remove("active"));
           reviewerInput.value = "";
           btn.disabled = false;
           btn.innerHTML = "確認送出資料";
-          window.scrollTo(0, 0);
+
+          window.scrollTo({ top: 0, behavior: "smooth" }); // 捲回頂部看提示
+
+          // 3秒後自動隱藏
           setTimeout(() => {
+            msg.classList.remove("show");
             msg.classList.add("hidden");
+            msg.style.display = "none"; // 徹底隱藏避免佔位
           }, 3000);
         } catch (error) {
           console.error("傳送失敗:", error);
@@ -354,96 +397,102 @@
         }
       });
 
-      // 定義異體字地圖
+      // 1. 確保異體字對照表存在
       const variantMap = {
         秘: "祕",
         台: "臺",
-        裡: "里",
-        裏: "里",
+        里: "裡",
         搜: "蒐",
-        群: "羣",
-        線: "綫",
-        併: "並",
-        衛: "衞",
-        啟: "啓",
-        峰: "峯",
+        呪: "咒",
+        迴: "回",
         猫: "貓",
+        峰: "峯",
+        嶋: "島",
       };
 
-      // 統一化文字的函式
+      // 2. 標準化文字函式
       function normalizeText(str) {
         if (!str) return "";
         let normalized = str.trim().toLowerCase();
-
-        // 遍歷地圖進行替換
         for (let key in variantMap) {
           normalized = normalized.split(key).join(variantMap[key]);
         }
         return normalized;
       }
 
-      // 取得書名輸入框
+      // 監聽書名輸入
       const titleInput = document.getElementById("title");
-      let debounceTimer; // 用於防抖
+      const feedback = document.getElementById("searchFeedback");
+      let lastAlertedTitle = ""; // 避免針對同一個書名重複跳出 confirm
 
-      // 使用 'input' 事件：只要文字變動（打字、刪除、貼上）就會即時偵測
       titleInput.addEventListener("input", function () {
-        const inputTitle = this.value.trim();
+        const inputVal = this.value.trim();
 
-        // 1. 基本檢查
-        if (!inputTitle || allBooks.length === 0) return;
+        if (!inputVal) {
+          feedback.innerHTML = "";
+          feedback.className = "search-feedback";
+          lastAlertedTitle = "";
+          return;
+        }
 
-        // 2. 使用「防抖 (Debounce)」：當使用者停止打字 500ms 後才執行搜尋
-        // 這樣不會因為打一個字就跳一次視窗，效能更好且不會干擾輸入
-        clearTimeout(debounceTimer);
-        debounceTimer = setTimeout(() => {
-          const normalizedInput = normalizeText(inputTitle);
+        // 1. 顯示搜尋中
+        feedback.innerHTML = "🔍 正在搜尋書庫...";
+        feedback.className = "search-feedback active status-searching";
 
-          const existingBook = allBooks.find((b) => {
-            // 將資料庫中的標題也進行統一化比對
-            const normalizedDBTitle = normalizeText(String(b.title || ""));
-            return normalizedDBTitle === normalizedInput;
-          });
+        // 使用 debounce 思路，但為了反應靈敏，這裡直接進行記憶體內比對
+        const normalizedInput = normalizeText(inputVal);
+        const existingBook = allBooks.find(
+          (b) => normalizeText(String(b.title)) === normalizedInput,
+        );
 
-          if (existingBook) {
-            // 避免在欄位已經有資料時重複跳出視窗
-            // 我們檢查 author 欄位是否為空，代表這是一個「新填寫」的動作
-            if (document.getElementById("author").value !== "") return;
+        if (existingBook) {
+          // 2. 顯示已存在
+          feedback.innerHTML = "⚠️ 書庫內已有此書";
+          feedback.className = "search-feedback active status-found";
 
-            const confirmLoad = confirm(
-              `📢 發現重複！\n「${inputTitle}」已在書庫中。\n是否自動填入該書的歷史資料？`
-            );
-
-            if (confirmLoad) {
-              // 填入資料邏輯 (保持你原本的設定)
-              document.getElementById("jpTitle").value =
-                existingBook.jpTitle || "";
-              document.getElementById("author").value =
-                existingBook.author || "";
-              document.getElementById("level").value =
-                existingBook.level || "正常";
-              document.getElementById("twStatus").value =
-                existingBook.twStatus || "";
-              document.getElementById("jpStatus").value =
-                existingBook.jpStatus || "";
-              document.getElementById("ebookUrl").value =
-                existingBook.ebookUrl || "";
-              document.getElementById("chilUrl").value =
-                existingBook.chilUrl || "";
-              document.getElementById("tags").value = existingBook.tags || "";
-
+          // 3. 判斷是否彈出提示 (只有在完全匹配且還沒問過這本書時才彈出)
+          if (lastAlertedTitle !== normalizedInput) {
+            // 稍微延遲讓使用者看清楚狀態文字
+            setTimeout(() => {
               if (
-                existingBook.coverUrl &&
-                document.getElementById("coverUrl")
+                confirm(
+                  `📢 發現重複書籍！\n「${existingBook.title}」已存在。\n是否要自動填入書籍資料？`,
+                )
               ) {
-                document.getElementById("coverUrl").value =
-                  existingBook.coverUrl;
+                autoFillForm(existingBook);
               }
-              alert("✅ 歷史資料已成功帶入。");
-            }
+              lastAlertedTitle = normalizedInput;
+            }, 400);
           }
-        }, 500); // 這裡的 500 毫秒可以根據你的手感調整
+        } else {
+          // 4. 顯示新書籍
+          feedback.innerHTML = "✨ 書庫內尚未有此書";
+          feedback.className = "search-feedback active status-new";
+          lastAlertedTitle = "";
+        }
       });
+
+      // 封裝自動填入邏輯
+      function autoFillForm(book) {
+        document.getElementById("jpTitle").value = book.jpTitle || "";
+        document.getElementById("author").value = book.author || "";
+        document.getElementById("level").value = book.level || "正常";
+        document.getElementById("twStatus").value = book.twStatus || "";
+        document.getElementById("jpStatus").value = book.jpStatus || "";
+        document.getElementById("ebookUrl").value = book.ebookUrl || "";
+        document.getElementById("chilUrl").value = book.chilUrl || "";
+        document.getElementById("tags").value = book.tags || "";
+
+        if (book.rating) {
+          ratingInput.value = book.rating;
+          updateRatingColor(book.rating);
+        }
+
+        if (book.coverUrl) {
+          document.getElementById("coverUrl").value = book.coverUrl;
+        }
+        alert("✅ 資料已成功帶入。");
+      }
 
       function clearFullForm() {
         if (confirm("確定要清空目前填寫的所有資料嗎？")) {
@@ -467,6 +516,16 @@
 
           console.log("表單已完全清空");
         }
+      }
+
+      // 新增：專門用來隱藏搜尋回饋與重設狀態的函式
+      function resetSearchFeedback() {
+        const feedback = document.getElementById("searchFeedback");
+        if (feedback) {
+          feedback.innerHTML = "";
+          feedback.className = "search-feedback"; // 移除 active 類別使其隱藏
+        }
+        lastAlertedTitle = ""; // 清除最後比對紀錄，讓下次輸入同書名時能再次觸發提示
       }
     </script>
   </body>
