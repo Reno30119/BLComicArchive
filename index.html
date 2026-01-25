@@ -14,6 +14,7 @@
     <nav class="top-nav">
       <a href="index.html" class="nav-item active">➕ 新增書籍</a>
       <a href="list.html" class="nav-item">🔍 查詢書庫</a>
+      <a href="tags.html" class="nav-item">🏷️ 標籤管理</a>
     </nav>
 
     <div class="container">
@@ -103,9 +104,10 @@
           </div>
         </div>
 
-        <div class="form-group">
+        <div class="form-group" style="position: relative">
           <label for="tags">標籤 (以逗號 / 空白鍵分隔)</label>
-          <input type="text" id="tags" name="tags" />
+          <input type="text" id="tags" name="tags" autocomplete="off" />
+          <div id="customTagList" class="custom-tag-list"></div>
         </div>
         <input type="hidden" id="coverUrl" name="coverUrl" value="" />
         <div class="form-row">
@@ -536,6 +538,90 @@
         }
         lastAlertedTitle = ""; // 清除最後比對紀錄，讓下次輸入同書名時能再次觸發提示
       }
+
+      let allTags = []; // 儲存從 GAS 抓回來的標籤
+
+      // 1. 初始化抓取標籤
+      async function initTagSearch() {
+        try {
+          const res = await fetch(`${scriptURL}?action=readTags`);
+          allTags = await res.json();
+        } catch (e) {
+          console.error("標籤載入失敗", e);
+        }
+      }
+
+      const tagInput = document.getElementById("tags");
+      const customList = document.getElementById("customTagList");
+
+      // 2. 監聽輸入事件
+      tagInput.addEventListener("input", function () {
+        const fullVal = this.value;
+        const parts = fullVal.split(","); // 以逗號分割
+        const currentQuery = parts[parts.length - 1].trim().toLowerCase(); // 只取最後一個詞
+
+        if (currentQuery === "") {
+          customList.style.display = "none";
+          return;
+        }
+
+        // 過濾符合關鍵字的標籤
+        const matches = allTags.filter((t) =>
+          t.name.toLowerCase().includes(currentQuery),
+        );
+
+        renderDropdown(matches, currentQuery);
+      });
+
+      // 3. 渲染選單
+      function renderDropdown(matches, query) {
+        if (matches.length === 0) {
+          customList.style.display = "none";
+          return;
+        }
+
+        customList.innerHTML = matches
+          .map(
+            (t) => `
+    <div class="tag-item" onclick="addTag('${t.name}')">
+      <strong>${t.name}</strong>
+      <span class="tag-desc">${t.definition || ""}</span>
+    </div>
+  `,
+          )
+          .join("");
+
+        customList.style.display = "block";
+      }
+
+      // 修改 addTag 函式
+      window.addTag = function (tagName) {
+        const tagInput = document.getElementById("tags");
+
+        // 1. 依照「逗號、空白、或全形頓號」分割
+        let parts = tagInput.value.split(/[ ,、]+/);
+
+        // 2. 將最後一個正在打的詞換成選中的標籤名
+        parts[parts.length - 1] = tagName;
+
+        // 3. 清理掉多餘的空字串並重新組合，統一用「逗號+空格」隔開
+        tagInput.value =
+          parts
+            .map((t) => t.trim())
+            .filter((t) => t !== "")
+            .join(", ") + ", "; // 最後留個逗號方便輸入下一個
+
+        document.getElementById("customTagList").style.display = "none";
+        tagInput.focus();
+      };
+
+      // 5. 點擊頁面其他地方時隱藏選單
+      document.addEventListener("click", (e) => {
+        if (e.target !== tagInput) customList.style.display = "none";
+      });
+
+      // 啟動
+      window.addEventListener("load", initTagSearch);
     </script>
   </body>
 </html>
