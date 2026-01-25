@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-TW">
   <head>
     <meta charset="UTF-8" />
@@ -7,13 +7,14 @@
     <link rel="stylesheet" href="list-style.css" />
     <link
       rel="icon"
-      href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect x=%2215%22 y=%2220%22 width=%2220%22 height=%2260%22 fill=%22%23e74c3c%22 rx=%222%22/><rect x=%2240%22 y=%2210%22 width=%2220%22 height=%2270%22 fill=%22%233498db%22 rx=%222%22/><rect x=%2265%22 y=%2225%22 width=%2220%22 height=%2255%22 fill=%22%23f1c40f%22 rx=%222%22/></svg>"
+      href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎨</text></svg>"
     />
   </head>
   <body>
     <nav class="top-nav">
       <a href="index.html" class="nav-item">➕ 新增書籍</a>
       <a href="list.html" class="nav-item active">🔍 查詢書庫</a>
+      <a href="tags.html" class="nav-item">🏷️ 標籤管理</a>
     </nav>
 
     <div class="list-container">
@@ -196,7 +197,10 @@
             </div>
 
             <label>標籤 (以逗號 / 空白鍵分隔)</label>
-            <input type="text" id="editTags" name="tags" />
+            <div style="position: relative">
+              <input type="text" id="editTags" name="tags" autocomplete="off" />
+              <div id="customTagList" class="custom-tag-list"></div>
+            </div>
 
             <label>電子書網址</label>
             <input type="url" id="editEbookUrl" name="ebookUrl" />
@@ -342,7 +346,7 @@
             loadingEl.innerHTML = "正在同步最新書庫...";
           }
           const response = await fetch(
-            `${scriptURL}?action=read&t=${new Date().getTime()}`
+            `${scriptURL}?action=read&t=${new Date().getTime()}`,
           );
           if (!response.ok) throw new Error("網路回應錯誤");
 
@@ -405,7 +409,7 @@
         grid.innerHTML = "";
 
         const validData = data.filter(
-          (item) => item.title && String(item.title).trim() !== ""
+          (item) => item.title && String(item.title).trim() !== "",
         );
 
         data.forEach((book) => {
@@ -420,8 +424,8 @@
               : `<div class="no-cover">
        <span>無封面</span>
        <button onclick="reFetchCover('${book.title.replace(/'/g, "\\'")}', '${
-                  book.ebookUrl || ""
-                }', '${book.chilUrl || ""}')">🔍 抓取</button>
+         book.ebookUrl || ""
+       }', '${book.chilUrl || ""}')">🔍 抓取</button>
      </div>`;
 
           row.innerHTML = `
@@ -433,13 +437,13 @@
                 <div class="item-info" style="flex: 1;">
                     <div class="title-row" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                         <span class="badge ${getLevelColor(book.level)}">${
-            book.level
-          }</span>
+                          book.level
+                        }</span>
                         <h3 class="title" style="margin: 0; flex: 1;">${
                           book.title
                         }</h3>
                         <span class="avg-score ${getScoreColor(
-                          avgRating
+                          avgRating,
                         )}">${avgRating}</span>
                         
 <button class="edit-book-btn" onclick="openBookInfoModal('${
@@ -452,7 +456,7 @@
               <p class="author" style="margin: 8px 0; margin-top:-2px">
                   👤 <span class="author-link" onclick="quickSearch('${book.author.replace(
                     /'/g,
-                    "\\'"
+                    "\\'",
                   )}')">${book.author}</span> 
                   <span class="jp-title" style="color:#888;margin-left: 8px; font-size:0.85em;">${
                     book.jpTitle || ""
@@ -475,7 +479,7 @@
                             const tag = t.trim();
                             return `<span class="tag-badge" onclick="quickSearch('${tag.replace(
                               /'/g,
-                              "\\'"
+                              "\\'",
                             )}')">#${tag}</span>`;
                           })
                           .join("")
@@ -514,10 +518,10 @@
                                   r.reviewer
                                 }</span><span style="color: #ddd;margin-left: 8px;">||</span>
                                 <span class="rev-score ${getScoreColor(
-                                  r.rating
+                                  r.rating,
                                 )}"  style="margin-left:1px;">⭐${
-                              r.rating
-                            }</span>
+                                  r.rating
+                                }</span>
                                 <span class="rev-comment" style="display:block; font-size:0.9em; color:#555;">${
                                   r.comment
                                 }</span>
@@ -525,7 +529,7 @@
                                   r.timestamp
                                 }')" style="position:absolute; right:5px; top:8px; border:none; background:none; cursor:pointer; color:#ccc;">✎</button>
                             </div>
-                        `
+                        `,
                           )
                           .join("")}
 
@@ -563,7 +567,7 @@
 
         try {
           const fetchUrl = `${scriptURL}?action=fetchCover&url=${encodeURIComponent(
-            urlToFetch
+            urlToFetch,
           )}`;
           const res = await fetch(fetchUrl);
           const data = await res.json();
@@ -815,7 +819,7 @@
           allBooks.sort((a, b) => b.rating - a.rating);
         } else {
           allBooks.sort((a, b) =>
-            String(a[type]).localeCompare(String(b[type]), "zh-Hant")
+            String(a[type]).localeCompare(String(b[type]), "zh-Hant"),
           );
         }
         renderBooks(allBooks);
@@ -854,7 +858,7 @@
 
         // 1. 合併邏輯：按書名分組，收集所有評論
         const validData = allBooks.filter(
-          (item) => item.title && String(item.title).trim() !== ""
+          (item) => item.title && String(item.title).trim() !== "",
         );
 
         const merged = validData.reduce((acc, curr) => {
@@ -880,13 +884,13 @@
         let processedBooks = Object.values(merged).map((book) => {
           const totalRating = book.reviews.reduce(
             (sum, r) => sum + r.rating,
-            0
+            0,
           );
           book.avgRating = totalRating / book.reviews.length;
 
           // B. 💡 關鍵新增：讓該書的評論依照評論者名字排序 (Reno, 茶壺...)
           book.reviews.sort((a, b) =>
-            String(a.reviewer).localeCompare(String(b.reviewer), "zh-Hant")
+            String(a.reviewer).localeCompare(String(b.reviewer), "zh-Hant"),
           );
 
           return book;
@@ -988,7 +992,7 @@
         console.log("正在搜尋 TS:", ts);
 
         const bookData = allBooks.find(
-          (b) => String(b.timestamp) === String(ts)
+          (b) => String(b.timestamp) === String(ts),
         );
 
         console.log("抓到的書本原始資料:", bookData); // 除錯點 2
@@ -1022,9 +1026,8 @@
         safeSetVal("addCommentJpStatus", bookData.jpStatus);
 
         // 顯示 Modal
-        document.getElementById(
-          "addCommentModalTitle"
-        ).innerText = `✍️ 為《${bookData.title}》新增新評論`;
+        document.getElementById("addCommentModalTitle").innerText =
+          `✍️ 為《${bookData.title}》新增新評論`;
         document.getElementById("addCommentModal").classList.remove("hidden");
         document
           .getElementById("addCommentRating")
@@ -1102,7 +1105,7 @@
           ratingInput.classList.remove(
             "rating-low",
             "rating-mid",
-            "rating-high"
+            "rating-high",
           );
 
           // 根據分數套用類別 (邏輯同 Index)
@@ -1126,7 +1129,7 @@
           ratingInput.classList.remove(
             "rating-low",
             "rating-mid",
-            "rating-high"
+            "rating-high",
           );
 
           // 套用新類別
@@ -1150,6 +1153,78 @@
         // 防止出現連續逗號
         this.value = this.value.replace(/,+/g, ",");
       });
+
+      let allDefinedTags = []; // 用來存儲從 Tags 分頁抓來的資料
+
+      // 1. 初始化抓取標籤定義 (可以在 fetchData 內或 window.onload 執行)
+      async function fetchTagDefinitions() {
+        try {
+          const res = await fetch(`${scriptURL}?action=readTags`);
+          allDefinedTags = await res.json();
+        } catch (e) {
+          console.error("載入標籤定義失敗", e);
+        }
+      }
+
+      // 2. 監聽編輯框的輸入
+      const editTagInput = document.getElementById("editTags");
+      const customList = document.getElementById("customTagList");
+
+      editTagInput.addEventListener("input", function () {
+        const fullVal = this.value;
+        // 支援空白、逗號、頓號分割
+        const parts = fullVal.split(/[ ,、]+/);
+        const currentQuery = parts[parts.length - 1].trim().toLowerCase();
+
+        if (currentQuery === "") {
+          customList.style.display = "none";
+          return;
+        }
+
+        const matches = allDefinedTags.filter((t) =>
+          t.name.toLowerCase().includes(currentQuery),
+        );
+
+        if (matches.length > 0) {
+          customList.innerHTML = matches
+            .map(
+              (t) => `
+      <div class="tag-item" onclick="applyTagToEdit('${t.name}')">
+        <strong>${t.name}</strong>
+        <span class="tag-desc">${t.definition || ""}</span>
+      </div>
+    `,
+            )
+            .join("");
+          customList.style.display = "block";
+        } else {
+          customList.style.display = "none";
+        }
+      });
+
+      // 3. 點選推薦標籤後的動作
+      window.applyTagToEdit = function (tagName) {
+        let parts = editTagInput.value.split(/[ ,、]+/);
+        parts[parts.length - 1] = tagName; // 替換最後一個詞
+
+        // 統一格式為「標籤, 標籤」
+        editTagInput.value =
+          parts
+            .map((p) => p.trim())
+            .filter((p) => p !== "")
+            .join(", ") + ", ";
+
+        customList.style.display = "none";
+        editTagInput.focus();
+      };
+
+      // 4. 點擊外部關閉選單
+      document.addEventListener("click", (e) => {
+        if (e.target !== editTagInput) customList.style.display = "none";
+      });
+
+      // 5. 在頁面載入時執行初始化
+      window.addEventListener("DOMContentLoaded", fetchTagDefinitions);
     </script>
   </body>
 </html>

@@ -7,6 +7,45 @@ body {
   padding: 0;
 }
 
+.custom-tag-list {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  width: 100%;
+  box-sizing: border-box; /* 關鍵：防止寬度凸出 */
+  max-height: 200px;
+  overflow-y: auto;
+  background: white;
+  border: 1px solid #3498db;
+  border-top: none;
+  border-radius: 0 0 10px 10px;
+  box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+  display: none;
+  z-index: 10001; /* 確保高於 Modal 的 z-index */
+}
+
+.tag-item {
+  padding: 10px 15px;
+  cursor: pointer;
+  border-bottom: 1px solid #f9f9f9;
+  box-sizing: border-box;
+}
+
+.tag-item:hover {
+  background-color: #f0f7ff;
+}
+
+.tag-item strong {
+  color: #3498db;
+  display: block;
+}
+
+.tag-item .tag-desc {
+  font-size: 0.8em;
+  color: #888;
+}
+
 .top-nav {
   display: flex;
   justify-content: center;
@@ -51,7 +90,9 @@ body {
   border-radius: 16px;
   padding: 20px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
 }
 
 .book-list-item:hover {
@@ -246,7 +287,7 @@ body {
   border-color: #3498db;
 }
 .item-info {
-flex: 1;
+  flex: 1;
   min-width: 0; /* 關鍵：將 200px 改為 0，讓它在小螢幕能縮小而不掉行 */
   display: flex;
   flex-direction: column;
@@ -558,25 +599,25 @@ flex: 1;
 
   /* 1. 讓父容器改為垂直排列 */
   .item-main {
-    flex-direction: column; 
+    flex-direction: column;
     align-items: center; /* 讓封面在中間，若要靠左請改為 flex-start */
     /* text-align: center;  讓資訊文字也跟著置中（選用） */
   }
 
   /* 2. 重點修改：讓 .item-info 填滿寬度 */
   .item-info {
-    width: 100%;       /* 強制填滿寬度，消除右側空白 */
-    min-width: 0;      /* 解除原本的最小寬度限制 */
-    padding-left: 0;   /* 移除原本在側邊時的間距 */
-    margin-top: 15px;  /* 增加與上方封面的距離 */
-    display: block;    /* 確保它以區塊元素呈現 */
+    width: 100%; /* 強制填滿寬度，消除右側空白 */
+    min-width: 0; /* 解除原本的最小寬度限制 */
+    padding-left: 0; /* 移除原本在側邊時的間距 */
+    margin-top: 15px; /* 增加與上方封面的距離 */
+    display: block; /* 確保它以區塊元素呈現 */
   }
 
   /* 3. 調整封面外距 */
   .item-cover {
-    margin-right: 0;   /* 移除原本並排時的右方間距 */
+    margin-right: 0; /* 移除原本並排時的右方間距 */
     margin-bottom: 10px;
-    flex-shrink: 0;    /* 保持封面形狀 */
+    flex-shrink: 0; /* 保持封面形狀 */
   }
 
   /* 4. 標籤區域也改為置中 (如果 .item-main 設定了 center) */
