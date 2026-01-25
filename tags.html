@@ -1,0 +1,379 @@
+<!doctype html>
+<html lang="zh-TW">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>標籤管理 - 漫畫書庫</title>
+    <link rel="stylesheet" href="style.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏷️</text></svg>"
+    />
+    <style>
+      .tag-list-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px;
+        border-bottom: 1px solid #eee;
+      }
+      .tag-info {
+        flex: 1;
+      }
+      .tag-name {
+        font-weight: bold;
+        color: #2c3e50;
+      }
+      .tag-def {
+        font-size: 0.85rem;
+        color: #7f8c8d;
+      }
+      .edit-btn {
+        background: #3498db;
+        color: white;
+        border: none;
+        padding: 5px 10px;
+        border-radius: 5px;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <nav class="top-nav">
+      <a href="index.html" class="nav-item">➕ 新增書籍</a>
+      <a href="list.html" class="nav-item">🔍 查詢書庫</a>
+      <a href="tags.html" class="nav-item active">🏷️ 標籤管理</a>
+    </nav>
+
+    <div class="container">
+      <h2>🏷️ 標籤定義管理</h2>
+
+      <div class="search-group" style="margin-top: 20px">
+        <input
+          type="text"
+          id="tagSearchInput"
+          placeholder="🔍 搜尋標籤名稱或定義..."
+          style="
+            width: 100%;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            box-sizing: border-box;
+          "
+        />
+        <!-- <p style="font-size: 0.8rem; color: #888; margin-top: 5px">
+          * 目前已自動按筆畫順序由少至多排序
+        </p> -->
+      </div>
+
+      <div
+        class="form-group"
+        style="
+          margin-top: 20px;
+          border: 1px solid #eee;
+          padding: 15px;
+          border-radius: 10px;
+        "
+      >
+        <label id="formTitle">新增標籤定義</label>
+        <input type="text" id="tagName" placeholder="標籤名稱" />
+        <textarea
+          id="tagDefinition"
+          rows="2"
+          placeholder="輸入標籤定義..."
+          style="margin-top: 10px"
+        ></textarea>
+
+        <div style="display: flex; gap: 10px; margin-top: 10px">
+          <button
+            id="saveTagBtn"
+            class="rev-btn active"
+            style="flex: 2; margin-top: 0"
+          >
+            新增標籤
+          </button>
+          <button
+            id="cancelEditBtn"
+            class="rev-btn"
+            style="
+              flex: 1;
+              margin-top: 0;
+              background-color: #95a5a6;
+              color: white;
+              display: none;
+            "
+          >
+            取消編輯
+          </button>
+        </div>
+      </div>
+
+      <div id="tagList" style="margin-top: 20px">
+        <p style="text-align: center">載入標籤中...</p>
+      </div>
+    </div>
+
+    <script>
+      // 1. 務必填入與 index.html 相同的 scriptURL
+      const scriptURL =
+        "https://script.google.com/macros/s/AKfycbwqnfCjBq_BYZSWAOU6TnVj2O6YvFF2jan4dY0smm3waf9xP-wOLmz2_4B_L3MND7PK9A/exec";
+
+      // 載入標籤列表
+      async function loadTags() {
+        const listDiv = document.getElementById("tagList");
+        try {
+          // 加上 action=readTags 參數
+          const res = await fetch(`${scriptURL}?action=readTags`);
+          const tags = await res.json();
+          if (tags.length === 0) {
+            listDiv.innerHTML =
+              "<p style='text-align:center;'>目前尚無標籤定義</p>";
+            return;
+          }
+          listDiv.innerHTML = tags
+            .map(
+              (t) => `
+            <div class="tag-list-item">
+              <div class="tag-info">
+                <div class="tag-name">${t.name}</div>
+                <div class="tag-def">${t.definition || "未定義"}</div>
+              </div>
+              <button class="edit-btn" onclick="editTag('${t.name}', '${t.definition}')">編輯</button>
+            </div>
+          `,
+            )
+            .join("");
+        } catch (err) {
+          console.error(err);
+          listDiv.innerHTML = "❌ 載入失敗，請確認 GAS 已發佈並開啟權限。";
+        }
+      }
+
+      function editTag(name, def) {
+        document.getElementById("tagName").value = name;
+        document.getElementById("tagDefinition").value = def;
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+
+      // 儲存邏輯修正
+      document.getElementById("saveTagBtn").onclick = async function () {
+        const name = document.getElementById("tagName").value.trim();
+        const def = document.getElementById("tagDefinition").value.trim();
+        if (!name) return alert("請輸入標籤名稱");
+
+        this.disabled = true;
+        this.innerText = "儲存中...";
+
+        // 使用 URLSearchParams 並明確加入 action 參數
+        const params = new URLSearchParams();
+        params.append("action", "upsertTag");
+        params.append("tagName", name);
+        params.append("definition", def);
+
+        try {
+          // 模仿 index.html 的發送方式，解決 Failed to fetch 問題
+          await fetch(scriptURL, {
+            method: "POST",
+            mode: "no-cors",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: params.toString(),
+          });
+
+          alert(
+            "✅ 儲存請求已送出！\n(由於 Google 權限機制，列表將於 2 秒後自動更新)",
+          );
+
+          // 清空輸入
+          document.getElementById("tagName").value = "";
+          document.getElementById("tagDefinition").value = "";
+
+          // 延遲重整，給予 GAS 寫入時間
+          setTimeout(loadTags, 2000);
+        } catch (err) {
+          console.error(err);
+          alert("儲存發生錯誤，請檢查網路連線。");
+        } finally {
+          this.disabled = false;
+          this.innerText = "儲存標籤";
+        }
+      };
+
+      // tags.html 的 script 區塊
+      let allTags = []; // 儲存所有標籤資料
+
+      async function loadTags() {
+        const listDiv = document.getElementById("tagList");
+        try {
+          const res = await fetch(`${scriptURL}?action=readTags`);
+          allTags = await res.json();
+
+          // 1. 實作按筆畫排序 (使用 zh-Hant 區域化比對)
+          allTags.sort((a, b) => a.name.localeCompare(b.name, "zh-Hant"));
+
+          renderTagList(allTags); // 初始渲染全部標籤
+        } catch (err) {
+          console.error(err);
+          listDiv.innerHTML = "❌ 載入失敗，請確認 GAS 已發佈。";
+        }
+      }
+
+      // 2. 封裝渲染邏輯，方便搜尋時重複呼叫
+      function renderTagList(data) {
+        const listDiv = document.getElementById("tagList");
+        if (data.length === 0) {
+          listDiv.innerHTML =
+            "<p style='text-align:center;'>找不到符合的標籤</p>";
+          return;
+        }
+
+        listDiv.innerHTML = data
+          .map(
+            (t) => `
+    <div class="tag-list-item">
+      <div class="tag-info">
+        <div class="tag-name">${t.name}</div>
+        <div class="tag-def">${t.definition || "未定義"}</div>
+      </div>
+      <button class="edit-btn" onclick="editTag('${t.name}', '${t.definition}')">編輯</button>
+    </div>
+  `,
+          )
+          .join("");
+      }
+
+      // 3. 監聽搜尋輸入事件
+      document
+        .getElementById("tagSearchInput")
+        .addEventListener("input", function () {
+          const term = this.value.toLowerCase().trim();
+
+          // 過濾標籤名稱或定義內容
+          const filtered = allTags.filter(
+            (t) =>
+              t.name.toLowerCase().includes(term) ||
+              (t.definition && t.definition.toLowerCase().includes(term)),
+          );
+
+          renderTagList(filtered);
+        });
+
+      // tags.html 的 script 區塊
+
+      // 封裝一個清空表單的函式
+      function resetTagForm() {
+        document.getElementById("tagName").value = "";
+        document.getElementById("tagDefinition").value = "";
+        // 如果你有實作「搜尋後編輯」，也可以在這裡決定是否清空搜尋框
+      }
+
+      // 綁定取消按鈕點擊事件
+      document.getElementById("cancelEditBtn").onclick = function () {
+        resetTagForm();
+      };
+
+      // 修改原本的儲存邏輯
+      document.getElementById("saveTagBtn").onclick = async function () {
+        const name = document.getElementById("tagName").value.trim();
+        const def = document.getElementById("tagDefinition").value.trim();
+        if (!name) return alert("請輸入標籤名稱");
+
+        this.disabled = true;
+        this.innerText = "儲存中...";
+
+        const params = new URLSearchParams();
+        params.append("action", "upsertTag");
+        params.append("tagName", name);
+        params.append("definition", def);
+
+        try {
+          await fetch(scriptURL, {
+            method: "POST",
+            mode: "no-cors",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: params.toString(),
+          });
+
+          alert(
+            "✅ 儲存請求已送出！\n(由於 Google 權限機制，列表將於 2 秒後自動更新)",
+          );
+
+          // 使用剛封裝好的清空函式
+          resetTagForm();
+
+          setTimeout(loadTags, 2000);
+        } catch (err) {
+          console.error(err);
+          alert("儲存發生錯誤，請檢查網路連線。");
+        } finally {
+          this.disabled = false;
+          this.innerText = "儲存標籤";
+        }
+      };
+
+      // 1. 填入編輯框 (點擊列表的編輯按鈕時)
+      function editTag(name, def) {
+        document.getElementById("tagName").value = name;
+        document.getElementById("tagDefinition").value = def;
+
+        // 變更介面文字
+        document.getElementById("saveTagBtn").innerText = "更新標籤";
+        document.getElementById("formTitle").innerText = "編輯標籤定義";
+        document.getElementById("cancelEditBtn").style.display = "block"; // 顯示取消按鈕
+
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+
+      // 2. 重置表單 (回到初始狀態)
+      function resetTagForm() {
+        document.getElementById("tagName").value = "";
+        document.getElementById("tagDefinition").value = "";
+
+        // 恢復介面文字
+        document.getElementById("saveTagBtn").innerText = "新增標籤";
+        document.getElementById("formTitle").innerText = "新增標籤定義";
+        document.getElementById("cancelEditBtn").style.display = "none"; // 隱藏取消按鈕
+      }
+
+      // 3. 綁定取消按鈕
+      document.getElementById("cancelEditBtn").onclick = function () {
+        resetTagForm();
+      };
+
+      // 4. 修改儲存後的邏輯
+      document.getElementById("saveTagBtn").onclick = async function () {
+        const name = document.getElementById("tagName").value.trim();
+        const def = document.getElementById("tagDefinition").value.trim();
+        if (!name) return alert("請輸入標籤名稱");
+
+        const originalText = this.innerText; // 紀錄目前的按鈕文字 (新增或更新)
+        this.disabled = true;
+        this.innerText = "處理中...";
+
+        const params = new URLSearchParams();
+        params.append("action", "upsertTag");
+        params.append("tagName", name);
+        params.append("definition", def);
+
+        try {
+          await fetch(scriptURL, {
+            method: "POST",
+            mode: "no-cors",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: params.toString(),
+          });
+
+          alert("✅ 請求已送出！清單將於 2 秒後自動更新");
+          resetTagForm(); // 儲存成功後切換回「新增」模式
+          setTimeout(loadTags, 2000);
+        } catch (err) {
+          alert("儲存發生錯誤");
+          this.innerText = originalText;
+        } finally {
+          this.disabled = false;
+        }
+      };
+
+      loadTags();
+    </script>
+  </body>
+</html>
