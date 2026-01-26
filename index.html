@@ -104,11 +104,31 @@
           </div>
         </div>
 
-        <div class="form-group" style="position: relative">
+        <div class="form-group">
           <label for="tags">標籤 (以逗號 / 空白鍵分隔)</label>
-          <input type="text" id="tags" name="tags" autocomplete="off" />
-          <div id="customTagList" class="custom-tag-list"></div>
+          <input
+            type="text"
+            id="tags"
+            placeholder="輸入關鍵字或點選標籤..."
+            autocomplete="off"
+          />
+
+          <div class="tag-system-root" style="position: relative">
+            <div id="customTagList" class="custom-tag-list"></div>
+
+            <div class="tag-cloud-wrapper">
+              <div id="tagCloud" class="tag-cloud"></div>
+              <button
+                type="button"
+                id="toggleCloudBtn"
+                class="toggle-cloud-btn"
+              >
+                展開標籤列表 ▼
+              </button>
+            </div>
+          </div>
         </div>
+
         <input type="hidden" id="coverUrl" name="coverUrl" value="" />
         <div class="form-row">
           <div class="form-group">
@@ -541,87 +561,154 @@
 
       let allTags = []; // 儲存從 GAS 抓回來的標籤
 
-      // 1. 初始化抓取標籤
-      async function initTagSearch() {
+      // 定義分類標籤雲
+      const categorizedTags = {
+        作品性質: ["有續作", "續作", "系列作"],
+        角色身分: ["DK", "大學生", "校園戀愛", "職場", "床伴", "隱藏面貌"],
+        其餘特質: ["暗戀", "雙向暗戀", "年下攻"],
+      };
+      const manualCloudTags = [
+        "有續作",
+        "續作",
+        "系列作",
+        "暗戀",
+        "雙向暗戀",
+        "隱藏面貌",
+        "DK",
+        "大學生",
+        "校園戀愛",
+        "職場",
+        "床伴",
+      ];
+
+      async function initTagFeatures() {
         try {
           const res = await fetch(`${scriptURL}?action=readTags`);
           allTags = await res.json();
+
+          // 渲染標籤雲：現在改用 manualCloudTags
+          renderTagCloud();
         } catch (e) {
-          console.error("標籤載入失敗", e);
+          console.error("載入標籤失敗", e);
+          // 即使 GAS 失敗，標籤雲還是可以渲染自訂標籤
+          renderTagCloud();
         }
+      }
+
+      // 渲染分類標籤雲
+      function renderTagCloud() {
+        const cloud = document.getElementById("tagCloud");
+        if (!cloud) return;
+
+        const categoryColors = {
+          作品性質: "#74b9ff", // 藍色
+          角色身分: "#ff85a2", // 橘色
+          其餘特質: "#a29bfe", // 綠色
+        };
+
+        let html = "";
+        for (const [category, tags] of Object.entries(categorizedTags)) {
+          const color = categoryColors[category] || "#95a5a6"; // 若沒對應到則用灰色
+
+          html += `
+      <div class="tag-group">
+        <div class="tag-group-title" style="border-left-color: ${color}">${category}</div>
+        <div class="tag-group-items">
+          ${tags
+            .map(
+              (tagName) => `
+            <span class="cloud-item" 
+                  style="border-left: 4px solid ${color} !important; background-color: ${color}15;" 
+                  onclick="addTagFromUI('${tagName}')">
+              + ${tagName}
+            </span>
+          `,
+            )
+            .join("")}
+        </div>
+      </div>
+    `;
+        }
+        cloud.innerHTML = html;
+
+        // 摺疊按鈕邏輯 (維持原本的 JS)
+        const toggleBtn = document.getElementById("toggleCloudBtn");
+        toggleBtn.onclick = function () {
+          const isExpanded = cloud.classList.toggle("expanded");
+          this.innerText = isExpanded ? "收起標籤列表 ▲" : "展開標籤列表 ▼";
+        };
       }
 
       const tagInput = document.getElementById("tags");
       const customList = document.getElementById("customTagList");
 
-      // 2. 監聽輸入事件
       tagInput.addEventListener("input", function () {
         const fullVal = this.value;
-        const parts = fullVal.split(","); // 以逗號分割
-        const currentQuery = parts[parts.length - 1].trim().toLowerCase(); // 只取最後一個詞
+        const parts = fullVal.split(/[ ,、]+/); // 分割現有標籤
+        const currentQuery = parts[parts.length - 1].trim().toLowerCase();
 
         if (currentQuery === "") {
           customList.style.display = "none";
           return;
         }
 
-        // 過濾符合關鍵字的標籤
         const matches = allTags.filter((t) =>
           t.name.toLowerCase().includes(currentQuery),
         );
 
-        renderDropdown(matches, currentQuery);
+        if (matches.length > 0) {
+          customList.innerHTML = matches
+            .map(
+              (t) => `
+      <div class="tag-item" onclick="addTagFromUI('${t.name}')">
+        <strong>${t.name}</strong>
+        <span class="tag-desc">${t.definition || ""}</span>
+      </div>
+    `,
+            )
+            .join("");
+          customList.style.display = "block";
+        } else {
+          customList.style.display = "none";
+        }
       });
 
-      // 3. 渲染選單
-      function renderDropdown(matches, query) {
-        if (matches.length === 0) {
-          customList.style.display = "none";
-          return;
-        }
-
-        customList.innerHTML = matches
-          .map(
-            (t) => `
-    <div class="tag-item" onclick="addTag('${t.name}')">
-      <strong>${t.name}</strong>
-      <span class="tag-desc">${t.definition || ""}</span>
-    </div>
-  `,
-          )
-          .join("");
-
-        customList.style.display = "block";
-      }
-
-      // 修改 addTag 函式
-      window.addTag = function (tagName) {
+      window.addTagFromUI = function (tagName) {
         const tagInput = document.getElementById("tags");
-
-        // 1. 依照「逗號、空白、或全形頓號」分割
         let parts = tagInput.value.split(/[ ,、]+/);
 
-        // 2. 將最後一個正在打的詞換成選中的標籤名
-        parts[parts.length - 1] = tagName;
+        const existingTags = parts.map((p) => p.trim());
+        if (!existingTags.includes(tagName)) {
+          parts[parts.length - 1] = tagName;
+          tagInput.value = parts.filter((p) => p !== "").join(", ") + ", ";
+        }
 
-        // 3. 清理掉多餘的空字串並重新組合，統一用「逗號+空格」隔開
-        tagInput.value =
-          parts
-            .map((t) => t.trim())
-            .filter((t) => t !== "")
-            .join(", ") + ", "; // 最後留個逗號方便輸入下一個
-
+        // 關鍵：選完標籤後隱藏推薦清單，讓標籤雲重新露出來
         document.getElementById("customTagList").style.display = "none";
         tagInput.focus();
       };
 
-      // 5. 點擊頁面其他地方時隱藏選單
+      // 點擊外部關閉搜尋推薦
       document.addEventListener("click", (e) => {
         if (e.target !== tagInput) customList.style.display = "none";
       });
 
-      // 啟動
-      window.addEventListener("load", initTagSearch);
+      // 修正後的 addTagFromUI (點擊後自動收起搜尋清單)
+      window.addTagFromUI = function (tagName) {
+        const tagInput = document.getElementById("tags");
+        let parts = tagInput.value.split(/[ ,、]+/);
+
+        const existingTags = parts.map((p) => p.trim());
+        if (!existingTags.includes(tagName)) {
+          parts[parts.length - 1] = tagName;
+          tagInput.value = parts.filter((p) => p !== "").join(", ") + ", ";
+        }
+
+        document.getElementById("customTagList").style.display = "none"; // 點選後立刻蓋掉推薦
+        tagInput.focus();
+      };
+
+      window.addEventListener("load", initTagFeatures);
     </script>
   </body>
 </html>

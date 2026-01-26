@@ -14,9 +14,10 @@ body {
   padding-bottom: 40px;
 }
 
+/* 推薦清單：徹底蓋過下方 */
 .custom-tag-list {
   position: absolute;
-  top: 100%; /* 緊貼在輸入框下方 */
+  top: -12px; /* 緊貼在輸入框下方 */
   left: 0;
   right: 0; /* 確保右邊對齊父容器邊緣，解決凸出問題 */
   width: 100%; /* 寬度設為 100% */
@@ -30,6 +31,109 @@ body {
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
   display: none;
   z-index: 9999;
+}
+
+/* 標籤雲容器：設為低層級 */
+.tag-cloud-wrapper {
+  margin-top: 12px;
+  position: relative;
+  z-index: 1; /* 確保它永遠在推薦清單下面 */
+}
+
+.tag-cloud {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  max-height: 40px; /* 稍微加高一點點，讓第一行顯示更完整 */
+  overflow: hidden;
+  transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  padding: 4px 0;
+}
+
+/* 分類組容器 */
+.tag-group {
+  margin-bottom: 15px;
+  width: 100%;
+}
+
+.tag-group-title {
+  font-size: 0.85rem;
+  font-weight: bold;
+  margin-bottom: 8px;
+  padding-left: 8px;
+  border-left: 4px solid #ccc; /* 預設顏色，JS 會透過 style 覆蓋 */
+  color: #555;
+}
+
+/* 標籤項目排列 */
+.tag-group-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* 標籤雲容器調整 (支援展開) */
+.tag-cloud {
+  display: block; /* 改回 block 才能容納多組 div */
+  overflow: hidden;
+  max-height: 75px; /* 初始顯示約一個分類的高度 */
+  transition: max-height 0.4s ease;
+}
+
+.tag-cloud.expanded {
+  max-height: 1000px;
+}
+
+/* 標籤雲按鈕美化：現代膠囊風格 */
+.cloud-item {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 14px;
+  background: #f5f5f5;
+  color: #495057;
+  border-radius: 30px; /* 圓角膠囊感 */
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all 0.2s;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.cloud-item:hover {
+  background: #e7f5ff;
+  color: #228be6;
+  border-color: #a5d8ff;
+  transform: translateY(-2px); /* 輕微浮起 */
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* 展開按鈕：簡潔文字感 */
+.toggle-cloud-btn {
+  background: none;
+  border: none;
+  color: #adb5bd;
+  font-size: 12px;
+  cursor: pointer;
+  padding: 8px 0;
+  text-decoration: underline;
+  transition: color 0.2s;
+}
+
+.toggle-cloud-btn:hover {
+  color: #3498db;
+}
+/* 導覽列 */
+.top-nav {
+  display: flex;
+  justify-content: center;
+  background: #fff;
+  padding: 10px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  margin-bottom: 20px;
 }
 
 .tag-item {
@@ -47,19 +151,6 @@ body {
   font-size: 12px;
   color: #999;
   display: block;
-}
-
-/* 導覽列 */
-.top-nav {
-  display: flex;
-  justify-content: center;
-  background: #fff;
-  padding: 10px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  margin-bottom: 20px;
 }
 
 .nav-item {
