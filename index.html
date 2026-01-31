@@ -302,17 +302,6 @@
         this.value = this.value.replace(/,+/g, ",");
       });
 
-      // 表單送出前的最終清理
-      document.getElementById("bookForm").onsubmit = function () {
-        let rawTags = tagsInput.value;
-        // 使用正規表達式 /[ ,、]+/ 同時匹配：半形逗號、空格、全形頓號
-        tagsInput.value = rawTags
-          .split(/[ ,、]+/) // 這裡會把 逗號、空格、頓號 都當作分隔符號
-          .map((t) => t.trim())
-          .filter((t) => t !== "")
-          .join(", "); // 最後統一格式化為「逗號+空白」
-      };
-      // 初始化顏色 (頁面載入時先執行一次，預設 5.0 會是藍色)
       updateRatingColor(ratingInput.value);
 
       const form = document.getElementById("bookForm");
@@ -330,7 +319,6 @@
         });
       });
 
-      // --- 替換成這個版本：新增時自動抓取封面 ---
       form.addEventListener("submit", async (e) => {
         e.preventDefault();
 
@@ -344,15 +332,22 @@
         msg.className = "info show";
         msg.classList.remove("hidden");
 
-        tagsInput.value = tagsInput.value
-          .split(",")
-          .map((t) => t.trim())
-          .filter((t) => t !== "")
-          .join(", ");
+        // 1. 先抓取並整理標籤（去除多餘空格、重複、及結尾逗號）
+        const rawTags = document.getElementById("tags").value;
+        const cleanTags = rawTags
+          .split(/[ ,、]+/)        // 支援多種分隔符
+          .map(t => t.trim())      // 去除前後空白
+          .filter(t => t !== "")   // 去除空字串
+          .join(", ");             // 統一用「逗號+空格」隔開
 
+        tagsInputField.value = cleanTags;
+        // 4. 準備傳送資料
         const formData = new FormData(form);
+        formData.set("tags", cleanTags); // 強制覆蓋，確保標籤雲點選的也有進來
+        
+        // 5. 如果你後面需要用到 data 物件
         const data = Object.fromEntries(formData.entries());
-
+        
         try {
           // 1. 自動抓取封面邏輯：優先用 ebookUrl (BookWalker)，沒有就用 chilUrl (ちるちる)
           const targetUrl = data.ebookUrl || data.chilUrl;
@@ -709,4 +704,5 @@
     </script>
   </body>
 </html>
+
 
