@@ -333,21 +333,21 @@
         msg.classList.remove("hidden");
 
         // 1. 先抓取並整理標籤（去除多餘空格、重複、及結尾逗號）
-        const rawTags = document.getElementById("tags").value;
-        const cleanTags = rawTags
-          .split(/[ ,、]+/)        // 支援多種分隔符
-          .map(t => t.trim())      // 去除前後空白
-          .filter(t => t !== "")   // 去除空字串
-          .join(", ");             // 統一用「逗號+空格」隔開
+        const tagsInputField = document.getElementById("tags");
+        const cleanTags = tagsInputField.value
+          .split(/[ ,、]+/) // 支援多種分隔符
+          .map((t) => t.trim()) // 去除前後空白
+          .filter((t) => t !== "") // 去除空字串
+          .join(", "); // 統一用「逗號+空格」隔開
 
         tagsInputField.value = cleanTags;
         // 4. 準備傳送資料
         const formData = new FormData(form);
         formData.set("tags", cleanTags); // 強制覆蓋，確保標籤雲點選的也有進來
-        
+
         // 5. 如果你後面需要用到 data 物件
         const data = Object.fromEntries(formData.entries());
-        
+
         try {
           // 1. 自動抓取封面邏輯：優先用 ebookUrl (BookWalker)，沒有就用 chilUrl (ちるちる)
           const targetUrl = data.ebookUrl || data.chilUrl;
@@ -704,5 +704,3 @@
     </script>
   </body>
 </html>
-
-
