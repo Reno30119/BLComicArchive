@@ -899,10 +899,24 @@
         // 3. 執行過濾 (搜尋框 + 平均分區間 + 評論者)
         let filtered = processedBooks.filter((book) => {
           // A. 搜尋文字過濾
-          const matchSearch =
-            book.title.toLowerCase().includes(searchTerm) ||
-            book.author.toLowerCase().includes(searchTerm) ||
-            book.tags.toLowerCase().includes(searchTerm);
+          const query = searchTerm.trim().toLowerCase();
+
+          // 1. 書名與作者維持「模糊搜尋」 (只要包含就中)
+          const matchTitle = book.title.toLowerCase().includes(query);
+          const matchAuthor = book.author.toLowerCase().includes(query);
+
+          // 2. 標籤改為「精確比對」
+          // 先將標籤字串 "暗戀, 甜寵" 轉為陣列 ["暗戀", "甜寵"]
+          const tagList = book.tags
+            .toLowerCase()
+            .split(/[ ,、]+/) // 支援多種分隔符號
+            .map((t) => t.trim())
+            .filter((t) => t !== "");
+
+          // 檢查陣列中是否有「完全等於」關鍵字的項目
+          const matchTags = tagList.includes(query);
+
+          const matchSearch = matchTitle || matchAuthor || matchTags;
 
           // B. 分數區間過濾
           let matchRating = true;
