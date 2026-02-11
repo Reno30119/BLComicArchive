@@ -260,6 +260,32 @@ textarea:focus {
   box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
 }
 
+/* 1. 當瀏覽器自動填入時，維持你的預設樣式 */
+input:-webkit-autofill,
+input:-webkit-autofill:hover {
+  /* 使用內陰影強制背景為你的 #fdfdfd */
+  -webkit-box-shadow: 0 0 0px 1000px #fdfdfd inset !important;
+  /* 文字顏色改為黑色或深灰 */
+  -webkit-text-fill-color: #333 !important;
+  /* 邊框維持原本的 #eee */
+  border: 1.5px solid #eee !important;
+  border-radius: 8px;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+/* 2. 當「自動填入的欄位」被點擊 (Focus) 時，對齊你的藍色樣式 */
+input:-webkit-autofill:focus {
+  /* 背景變純白 #fff */
+  -webkit-box-shadow:
+    0 0 0px 1000px #ffffff inset,
+    0 0 0 3px rgba(52, 152, 219, 0.1) !important;
+  /* 文字顏色 */
+  -webkit-text-fill-color: #000 !important;
+  /* 邊框變為藍色 #3498db */
+  border: 1.5px solid #3498db !important;
+  outline: none;
+}
+
 /* 針對評分輸入框特別優化 */
 #rating {
   text-align: center;
