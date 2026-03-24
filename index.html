@@ -29,16 +29,22 @@
       <form id="bookForm">
         <div class="form-group">
           <label for="title">中文書名</label>
-          <input
-            type="text"
-            id="title"
-            name="title"
-            required
-            placeholder="請輸入書名"
-          />
+          <div style="position: relative; width: 100%">
+            <input
+              type="text"
+              id="title"
+              name="title"
+              required
+              placeholder="請輸入書名"
+              autocomplete="off"
+              style="width: 100%; box-sizing: border-box"
+            />
+            <div class="title-system-root" style="position: relative" ;>
+              <div id="titleRecommendationList" class="custom-tag-list"></div>
+            </div>
+          </div>
           <div id="searchFeedback" class="search-feedback"></div>
         </div>
-
         <div class="form-group">
           <label for="jpTitle">日文書名</label>
           <input type="text" id="jpTitle" name="jpTitle" />
@@ -335,10 +341,12 @@
         // 1. 先抓取並整理標籤（去除多餘空格、重複、及結尾逗號）
         const tagsInputField = document.getElementById("tags");
         const cleanTags = tagsInputField.value
-          .split(/[ ,、]+/) // 支援多種分隔符
-          .map((t) => t.trim()) // 去除前後空白
-          .filter((t) => t !== "") // 去除空字串
-          .join(", "); // 統一用「逗號+空格」隔開
+          .trim()
+          .replace(/[ ,、]+$/, "")
+          .split(/[ ,、]+/)
+          .map((t) => t.trim())
+          .filter((t) => t !== "")
+          .join(", ");
 
         tagsInputField.value = cleanTags;
         // 4. 準備傳送資料
@@ -442,18 +450,17 @@
       const titleInput = document.getElementById("title");
       const feedback = document.getElementById("searchFeedback");
       let lastAlertedTitle = ""; // 避免針對同一個書名重複跳出 confirm
-
+      const titleRecList = document.getElementById("titleRecommendationList");
       let searchTimeout; // 1. 用來存放計時器的變數
 
       titleInput.addEventListener("input", function () {
         const inputVal = this.value.trim();
-
-        // 2. 每次輸入就立刻清除「上一次」準備要彈出的視窗
         clearTimeout(searchTimeout);
 
         if (!inputVal) {
           feedback.innerHTML = "";
           feedback.className = "search-feedback";
+          titleRecList.style.display = "none";
           lastAlertedTitle = "";
           return;
         }
@@ -463,6 +470,33 @@
         feedback.className = "search-feedback active status-searching";
 
         const normalizedInput = normalizeText(inputVal);
+
+        // --- A. 下拉推薦邏輯 (模糊搜尋) ---
+        // 找出書名包含關鍵字的所有書籍（不重複書名）
+        const matches = [...new Set(allBooks.map((b) => b.title))]
+          .filter((t) => normalizeText(t).includes(normalizedInput))
+          .slice(0, 5); // 只顯示前 5 筆
+
+        // 在你的 titleInput 監聽器內加入
+        if (matches.length > 0) {
+          titleRecList.innerHTML = matches
+            .map((t) => {
+              const book = allBooks.find((b) => b.title === t);
+              return `
+      <div class="tag-item" onclick="selectTitleFromRec('${t.replace(/'/g, "\\'")}')">
+        <div style="display:flex; justify-content:space-between;">
+          <strong>${t}</strong>
+          <span style="color:#a5b1c2; font-size:0.85rem;">${book.author || ""}</span>
+        </div>
+      </div>`;
+            })
+            .join("");
+          titleRecList.style.display = "block"; // 顯示
+        } else {
+          titleRecList.style.display = "none"; // 沒資料就隱藏
+        }
+
+        // --- B. 重複檢查邏輯 (完全符合) ---
         const existingBook = allBooks.find(
           (b) => normalizeText(String(b.title)) === normalizedInput,
         );
@@ -491,9 +525,27 @@
         }
       });
 
+      // 新增：處理點選推薦項目的函式
+      window.selectTitleFromRec = function (title) {
+        titleInput.value = title;
+        titleRecList.style.display = "none";
+
+        // 找出該書的完整資料並帶入
+        const fullBook = allBooks.find((b) => b.title === title);
+        if (fullBook) {
+          autoFillForm(fullBook);
+        }
+      };
+
+      // 點擊頁面其他地方時關閉清單
+      document.addEventListener("click", (e) => {
+        if (e.target !== titleInput) titleRecList.style.display = "none";
+      });
+
       // 封裝自動填入邏輯
       function autoFillForm(book) {
         const titleField = document.getElementById("title");
+        resetSearchFeedback();
 
         // 1. 強制填入中文書名
         titleField.value = book.title || "";
@@ -510,15 +562,19 @@
         document.getElementById("chilUrl").value = book.chilUrl || "";
         document.getElementById("tags").value = book.tags || "";
 
-        if (book.rating) {
-          ratingInput.value = book.rating;
-          updateRatingColor(book.rating);
-        }
-
         if (book.coverUrl) {
           document.getElementById("coverUrl").value = book.coverUrl;
         }
         alert("✅ 資料已成功帶入。");
+      }
+
+      function resetSearchFeedback() {
+        const feedback = document.getElementById("searchFeedback");
+        if (feedback) {
+          feedback.innerHTML = "";
+          feedback.className = "search-feedback"; // 移除 active 類別使其隱藏
+        }
+        lastAlertedTitle = "";
       }
 
       function clearFullForm() {

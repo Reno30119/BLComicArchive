@@ -37,6 +37,46 @@ body {
   padding: 6px; /* 內距，讓裡面的項目不貼邊 */
 }
 
+#titleRecommendationList {
+  position: absolute;
+  /* 關鍵：100% 代表從父容器（輸入框高度）的最底端開始計算 */
+  top: 100%;
+  left: 0;
+  right: 0;
+  width: 100%;
+
+  /* 增加 4px 的間距，讓它看起來是黏在下面而不是疊在上面 */
+  margin-top: 4px;
+
+  background-color: white;
+  border: 1px solid #dfe4ea;
+  border-radius: 8px;
+  box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+
+  /* 確保層級夠高，能壓在下方的 searchFeedback 之上 */
+  z-index: 2000;
+  max-height: 200px;
+  overflow-y: auto;
+  display: none;
+  box-sizing: border-box;
+}
+
+/* 推薦項目的淡雅樣式 */
+#titleRecommendationList .tag-item {
+  padding: 10px 15px;
+  border-bottom: 1px solid #f1f2f6;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+#titleRecommendationList .tag-item:last-child {
+  border-bottom: none;
+}
+
+#titleRecommendationList .tag-item:hover {
+  background: linear-gradient(135deg, #f1f2f6 0%, #dfe4ea 100%) !important;
+}
+
 /* 標籤雲容器：設為低層級 */
 .tag-cloud-wrapper {
   margin-top: 12px;
@@ -602,5 +642,10 @@ input:-webkit-autofill:focus {
     height: 50px;
     flex: 1; /* 讓它佔滿剩餘空間 */
     text-align: center;
+  }
+
+  .nav-item {
+    font-size: 1rem;
+    padding: 8px 10px;
   }
 }

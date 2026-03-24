@@ -33,6 +33,7 @@
               id="searchInput"
               placeholder="搜尋書名、作者或標籤..."
               style="width: 100%; padding-right: 30px"
+              autocomplete="off"
             />
             <span
               id="clearSearch"
@@ -45,6 +46,7 @@
               "
               >✖</span
             >
+            <div id="searchRecommendationList" class="custom-tag-list"></div>
           </div>
           <button id="refreshBtn" class="refresh-btn" onclick="fetchData()">
             🔄 更新數據
@@ -853,10 +855,11 @@
         const searchTerm = document
           .getElementById("searchInput")
           .value.toLowerCase();
+
         const ratingThreshold = document.getElementById("ratingFilter").value;
         const levelThreshold = document.getElementById("levelFilter").value;
 
-        // 1. 合併邏輯：按書名分組，收集所有評論
+        // 1. 合併邏輯：按書名分組
         const validData = allBooks.filter(
           (item) => item.title && String(item.title).trim() !== "",
         );
@@ -880,43 +883,56 @@
           return acc;
         }, {});
 
-        // 2. 計算綜合平均分
+        // 2. 計算平均分並排序評論者
         let processedBooks = Object.values(merged).map((book) => {
           const totalRating = book.reviews.reduce(
             (sum, r) => sum + r.rating,
             0,
           );
           book.avgRating = totalRating / book.reviews.length;
-
-          // B. 💡 關鍵新增：讓該書的評論依照評論者名字排序 (Reno, 茶壺...)
           book.reviews.sort((a, b) =>
             String(a.reviewer).localeCompare(String(b.reviewer), "zh-Hant"),
           );
-
           return book;
         });
 
-        // 3. 執行過濾 (搜尋框 + 平均分區間 + 評論者)
+        // 3. 執行過濾
         let filtered = processedBooks.filter((book) => {
-          // A. 搜尋文字過濾
-          const query = searchTerm.trim().toLowerCase();
+          // --- 【搜尋邏輯修正開始】 ---
+          const query = searchTerm.trim();
+          let matchSearch = false;
 
-          // 1. 書名與作者維持「模糊搜尋」 (只要包含就中)
-          const matchTitle = book.title.toLowerCase().includes(query);
-          const matchAuthor = book.author.toLowerCase().includes(query);
+          if (query === "") {
+            matchSearch = true; // 沒輸入文字就顯示全部
+          } else if (query.startsWith("#")) {
+            // A 模式：標籤精確比對 (當點選推薦標籤產生的 # 格式時)
+            const pureTag = query.substring(1); // 移除 # 字號
+            const tagList = book.tags
+              .toLowerCase()
+              .split(/[ ,、]+/)
+              .map((t) => t.trim())
+              .filter((t) => t !== "");
 
-          // 2. 標籤改為「精確比對」
-          // 先將標籤字串 "暗戀, 甜寵" 轉為陣列 ["暗戀", "甜寵"]
-          const tagList = book.tags
-            .toLowerCase()
-            .split(/[ ,、]+/) // 支援多種分隔符號
-            .map((t) => t.trim())
-            .filter((t) => t !== "");
+            // 這裡使用 includes 做精確匹配，避免搜尋「青梅」也出現「青梅竹馬」
+            matchSearch = tagList.includes(pureTag);
+          } else {
+            // B 模式：一般模糊比對 (手動輸入時)
+            const matchTitle = book.title.toLowerCase().includes(query);
+            const matchAuthor = (book.author || "")
+              .toLowerCase()
+              .includes(query);
 
-          // 檢查陣列中是否有「完全等於」關鍵字的項目
-          const matchTags = tagList.includes(query);
+            const tagList = book.tags
+              .toLowerCase()
+              .split(/[ ,、]+/)
+              .map((t) => t.trim());
 
-          const matchSearch = matchTitle || matchAuthor || matchTags;
+            // 這裡用 some + includes，讓手動輸入時依然保有彈性
+            const matchTags = tagList.some((t) => t.includes(query));
+
+            matchSearch = matchTitle || matchAuthor || matchTags;
+          }
+          // --- 【搜尋邏輯修正結束】 ---
 
           // B. 分數區間過濾
           let matchRating = true;
@@ -938,7 +954,7 @@
           return matchSearch && matchRating && matchReviewer && matchLevel;
         });
 
-        // 4. 排序邏輯 (維持原樣)
+        // 4. 排序邏輯
         filtered.sort((a, b) => {
           if (currentSortType === "rating") return b.avgRating - a.avgRating;
           if (currentSortType === "author")
@@ -1239,6 +1255,154 @@
 
       // 5. 在頁面載入時執行初始化
       window.addEventListener("DOMContentLoaded", fetchTagDefinitions);
+
+      const searchInput = document.getElementById("searchInput");
+      const searchRecList = document.getElementById("searchRecommendationList");
+
+      searchInput.addEventListener("input", function () {
+        const val = this.value.trim().toLowerCase();
+
+        if (!val) {
+          searchRecList.style.display = "none";
+          return;
+        }
+
+        // 從所有書籍中找出符合書名或作者的項目 (去重)
+        // 假設你的書籍資料存在 allBooks 變數中
+        const matches = allBooks
+          .filter(
+            (book) =>
+              book.title.toLowerCase().includes(val) ||
+              (book.author && book.author.toLowerCase().includes(val)),
+          )
+          .slice(0, 8); // 最多顯示 8 筆
+
+        if (matches.length > 0) {
+          searchRecList.innerHTML = matches
+            .map(
+              (book) => `
+      <div class="tag-item" onclick="selectSearchRec('${book.title.replace(/'/g, "\\'")}')">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <span>🔍 ${book.title}</span>
+          <span class="rec-author">${book.author || ""}</span>
+        </div>
+      </div>
+    `,
+            )
+            .join("");
+          searchRecList.style.display = "block";
+        } else {
+          searchRecList.style.display = "none";
+        }
+      });
+
+      searchInput.addEventListener("input", function () {
+        const val = this.value.trim().toLowerCase();
+        const searchRecList = document.getElementById(
+          "searchRecommendationList",
+        );
+
+        if (!val) {
+          searchRecList.style.display = "none";
+          return;
+        }
+
+        let suggestions = [];
+
+        allBooks.forEach((book) => {
+          const title = (book.title || "").toString();
+          const author = (book.author || "").toString();
+          const tags = (book.tags || "").toString();
+
+          const authorSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 80 80" class="rec-icon"><g fill="none" stroke-linejoin="round" stroke-width="4"><path fill="#f2c94c" stroke="#f2c94c" stroke-linecap="square" d="M60 70H20a4 4 0 0 1-4-4a15.87 15.87 0 0 1 10.3-14.86l1.23-.462a35.53 35.53 0 0 1 24.94 0l1.23.462A15.87 15.87 0 0 1 64 66a4 4 0 0 1-4 4Z"/><path fill="#f2994a" stroke="#f2994a" stroke-linecap="round" d="M33.902 38.867a13.347 13.347 0 0 0 19.15-9.08l.223-1.044a14.2 14.2 0 0 0-2.51-11.466l-.36-.48a12.992 12.992 0 0 0-20.81 0l-.36.48a14.2 14.2 0 0 0-2.51 11.465l.223 1.046a13.35 13.35 0 0 0 6.953 9.08"/></g></svg>`;
+
+          // 1. 書名匹配
+          if (title.toLowerCase().includes(val)) {
+            suggestions.push({
+              text: title,
+              sub: author,
+              icon: "📖",
+              type: "normal",
+            });
+          }
+          // 2. 作者匹配
+          if (author && author.toLowerCase().includes(val)) {
+            suggestions.push({
+              text: author,
+              sub: "【作者】",
+              icon: "👤",
+              type: "normal",
+            });
+          }
+          // 3. 標籤匹配 (關鍵：標記為 tag 類型)
+          if (tags && tags.toLowerCase().includes(val)) {
+            const tagArr = tags.split(/[ ,、]+/);
+            tagArr.forEach((t) => {
+              if (t.trim().toLowerCase().includes(val)) {
+                suggestions.push({
+                  text: t.trim(),
+                  sub: "【標籤】",
+                  icon: "🏷️",
+                  type: "tag",
+                });
+              }
+            });
+          }
+        });
+
+        // 去重
+        const uniqueMatches = Array.from(
+          new Map(suggestions.map((s) => [s.text, s])).values(),
+        ).slice(0, 10);
+
+        if (uniqueMatches.length > 0) {
+          searchRecList.innerHTML = uniqueMatches
+            .map(
+              (item) => `
+      <div class="tag-item" onclick="selectSearchRec('${item.text.replace(/'/g, "\\'")}', '${item.type}')">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <span>${item.icon} ${item.text}</span>
+          <span class="rec-author">${item.sub}</span>
+        </div>
+      </div>
+    `,
+            )
+            .join("");
+          searchRecList.style.display = "block";
+        } else {
+          searchRecList.style.display = "none";
+        }
+      });
+
+      window.selectSearchRec = function (text, type) {
+        const searchInput = document.getElementById("searchInput");
+        const searchRecList = document.getElementById(
+          "searchRecommendationList",
+        );
+        const clearBtn = document.getElementById("clearSearch");
+
+        // 如果類型是 tag，自動在前面加個 # 符號，變成標籤專用搜尋模式
+        if (type === "tag") {
+          searchInput.value = "#" + text;
+        } else {
+          searchInput.value = text;
+        }
+
+        if (clearBtn) clearBtn.style.display = "block";
+        if (searchRecList) searchRecList.style.display = "none";
+
+        // 執行你原本的過濾邏輯
+        if (typeof applyFilters === "function") {
+          applyFilters();
+        }
+
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      };
+
+      // 點擊空白處關閉
+      document.addEventListener("click", (e) => {
+        if (e.target !== searchInput) searchRecList.style.display = "none";
+      });
     </script>
   </body>
 </html>
