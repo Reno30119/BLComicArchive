@@ -633,6 +633,17 @@ body {
     margin: 0 auto; /* 封面居中 */
   }
 
+  .nav-item {
+    padding: 8px 10px; /* 縮小按鈕內邊距 */
+    font-size: 15px; /* 稍微縮小字體，確保塞得下 */
+    gap: 2px;
+  }
+
+  /* 如果還是太擠，可以考慮隱藏部分文字，只留圖示 + 兩個字 */
+  .nav-item span {
+    letter-spacing: -0.5px; /* 縮小字距 */
+  }
+
   /* 1. 讓父容器改為垂直排列 */
   .item-main {
     flex-direction: column;
@@ -960,4 +971,91 @@ body {
   border-color: #e74c3c !important;
   color: #e74c3c !important;
   box-shadow: 0 0 5px rgba(231, 76, 60, 0.2);
+}
+
+/* 基礎樣式 */
+#sync-toast {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%) translateY(100px);
+  color: white;
+  padding: 12px 24px;
+  border-radius: 50px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  transition:
+    transform 0.4s,
+    background-color 0.3s; /* 加入顏色變換動畫 */
+  z-index: 9999;
+  font-weight: bold;
+  pointer-events: none;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+/* 顯示狀態 */
+#sync-toast.show {
+  transform: translateX(-50%) translateY(0) !important;
+}
+
+/* --- 顏色定義 --- */
+.toast-success {
+  background-color: #27ae60 !important;
+} /* 綠色：更新成功 */
+.toast-info {
+  background-color: #3498db !important;
+} /* 藍色：已是最新 */
+.toast-error {
+  background-color: #e74c3c !important;
+} /* 紅色：發生錯誤 */
+
+/* 載入遮罩背景 */
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.85); /* 半透明白，帶點模糊感 */
+  backdrop-filter: blur(5px); /* 背景模糊 (毛玻璃效果) */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10000; /* 確保在最上層 */
+  transition: opacity 0.3s ease;
+}
+
+/* 內容容器 */
+.loading-content {
+  text-align: center;
+  color: #34495e;
+  font-family: sans-serif;
+}
+
+/* 旋轉圓圈動畫 */
+.spinner {
+  width: 40px;
+  height: 40px;
+  margin: 0 auto 15px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #3498db; /* 圓圈的主色調 */
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* 文字樣式 */
+.loading-content p {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 500;
+  letter-spacing: 1px;
 }

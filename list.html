@@ -48,7 +48,7 @@
             >
             <div id="searchRecommendationList" class="custom-tag-list"></div>
           </div>
-          <button id="refreshBtn" class="refresh-btn" onclick="fetchData()">
+          <button id="refreshBtn" class="refresh-btn" onclick="fetchData(true)">
             🔄 更新數據
           </button>
         </div>
@@ -139,7 +139,12 @@
         </div>
       </header>
 
-      <div id="loading">讀取書庫中...</div>
+      <div id="loading" class="loading-overlay">
+        <div class="loading-content">
+          <div class="spinner"></div>
+          <p>正在同步最新書庫...</p>
+        </div>
+      </div>
       <div class="book-grid" id="bookGrid"></div>
     </div>
 
@@ -327,6 +332,27 @@
       </div>
     </div>
 
+    <div
+      id="sync-toast"
+      style="
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%) translateY(100px);
+        background: #27ae60;
+        color: white;
+        padding: 10px 20px;
+        border-radius: 50px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        transition: transform 0.4s;
+        z-index: 9999;
+        font-weight: bold;
+        pointer-events: none;
+      "
+    >
+      ✅ 資料已同步至最新版本
+    </div>
+
     <script>
       /**
        * ⚠️ 重要提示：
@@ -340,34 +366,92 @@
 
       window.addEventListener("DOMContentLoaded", fetchData);
 
-      async function fetchData() {
+      /**
+       * 抓取資料函數
+       * @param {boolean} isManual - 是否為手動按鈕觸發 (預設為 false)
+       */
+      async function fetchData(isManual = false) {
         const loadingEl = document.getElementById("loading");
+        const refreshBtn = document.getElementById("refreshBtn");
+        const CACHE_KEY = "allBooksCache";
+
+        // --- 1. 判斷是否顯示全螢幕提示 ---
+        // 只有在「非手動按鈕觸發」時，才顯示全螢幕 loading
+        if (!isManual && loadingEl) {
+          loadingEl.style.display = "flex";
+        }
+
+        // --- 2. 無論如何都給予按鈕視覺回饋 (避免重複點擊) ---
+        if (refreshBtn) {
+          refreshBtn.disabled = true;
+          refreshBtn.innerHTML = "🔄 同步中...";
+          refreshBtn.style.opacity = "0.7";
+        }
+
         try {
-          if (loadingEl) {
-            loadingEl.style.display = "block";
-            loadingEl.innerHTML = "正在同步最新書庫...";
+          // 優先從快取顯示
+          const cachedData = localStorage.getItem(CACHE_KEY);
+          if (cachedData && allBooks.length === 0) {
+            allBooks = JSON.parse(cachedData);
+            applyFilters();
           }
+
           const response = await fetch(
             `${scriptURL}?action=read&t=${new Date().getTime()}`,
           );
           if (!response.ok) throw new Error("網路回應錯誤");
 
-          allBooks = await response.json();
+          const newData = await response.json();
+          const newDataString = JSON.stringify(newData);
 
-          if (allBooks && allBooks.length > 0) {
-            // ⚠️ 關鍵修正：初始讀取改為呼叫 applyFilters，它會處理合併邏輯並呼叫 renderBooks
+          // --- 3. 處理更新 ---
+          if (newDataString !== cachedData) {
+            allBooks = newData;
+            localStorage.setItem(CACHE_KEY, newDataString);
             applyFilters();
-            if (loadingEl) loadingEl.style.display = "none";
-          } else {
-            if (loadingEl) loadingEl.innerHTML = "📭 目前書庫中沒有資料。";
+            showSyncToast("✅ 資料已更新", "success");
+          } else if (isManual) {
+            // 手動按時才跳出「已是最新」的提示，自動執行時保持安靜
+            showSyncToast("✨ 目前已是最新資料", "info");
           }
         } catch (error) {
-          console.error("讀取失敗:", error);
-          if (loadingEl)
-            loadingEl.innerHTML =
-              "❌ 讀取失敗，請確認 GAS 部署為「所有人」且網址正確";
+          console.error("更新失敗:", error);
+          showSyncToast("❌ 同步失敗", "error");
+        } finally {
+          // --- 4. 恢復狀態 ---
+          if (refreshBtn) {
+            refreshBtn.disabled = false;
+            refreshBtn.innerHTML = "🔄 更新數據";
+            refreshBtn.style.opacity = "1";
+          }
+
+          // 關閉全螢幕提示 (如果有開啟的話)
+          if (loadingEl) {
+            loadingEl.style.display = "none";
+          }
         }
       }
+
+      function showSyncToast(message, type = "success") {
+        const toastEl = document.getElementById("sync-toast");
+        if (!toastEl) return;
+
+        // 1. 先移除所有可能的顏色類別
+        toastEl.classList.remove("toast-success", "toast-info", "toast-error");
+
+        // 2. 根據傳入的 type 加入對應顏色
+        toastEl.classList.add(`toast-${type}`);
+
+        // 3. 設定文字並顯示
+        toastEl.innerText = message;
+        toastEl.classList.add("show");
+
+        // 4. 3秒後自動消失
+        setTimeout(() => {
+          toastEl.classList.remove("show");
+        }, 3000);
+      }
+
       function openEditModal(ts) {
         // 找尋對應時間戳記的原始資料
         const book = allBooks.find((b) => String(b.timestamp) === String(ts));
@@ -408,140 +492,110 @@
       function renderBooks(data) {
         const grid = document.getElementById("bookGrid");
         if (!grid) return;
+
+        // 1. 先清空容器（建議用 textContent 清空效能更好，或直接 innerHTML = ""）
         grid.innerHTML = "";
 
-        const validData = data.filter(
+        // 2. 建立文件片段（快取區）
+        const fragment = document.createDocumentFragment();
+
+        // 3. 過濾無效資料（你原本有宣告 validData 但沒用到，這裡直接用 data.filter）
+        const filteredData = data.filter(
           (item) => item.title && String(item.title).trim() !== "",
         );
 
-        data.forEach((book) => {
+        filteredData.forEach((book) => {
           const row = document.createElement("div");
           row.className = "book-list-item";
+
           const avgRating = parseFloat(book.avgRating || 0).toFixed(1);
 
-          const coverUrl = book.coverUrl || "";
+          // 圖片優化：加上 loading="lazy" 減少首屏負擔
           const coverHTML =
             book.coverUrl && book.coverUrl !== ""
-              ? `<img src="${book.coverUrl}" alt="封面">`
+              ? `<img src="${book.coverUrl}" alt="封面" loading="lazy">`
               : `<div class="no-cover">
-       <span>無封面</span>
-       <button onclick="reFetchCover('${book.title.replace(/'/g, "\\'")}', '${
-         book.ebookUrl || ""
-       }', '${book.chilUrl || ""}')">🔍 抓取</button>
-     </div>`;
+             <span>無封面</span>
+             <button onclick="reFetchCover('${book.title.replace(/'/g, "\\'")}', '${
+               book.ebookUrl || ""
+             }', '${book.chilUrl || ""}')">🔍 抓取</button>
+           </div>`;
 
+          // 使用字串模板組合內容
           row.innerHTML = `
-            <div class="item-main" style="display: flex; gap: 15px; align-items: flex-start;">
-                <div class="book-cover-side">
-                    ${coverHTML}
-                </div>
+      <div class="item-main" style="display: flex; gap: 15px; align-items: flex-start;">
+        <div class="book-cover-side">
+            ${coverHTML}
+        </div>
 
-                <div class="item-info" style="flex: 1;">
-                    <div class="title-row" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                        <span class="badge ${getLevelColor(book.level)}">${
-                          book.level
-                        }</span>
-                        <h3 class="title" style="margin: 0; flex: 1;">${
-                          book.title
-                        }</h3>
-                        <span class="avg-score ${getScoreColor(
-                          avgRating,
-                        )}">${avgRating}</span>
-                        
-<button class="edit-book-btn" onclick="openBookInfoModal('${
-            book.reviews[0].timestamp
-          }')" title="編輯書籍基本資訊" style="background:none; border:none; color:#3498db; cursor:pointer; font-size:16px; padding:0 5px;">⚙️</button>
-                    </div>
+        <div class="item-info" style="flex: 1;">
+            <div class="title-row" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                <span class="badge ${getLevelColor(book.level)}">${book.level}</span>
+                <h3 class="title" style="margin: 0; flex: 1;">${book.title}</h3>
+                <span class="avg-score ${getScoreColor(avgRating)}">${avgRating}</span>
+                
+                <button class="edit-book-btn" onclick="openBookInfoModal('${
+                  book.reviews[0]?.timestamp || ""
+                }')" title="編輯書籍基本資訊" style="background:none; border:none; color:#3498db; cursor:pointer; font-size:16px; padding:0 5px;">⚙️</button>
+            </div>
 
-                    
+            <p class="author" style="margin: 8px 0; margin-top:-2px">
+              👤 <span class="author-link" onclick="quickSearch('${book.author.replace(/'/g, "\\'")}')">${book.author}</span> 
+              <span class="jp-title" style="color:#888;margin-left: 8px; font-size:0.85em;">${book.jpTitle || ""}</span>
+            </p>
 
-              <p class="author" style="margin: 8px 0; margin-top:-2px">
-                  👤 <span class="author-link" onclick="quickSearch('${book.author.replace(
-                    /'/g,
-                    "\\'",
-                  )}')">${book.author}</span> 
-                  <span class="jp-title" style="color:#888;margin-left: 8px; font-size:0.85em;">${
-                    book.jpTitle || ""
-                  }</span>
-                </p>
-<div class="status-row" style="margin-top: 12px;display: flex; gap: 8px; margin-bottom: 4px; font-size: 0.82em;">
-    <span style="background: #fff5f5; color: #c53030; padding: 2px 8px; border-radius: 4px; border: 1px solid #fed7d7;">
-        🇹🇼 台：${book.twStatus || "-"}
-    </span>
-    <span style="background: #eef2f7; color: #5a67d8; padding: 2px 8px; border-radius: 4px; border: 1px solid #dee2e6;">
-        🇯🇵 日：${book.jpStatus || "-"}
-    </span>
-</div>
-              <div class="tags" style="margin-top: 8px; margin-bottom: 5px; display: flex; flex-wrap: wrap; gap: 2px;">
-                  ${
-                    book.tags
-                      ? String(book.tags)
-                          .split(",")
-                          .map((t) => {
-                            const tag = t.trim();
-                            return `<span class="tag-badge" onclick="quickSearch('${tag.replace(
-                              /'/g,
-                              "\\'",
-                            )}')">#${tag}</span>`;
-                          })
-                          .join("")
-                      : ""
-                  }
-              </div>
+            <div class="status-row" style="margin-top: 12px;display: flex; gap: 8px; margin-bottom: 4px; font-size: 0.82em;">
+                <span style="background: #fff5f5; color: #c53030; padding: 2px 8px; border-radius: 4px; border: 1px solid #fed7d7;">
+                    🇹🇼 台：${book.twStatus || "-"}
+                </span>
+                <span style="background: #eef2f7; color: #5a67d8; padding: 2px 8px; border-radius: 4px; border: 1px solid #dee2e6;">
+                    🇯🇵 日：${book.jpStatus || "-"}
+                </span>
+            </div>
 
-                    <div class="item-links" style="margin-bottom: 10px;">
-                        ${
-                          book.ebookUrl
-                            ? `<a href="${book.ebookUrl}" target="_blank" class="link-icon ebook">📖 Bookwalker</a>`
-                            : ""
-                        }
-                        ${
-                          book.chilUrl
-                            ? `<a href="${book.chilUrl}" target="_blank" class="link-icon chil">🍒 ちるちる</a>`
-                            : ""
-                        }
-                      <div class="add-review-action-area">
-<button class="add-review-btn mobile-up-btn" onclick="openAddCommentModal('${
-            book.reviews[0].timestamp
-          }')">
-  📝 新增評論
-</button>
-                        </div>
-                            
-                    </div>
+            <div class="tags" style="margin-top: 8px; margin-bottom: 5px; display: flex; flex-wrap: wrap; gap: 2px;">
+                ${(book.tags ? String(book.tags).split(",") : [])
+                  .map((t) => {
+                    const tag = t.trim();
+                    return `<span class="tag-badge" onclick="quickSearch('${tag.replace(/'/g, "\\'")}')">#${tag}</span>`;
+                  })
+                  .join("")}
+            </div>
 
-
-                    <div class="item-reviews" style="border-top: 1px solid #f0f0f0; padding-top: 10px;">
-                        ${book.reviews
-                          .map(
-                            (r) => `
-                            <div class="mini-review" style="position: relative; padding-right: 35px; margin-bottom: 5px; background: #fdfdfd; padding: 8px; border-radius: 6px;">
-                                <span class="rev-name" style="font-weight:bold;">${
-                                  r.reviewer
-                                }</span><span style="color: #ddd;margin-left: 8px;">||</span>
-                                <span class="rev-score ${getScoreColor(
-                                  r.rating,
-                                )}"  style="margin-left:1px;">⭐${
-                                  r.rating
-                                }</span>
-                                <span class="rev-comment" style="display:block; font-size:0.9em; color:#555;">${
-                                  r.comment
-                                }</span>
-                                <button class="small-edit-btn" onclick="openCommentModal('${
-                                  r.timestamp
-                                }')" style="position:absolute; right:5px; top:8px; border:none; background:none; cursor:pointer; color:#ccc;">✎</button>
-                            </div>
-                        `,
-                          )
-                          .join("")}
-
-
-                    </div>
+            <div class="item-links" style="margin-bottom: 10px;">
+                ${book.ebookUrl ? `<a href="${book.ebookUrl}" target="_blank" class="link-icon ebook">📖 Bookwalker</a>` : ""}
+                ${book.chilUrl ? `<a href="${book.chilUrl}" target="_blank" class="link-icon chil">🍒 ちるちる</a>` : ""}
+                <div class="add-review-action-area">
+                  <button class="add-review-btn mobile-up-btn" onclick="openAddCommentModal('${book.reviews[0]?.timestamp || ""}')">
+                    📝 新增評論
+                  </button>
                 </div>
             </div>
-        `;
-          grid.appendChild(row);
+
+            <div class="item-reviews" style="border-top: 1px solid #f0f0f0; padding-top: 10px;">
+                ${(book.reviews || [])
+                  .map(
+                    (r) => `
+                    <div class="mini-review" style="position: relative; padding-right: 35px; margin-bottom: 5px; background: #fdfdfd; padding: 8px; border-radius: 6px;">
+                        <span class="rev-name" style="font-weight:bold;">${r.reviewer}</span><span style="color: #ddd;margin-left: 8px;">||</span>
+                        <span class="rev-score ${getScoreColor(r.rating)}" style="margin-left:1px;">⭐${r.rating}</span>
+                        <span class="rev-comment" style="display:block; font-size:0.9em; color:#555;">${r.comment}</span>
+                        <button class="small-edit-btn" onclick="openCommentModal('${r.timestamp}')" style="position:absolute; right:5px; top:8px; border:none; background:none; cursor:pointer; color:#ccc;">✎</button>
+                    </div>
+                `,
+                  )
+                  .join("")}
+            </div>
+        </div>
+      </div>
+    `;
+
+          // 將 row 放入 fragment 而不是直接放入 grid
+          fragment.appendChild(row);
         });
+
+        // 4. 最後將所有內容一次性塞入網頁，這只會觸發一次 Reflow
+        grid.appendChild(fragment);
       }
       // 1. 抓取封面的補救功能
       async function reFetchCover(title, bwUrl, chilUrl) {
