@@ -66,6 +66,7 @@
             <span class="filter-panel-label">排序</span>
             <div class="filter-btn-group">
               <button class="fbtn sort-chip active-chip" data-sort="date" onclick="sortData('date')">📅 最新</button>
+              <button class="fbtn sort-chip" data-sort="updated" onclick="sortData('updated')">🕐 近期更新</button>
               <button class="fbtn sort-chip" data-sort="rating" onclick="sortData('rating')">⭐ 評分</button>
               <button class="fbtn sort-chip" data-sort="author" onclick="sortData('author')">🖋️ 作者</button>
               <button class="fbtn sort-chip" data-sort="title" onclick="sortData('title')">📜 書名</button>
@@ -807,6 +808,9 @@
         mergedBooks = Object.values(merged).map((book) => {
           const totalRating = book.reviews.reduce((sum, r) => sum + r.rating, 0);
           book.avgRating = totalRating / book.reviews.length;
+          book.latestTimestamp = Math.max(
+            ...book.reviews.map((r) => new Date(r.timestamp).getTime())
+          );
           book.reviews.sort((a, b) =>
             String(a.reviewer).localeCompare(String(b.reviewer), "zh-Hant"),
           );
@@ -888,6 +892,8 @@
             return String(a.author).localeCompare(String(b.author), "zh-Hant");
           if (currentSortType === "title")
             return String(a.title).localeCompare(String(b.title), "zh-Hant");
+          if (currentSortType === "updated")
+            return b.latestTimestamp - a.latestTimestamp;
           if (currentSortType === "date")
             return new Date(b.timestamp) - new Date(a.timestamp);
           return 0;
