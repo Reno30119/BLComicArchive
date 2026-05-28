@@ -1,142 +1,83 @@
-/* --- 基礎設定與導覽列 --- */
+/* ── 設計系統變數 ── */
+:root {
+  --bg: #f4f4f5;
+  --surface: #ffffff;
+  --border: #e4e4e7;
+  --border-light: #f0f0f2;
+
+  --text-primary: #18181b;
+  --text-secondary: #71717a;
+  --text-muted: #a1a1aa;
+
+  --accent: #5f77a8;
+  --accent-light: #eaeff6;
+  --accent-hover: #4a6090;
+
+  --font-body: 'Noto Sans TC', -apple-system, sans-serif;
+
+  --radius: 10px;
+  --radius-lg: 16px;
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow: 0 4px 16px rgba(0, 0, 0, 0.07), 0 1px 4px rgba(0, 0, 0, 0.04);
+}
+
+/* ── 全域 ── */
+* {
+  box-sizing: border-box;
+}
+
 body {
-  font-family: "PingFang TC", "Microsoft JhengHei", sans-serif;
-  background-color: #f4f7f9;
-  color: #333;
+  font-family: var(--font-body);
+  background-color: var(--bg);
+  color: var(--text-primary);
   margin: 0;
   padding: 0;
+  -webkit-font-smoothing: antialiased;
 }
 
-.custom-tag-list {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
-  width: 100%;
-  box-sizing: border-box; /* 關鍵：防止寬度凸出 */
-  max-height: 200px;
-  overflow-y: auto;
-  background: white;
-  border: 1px solid #3498db;
-  border-top: none;
-  border-radius: 0 0 10px 10px;
-  box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
-  display: none;
-  z-index: 10001; /* 確保高於 Modal 的 z-index */
-}
-
-/* 搜尋頁專用的推薦框定位 */
-#searchRecommendationList {
-  position: absolute;
-  top: 100%; /* 確保從輸入框底部開始 */
-  left: 0;
-  right: 0;
-  width: 100%;
-  margin-top: 5px; /* 與搜尋框保持一點呼吸感 */
-  background: white;
-  border: 1px solid #dfe4ea;
-  border-radius: 8px;
-  box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
-  max-height: 250px;
-  overflow-y: auto;
-  z-index: 2000;
-  display: none;
-  box-sizing: border-box;
-}
-
-/* 推薦項目的樣式 (延續你喜歡的中性淡雅風格) */
-#searchRecommendationList .tag-item {
-  padding: 12px 15px;
-  border-bottom: 1px solid #f1f2f6;
-  cursor: pointer;
-}
-
-#searchRecommendationList .tag-item:hover {
-  background: linear-gradient(135deg, #f1f2f6 0%, #dfe4ea 100%) !important;
-}
-
-#searchRecommendationList .rec-author {
-  font-size: 0.85rem;
-  color: #a5b1c2; /* 你要求的淡灰色 */
-  margin-left: 10px;
-}
-
-.tag-item {
-  padding: 10px 15px;
-  cursor: pointer;
-  border-bottom: 1px solid #f9f9f9;
-  box-sizing: border-box;
-}
-
-.tag-item:hover {
-  background-color: #f0f7ff;
-}
-
-.tag-item strong {
-  color: #3498db;
-  display: block;
-}
-
-.tag-item .tag-desc {
-  font-size: 0.8em;
-  color: #888;
-}
-
+/* ── 導覽列 ── */
 .top-nav {
   display: flex;
   justify-content: center;
-  background: #fff;
-  padding: 10px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+  background: var(--surface);
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border);
   position: sticky;
   top: 0;
   z-index: 100;
+  gap: 4px;
 }
 
 .nav-item {
   text-decoration: none;
-  color: #7f8c8d;
-  padding: 10px 20px;
-  font-weight: bold;
+  color: var(--text-secondary);
+  padding: 8px 18px;
+  font-weight: 500;
   font-size: 0.95rem;
+  letter-spacing: 0.02em;
+  border-radius: var(--radius);
+  transition: all 0.15s;
+}
+
+.nav-item:hover {
+  background: var(--bg);
+  color: var(--text-primary);
 }
 
 .nav-item.active {
-  color: #3498db;
-  background: #ebf5fb;
-  border-radius: 20px;
+  background: var(--accent-light);
+  color: var(--accent);
+  font-weight: 600;
 }
 
-/* --- 容器佈局 --- */
+/* ── 容器佈局 ── */
 .list-container {
-  max-width: 850px; /* 稍微加寬一點以容納封面 */
+  max-width: 850px;
   margin: 20px auto;
   padding: 0 15px;
 }
 
-/* --- 列表項目設計 --- */
-.book-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.book-list-item {
-  background: #fff;
-  border-radius: 16px;
-  padding: 20px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-  transition:
-    transform 0.2s,
-    box-shadow 0.2s;
-}
-
-.book-list-item:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.08);
-}
-
-/* --- 搜尋列與標題區優化 --- */
+/* ── 搜尋列 ── */
 .list-header {
   margin-bottom: 25px;
   display: flex;
@@ -145,60 +86,150 @@ body {
 }
 
 .search-bar {
-  display: flex;
+  display: flex !important;
   gap: 10px;
   width: 100%;
   margin-bottom: 15px;
-  align-items: stretch; /* 確保輸入框跟按鈕高度一致 */
+  align-items: stretch;
 }
 
 #searchInput {
-  flex: 1; /* 重要：讓搜尋框自動撐開 */
-  min-width: 0; /* 防止在窄螢幕擠壓 */
-  padding: 12px 15px;
-  border-radius: 10px;
-  border: 1px solid #ddd;
+  flex: 1 !important;
+  min-width: 0;
+  height: 42px;
+  padding: 10px 13px;
+  border-radius: var(--radius);
+  border: 1.5px solid var(--border);
   font-size: 1rem;
+  font-family: var(--font-body);
   outline: none;
-  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
+  background: var(--surface);
+  color: var(--text-primary);
+  transition: border-color 0.15s, box-shadow 0.15s;
 }
 
 #searchInput:focus {
-  border-color: #3498db;
-  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(95, 119, 168, 0.15);
 }
 
 .refresh-btn {
-  background: #34495e;
+  background: var(--accent);
   color: white;
   border: none;
   padding: 0 15px;
-  border-radius: 10px;
+  border-radius: var(--radius);
   cursor: pointer;
   font-size: 0.9rem;
+  font-family: var(--font-body);
+  font-weight: 500;
   display: flex;
   align-items: center;
   gap: 5px;
+  transition: background 0.15s;
 }
 
-/* 容器排版優化 */
+.refresh-btn:hover {
+  background: var(--accent-hover);
+}
+
+/* ── 推薦清單 ── */
+.custom-tag-list {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  width: 100%;
+  box-sizing: border-box;
+  max-height: 200px;
+  overflow-y: auto;
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  display: none;
+  z-index: 10001;
+  padding: 6px;
+}
+
+#searchRecommendationList {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  width: 100%;
+  margin-top: 5px;
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  max-height: 250px;
+  overflow-y: auto;
+  z-index: 2000;
+  display: none;
+  box-sizing: border-box;
+}
+
+#searchRecommendationList .tag-item {
+  padding: 12px 15px;
+  border-bottom: 1px solid var(--border-light);
+  cursor: pointer;
+}
+
+#searchRecommendationList .tag-item:hover {
+  background: var(--accent-light);
+}
+
+#searchRecommendationList .rec-author {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-left: 10px;
+}
+
+.tag-item {
+  padding: 10px 15px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--border-light);
+  box-sizing: border-box;
+  transition: background 0.15s;
+}
+
+.tag-item:hover {
+  background-color: var(--accent-light);
+}
+
+.tag-item strong {
+  color: var(--accent);
+  display: block;
+  font-size: 14.5px;
+  letter-spacing: 0.02em;
+  font-weight: 500;
+}
+
+.tag-item .tag-desc {
+  font-size: 0.8em;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+/* ── 篩選區 ── */
 .sort-group {
-  background: #f8f9fa;
+  background: var(--bg);
   padding: 20px;
-  border-radius: 12px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
   display: flex;
   flex-direction: column;
-  gap: 12px; /* 縮小行與行之間的間距 */
-  max-width: 800px; /* 限制寬度防止電腦版拉得太開 */
+  gap: 12px;
+  max-width: 800px;
 }
 
 .filter-item {
   display: flex;
-  align-items: center; /* 確保標籤與按鈕垂直置中 */
+  align-items: center;
   gap: 15px;
 }
 
-/* 列佈局 */
 .filter-row {
   display: flex;
   align-items: center;
@@ -206,102 +237,141 @@ body {
   gap: 12px;
 }
 
-/* 讓標題文字變大 */
 .filter-label {
-  font-size: 1.1em; /* 加大文字 */
-  font-weight: bold;
-  color: #444;
-  min-width: 100px; /* 固定寬度讓右側對齊 */
+  font-size: 0.95em;
+  font-weight: 600;
+  color: var(--text-secondary);
+  min-width: 100px;
   flex-shrink: 0;
+  letter-spacing: 0.02em;
+}
+
+.btn-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .reset-container {
   display: flex;
-  align-items: center; /* 改為置中對齊，讓標籤與單行選單更整齊 */
+  align-items: center;
   gap: 10px;
   margin-left: auto;
 }
 
-.sort-btn:hover,
-.filter-btn:hover {
-  border-color: #3498db;
-  color: #3498db;
-  background: #f0f7ff;
+.reset-btn {
+  padding: 8px 18px;
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  color: var(--text-secondary);
+  font-size: 0.9em;
+  font-family: var(--font-body);
+  transition: all 0.15s;
 }
 
-/* 啟動狀態 */
-.filter-btn.active {
-  background: #3498db !important;
-  color: white !important;
-  border-color: #3498db !important;
-  box-shadow: 0 4px 10px rgba(52, 152, 219, 0.3);
+.reset-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-light);
 }
 
-/* 統一所有篩選元件的基礎樣式 */
+/* ── 篩選/排序按鈕 ── */
 .sort-btn,
 .filter-btn,
 .type-btn,
 .filter-select {
-  /* 1. 統一高度 */
   height: 38px;
-
-  /* 2. 統一盒模型計算方式（關鍵） */
   box-sizing: border-box;
-
-  /* 3. 統一對齊方式 */
   display: inline-flex;
   align-items: center;
   justify-content: center;
   vertical-align: middle;
-
-  /* 4. 重置內距與邊框 */
   margin: 0;
   padding: 0 15px;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  background-color: #fff;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  background-color: var(--surface);
   font-size: 14px;
+  font-family: var(--font-body);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s;
 }
 
-/* 封面與內容併排控制 */
+.sort-btn:hover,
+.filter-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-light);
+}
+
+.filter-btn.active {
+  background: var(--accent) !important;
+  color: white !important;
+  border-color: var(--accent) !important;
+  box-shadow: 0 4px 10px rgba(95, 119, 168, 0.25);
+}
+
+/* ── 書籍列表 ── */
+.book-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.book-list-item {
+  background: var(--surface);
+  border-radius: 4px var(--radius-lg) var(--radius-lg) 4px;
+  padding: 20px;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.book-list-item:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow);
+}
+
+/* ── 書封 ── */
 .item-main {
   display: flex;
   gap: 20px;
   align-items: flex-start;
 }
 
-/* 確保容器有固定比例 (例如 3:4)，這樣排版才會整齊 */
 .book-cover-side {
-  width: 120px; /* 從 120px 增加到 150px (可依喜好調整) */
-  height: 180px; /* 依照漫畫約 1:1.4 的比例設定高度 */
+  width: 120px;
+  height: 180px;
   flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  background-color: #f8f9fa;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  background-color: var(--bg);
+  box-shadow: var(--shadow-sm);
+  border-radius: var(--radius);
   position: relative;
-  border-left: 3px solid rgba(0, 0, 0, 0.05); /* 模擬書脊陰影 */
+  border-left: 3px solid rgba(0, 0, 0, 0.05);
 }
 
 .book-cover-side img {
   width: 100%;
   height: 100%;
-  /* 關鍵修正：從 cover 改成 contain */
   object-fit: cover;
-  /* 如果你不喜歡 contain 產生的白邊，可以加上背景色 */
-  background-color: #f0f0f0;
+  background-color: var(--bg);
   border-radius: 5px;
 }
-/* 無封面時的樣式 */
+
 .no-cover {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  color: #bdc3c7;
+  color: var(--text-muted);
   font-size: 0.8rem;
   width: 100%;
   height: 100%;
@@ -310,25 +380,28 @@ body {
 .no-cover button {
   padding: 4px 8px;
   font-size: 11px;
-  background: #fff;
-  border: 1px solid #ddd;
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: 4px;
   cursor: pointer;
+  font-family: var(--font-body);
   transition: all 0.2s;
 }
 
 .no-cover button:hover {
-  background: #3498db;
+  background: var(--accent);
   color: white;
-  border-color: #3498db;
+  border-color: var(--accent);
 }
+
+/* ── 書籍資訊 ── */
 .item-info {
   flex: 1;
-  min-width: 0; /* 關鍵：將 200px 改為 0，讓它在小螢幕能縮小而不掉行 */
+  min-width: 0;
   display: flex;
   flex-direction: column;
-  justify-content: flex-start; /* 改為頂部對齊 */
-  overflow: hidden; /* 防止內容溢出 */
+  justify-content: flex-start;
+  overflow: hidden;
 }
 
 .title-row {
@@ -341,14 +414,17 @@ body {
 .title {
   margin: 0;
   font-size: 1.25rem;
-  color: #2c3e50;
+  color: var(--text-primary);
   flex-grow: 1;
+  font-weight: 600;
+  min-width: 0;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
-/* 編輯書籍按鈕 (齒輪) */
 .edit-book-btn {
-  background: #f8f9fa;
-  border: 1px solid #eee;
+  background: var(--bg);
+  border: 1px solid var(--border);
   border-radius: 50%;
   width: 32px;
   height: 32px;
@@ -357,17 +433,16 @@ body {
   justify-content: center;
   cursor: pointer;
   transition: all 0.2s;
-  color: #bdc3c7;
+  color: var(--text-muted);
 }
 
 .edit-book-btn:hover {
-  background: #ebf5fb;
-  color: #3498db;
-  border-color: #3498db;
+  background: var(--accent-light);
+  color: var(--accent);
+  border-color: var(--accent);
   transform: rotate(45deg);
 }
 
-/* 評分與標籤 */
 .avg-score {
   font-size: 1.3rem;
   font-weight: 900;
@@ -376,20 +451,21 @@ body {
 
 .author {
   font-size: 0.95rem;
-  color: #555;
+  color: var(--text-secondary);
   margin: 0 0 10px 0;
 }
 
 .jp-title {
-  color: #95a5a6;
+  color: var(--text-muted);
   font-size: 0.85rem;
   font-weight: normal;
+  margin-left: 8px;
 }
 
 .tags span {
   display: inline-block;
-  background: #f0f2f5;
-  color: #7f8c8d;
+  background: var(--bg);
+  color: var(--text-secondary);
   font-size: 0.8rem;
   padding: 3px 10px;
   border-radius: 6px;
@@ -397,11 +473,50 @@ body {
   margin-bottom: 6px;
 }
 
+.tag-badge {
+  cursor: pointer;
+  background: var(--accent-light);
+  color: var(--accent);
+  padding: 2px 10px;
+  border-radius: 15px;
+  font-size: 0.85em;
+  margin-right: 5px;
+  border: 1px solid rgba(95, 119, 168, 0.2);
+  display: inline-block;
+  transition: 0.2s;
+  font-family: var(--font-body);
+}
+
+.tag-badge:hover {
+  background: var(--accent);
+  color: white;
+}
+
+.author-link {
+  cursor: pointer;
+  color: inherit;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.author-link:hover {
+  color: var(--accent);
+}
+
+/* ── 連結按鈕 ── */
+.item-links {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
 .link-icon {
   text-decoration: none;
   font-size: 0.8rem;
   padding: 6px 12px;
-  border-radius: 8px;
+  border-radius: var(--radius);
   color: white;
   font-weight: bold;
   display: inline-flex;
@@ -409,51 +524,74 @@ body {
   gap: 4px;
 }
 
-.ebook {
-  background: #27ae60;
-}
-.chil {
-  background: #e91e63;
+.ebook { background: #27ae60; }
+.chil  { background: #e91e63; }
+
+.add-review-action-area {
+  margin-left: auto;
+  display: flex;
+  justify-content: flex-end;
+  padding: 10px 0;
 }
 
-/* --- 評語區塊 --- */
+.add-review-btn.mobile-up-btn {
+  background: var(--surface);
+  border: 1.5px solid var(--accent);
+  color: var(--accent);
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: bold;
+  cursor: pointer;
+  white-space: nowrap;
+  font-family: var(--font-body);
+  transition: all 0.15s;
+}
+
+.add-review-btn.mobile-up-btn:hover {
+  background: var(--accent-light);
+}
+
+/* ── 評語區塊 ── */
 .item-reviews {
   margin-top: 15px;
   padding-top: 15px;
-  border-top: 1px solid #f0f0f0;
+  border-top: 1px solid var(--border-light);
 }
 
 .mini-review {
   position: relative;
   padding: 12px 45px 12px 12px;
-  background: #fafafa;
-  border-radius: 10px;
+  background: var(--bg);
+  border-radius: var(--radius);
   margin-bottom: 10px;
-  border: 1px solid #f5f5f5;
+  border: 1px solid var(--border-light);
 }
 
 .rev-name {
   font-weight: bold;
-  color: #3498db;
+  color: var(--accent);
 }
+
 .rev-score {
   margin: 0 8px;
 }
+
 .rev-comment {
   display: block;
   margin-top: 4px;
-  color: #666;
-  font-size: 0.9rem;
+  color: var(--text-secondary);
+  font-size: 0.95rem;
   line-height: 1.6;
+  letter-spacing: 0.025em;
 }
 
-/* 評語編輯鈕 (鉛筆) */
 .small-edit-btn {
   position: absolute;
   right: 12px;
   top: 12px;
-  background: white;
-  border: 1px solid #eee;
+  background: var(--surface);
+  border: 1px solid var(--border);
   width: 28px;
   height: 28px;
   border-radius: 50%;
@@ -461,222 +599,545 @@ body {
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  color: #ccc;
+  color: var(--text-muted);
   transition: all 0.2s;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow-sm);
 }
 
 .mini-review:hover .small-edit-btn {
-  color: #3498db;
-  border-color: #3498db;
+  color: var(--accent);
+  border-color: var(--accent);
   opacity: 1;
 }
 
-/* --- 彈出視窗 (Modal) 基礎設定 --- */
+/* ── Modal ── */
 .modal {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.5); /* 遮罩背景 */
+  background-color: rgba(0, 0, 0, 0.5);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
-  backdrop-filter: blur(4px); /* 背景模糊感 */
+  backdrop-filter: blur(4px);
   transform: translateZ(0);
   -webkit-transform: translateZ(0);
 }
 
-/* --- 視窗本體 --- */
 .modal-content {
-  background: #fff;
+  background: var(--surface);
   width: 90%;
   max-width: 480px;
   padding: 30px;
-  border-radius: 24px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
-
-  /* --- 加入以下屬性解決無法滑動的問題 --- */
-  max-height: 90vh; /* 設定最大高度為螢幕高度的 90% */
-  overflow-y: auto; /* 當內容超過高度時，自動顯示垂直捲軸 */
-  position: relative; /* 確保定位正確 */
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
 }
 
-/* 為了讓滑動更順暢 (適用於手機端) */
-.modal-content::-webkit-scrollbar {
-  width: 6px;
-}
+.modal-content::-webkit-scrollbar { width: 6px; }
 .modal-content::-webkit-scrollbar-thumb {
-  background: #ccc;
+  background: var(--border);
   border-radius: 10px;
 }
 
 @keyframes modalPop {
-  from {
-    transform: scale(0.9);
-    opacity: 0;
-  }
-  to {
-    transform: scale(1);
-    opacity: 1;
-  }
+  from { transform: scale(0.9); opacity: 0; }
+  to   { transform: scale(1);   opacity: 1; }
 }
 
 .modal-content h3 {
   margin: 0 0 20px 0;
   text-align: center;
   font-size: 1.4rem;
-  color: #2c3e50;
-  border-bottom: 1px solid #eee;
+  color: var(--text-primary);
+  border-bottom: 1px solid var(--border);
   padding-bottom: 15px;
 }
 
-/* --- 表單內部編排 --- */
 .modal-content label {
   display: block;
   margin: 15px 0 8px 0;
   font-weight: 600;
-  color: #7f8c8d;
+  color: var(--text-secondary);
   font-size: 0.95rem;
+  letter-spacing: 0.02em;
 }
 
 .modal-content input,
 .modal-content select,
 .modal-content textarea {
   width: 100%;
-  padding: 14px;
-  border: 1.5px solid #eee;
+  padding: 10px 13px;
+  border: 1.5px solid var(--border);
   resize: none;
-  border-radius: 12px;
-  background: #fdfdfd;
+  border-radius: var(--radius);
+  background: var(--surface);
   font-size: 1rem;
-  transition: all 0.2s;
-  box-sizing: border-box; /* 確保寬度包含內邊距 */
+  font-family: var(--font-body);
+  color: var(--text-primary);
+  transition: all 0.15s;
+  box-sizing: border-box;
 }
 
 .modal-content input:focus,
-.modal-content textarea:focus {
-  border-color: #3498db;
+.modal-content textarea:focus,
+.modal-content select:focus {
+  border-color: var(--accent);
   outline: none;
-  background: #fff;
+  box-shadow: 0 0 0 3px rgba(95, 119, 168, 0.15);
 }
 
-/* --- 按鈕編排 --- */
 .modal-btns {
   display: flex;
   gap: 15px;
   margin-top: 30px;
 }
 
-/* 隱藏邏輯 */
+/* ── Modal 評論者按鈕 ── */
+.reviewer-options {
+  display: flex;
+  gap: 12px;
+  margin: 10px 0 20px 0;
+}
+
+.rev-select-btn {
+  flex: 1;
+  padding: 12px;
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+  color: var(--text-secondary);
+  border-radius: var(--radius);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 0.95rem;
+  font-family: var(--font-body);
+}
+
+.rev-select-btn:hover {
+  background: var(--accent-light);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.rev-select-btn.active {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+  box-shadow: 0 4px 12px rgba(95, 119, 168, 0.25);
+  transform: translateY(-2px);
+}
+
+/* ── Modal 按鈕 ── */
+.modal-footer {
+  display: flex;
+  gap: 12px;
+  margin-top: 30px;
+}
+
+.cancel-btn {
+  flex: 1;
+  padding: 12px;
+  border: none;
+  background: var(--bg);
+  color: var(--text-secondary);
+  border-radius: var(--radius);
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  font-family: var(--font-body);
+  transition: background 0.15s;
+}
+
+.cancel-btn:hover {
+  background: var(--border);
+  color: var(--text-primary);
+}
+
+.save-review-btn,
+.save-btn {
+  flex: 2;
+  padding: 12px;
+  border: none;
+  background: var(--accent);
+  color: white;
+  border-radius: var(--radius);
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(95, 119, 168, 0.25);
+  transition: all 0.2s;
+  letter-spacing: 0.04em;
+  font-family: var(--font-body);
+}
+
+.save-review-btn:hover,
+.save-btn:hover {
+  background: var(--accent-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(95, 119, 168, 0.3);
+}
+
+.save-review-btn:active,
+.save-btn:active {
+  transform: translateY(0);
+}
+
+.save-review-btn:disabled,
+.save-btn:disabled {
+  background: var(--border);
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+/* ── 隱藏邏輯 ── */
 .hidden {
   display: none !important;
 }
 
-/* 修正搜尋列變形 */
-.search-bar {
-  display: flex !important;
-  gap: 10px;
-  width: 100%;
-}
-
-#searchInput {
-  flex: 1 !important; /* 強制搜尋框撐開 */
-  height: 42px;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-}
-
-/* 移除超連結外觀，改為低調的點擊效果 */
-.author-link {
-  cursor: pointer; /* 滑鼠移上去顯示手指，暗示可以點擊 */
-  color: inherit; /* 繼承父層顏色，不顯示藍色 */
-  text-decoration: none; /* 絕對不要底線 */
-  transition: color 0.2s; /* 讓顏色變換平滑一點 */
-}
-
-/* 只有滑鼠移上去時才輕微變色 (例如變成深一點的灰色或原本的深藍) */
-.author-link:hover {
-  color: #3498db; /* 或是您喜歡的任何顏色，不改顏色也可以 */
-  /* text-decoration: none; (確保 hover 時也不會出現底線) */
-}
-
-.tag-badge {
-  cursor: pointer;
-  background: #f0f7ff;
-  color: #3498db;
-  padding: 2px 10px;
-  border-radius: 15px;
-  font-size: 0.85em;
-  margin-right: 5px;
-  border: 1px solid #d0e7ff;
-  display: inline-block;
-  transition: 0.2s;
-}
-.tag-badge:hover {
-  background: #3498db;
+/* ── 分級 badge ── */
+.badge {
+  font-size: 0.75rem;
+  padding: 2px 8px;
+  border-radius: 6px;
   color: white;
 }
+.red    { background: #e74c3c; }
+.blue   { background: #3498db; }
+.green  { background: #2ecc71; }
+.orange { background: #f39c12; }
 
+/* ── 評分顏色 ── */
+.text-green { color: #16a34a; font-weight: bold; }
+.text-blue  { color: #3498db; font-weight: bold; }
+.text-red   { color: #e74c3c; font-weight: bold; }
+
+.rating-low {
+  border-color: #5a9068 !important;
+  color: #2e6b42 !important;
+}
+.rating-mid {
+  border-color: #4e78b8 !important;
+  color: #2d5a96 !important;
+}
+.rating-high {
+  border-color: #c06060 !important;
+  color: #9e3434 !important;
+}
+
+/* ── Toast ── */
+#sync-toast {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%) translateY(100px);
+  color: white;
+  padding: 12px 24px;
+  border-radius: 50px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  transition: transform 0.4s, background-color 0.3s;
+  z-index: 9999;
+  font-weight: bold;
+  pointer-events: none;
+  font-size: 14px;
+  white-space: nowrap;
+  font-family: var(--font-body);
+}
+
+#sync-toast.show {
+  transform: translateX(-50%) translateY(0) !important;
+}
+
+.toast-success { background-color: #27ae60 !important; }
+.toast-info    { background-color: var(--accent) !important; }
+.toast-error   { background-color: #e74c3c !important; }
+
+/* ── Loading 遮罩 ── */
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(5px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10000;
+  transition: opacity 0.3s ease;
+}
+
+.loading-content {
+  text-align: center;
+  color: var(--text-primary);
+  font-family: var(--font-body);
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  margin: 0 auto 15px;
+  border: 4px solid var(--border);
+  border-top: 4px solid var(--accent);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0%   { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.loading-content p {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 500;
+  letter-spacing: 1px;
+}
+
+/* ── 篩選面板（三行式）── */
+.filter-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 16px;
+  overflow: hidden;
+}
+
+.filter-panel-row {
+  display: flex;
+  align-items: center;
+  padding: 14px 20px;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.filter-panel-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  min-width: 42px;
+  flex-shrink: 0;
+}
+
+.filter-panel-divider {
+  height: 1px;
+  background: var(--border-light);
+}
+
+.filter-btn-group {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+  flex: 1;
+}
+
+/* 篩選按鈕基礎樣式 */
+.fbtn {
+  height: 38px;
+  padding: 0 16px;
+  border-radius: var(--radius);
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.fbtn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-light);
+}
+
+.sort-chip.active-chip,
+.filter-btn.active {
+  background: var(--accent) !important;
+  color: white !important;
+  border-color: var(--accent) !important;
+  font-weight: 600;
+}
+
+.fbtn-select {
+  appearance: none;
+  padding-right: 28px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23a1a1aa' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  cursor: pointer;
+}
+
+.fbtn-reset {
+  margin-left: auto;
+  border-style: dashed;
+}
+
+.fbtn-reset:hover {
+  background: #fff0f0 !important;
+  color: #ef4444 !important;
+  border-color: #fca5a5 !important;
+  border-style: solid !important;
+}
+
+/* ── 結果數量 ── */
+.result-count {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  letter-spacing: 0.02em;
+  padding: 0 4px 12px;
+}
+
+/* ── 連載狀態 badge ── */
+.status-row {
+  display: flex;
+  gap: 8px;
+  margin: 6px 0;
+  flex-wrap: wrap;
+}
+
+.status-badge-tw {
+  background: #fff5f5;
+  color: #c53030;
+  padding: 2px 8px;
+  border-radius: 4px;
+  border: 1px solid #fed7d7;
+  font-size: 0.8em;
+}
+
+.status-badge-jp {
+  background: #eef2f7;
+  color: #5a67d8;
+  padding: 2px 8px;
+  border-radius: 4px;
+  border: 1px solid #dee2e6;
+  font-size: 0.8em;
+}
+
+/* ── 評論分隔 ── */
+.rev-sep {
+  color: var(--border);
+  margin: 0 6px;
+  font-weight: 300;
+}
+
+/* ── 書籍評分左邊框 ── */
+.book-list-item[data-rating-tier="low"]  { border-left: 4px solid #6c7b6a; }
+.book-list-item[data-rating-tier="mid"]  { border-left: 4px solid #5f77a8; }
+.book-list-item[data-rating-tier="high"] { border-left: 4px solid #b5837e; }
+
+/* ── 手機版 ── */
 @media screen and (max-width: 600px) {
-  .book-cover-side {
-    width: 130px; /* 手機版不要太大，以免文字空間不夠 */
-    height: 182px;
-    margin: 0 auto 15px; /* 手機版居中並留點下邊距 */
-  }
-
   .book-cover-side {
     width: 80px;
     height: 110px;
-    margin: 0 auto; /* 封面居中 */
+    margin: 0 auto;
   }
 
   .nav-item {
-    padding: 8px 10px; /* 縮小按鈕內邊距 */
-    font-size: 15px; /* 稍微縮小字體，確保塞得下 */
-    gap: 2px;
+    padding: 7px 10px;
+    font-size: 0.85rem;
   }
 
-  /* 如果還是太擠，可以考慮隱藏部分文字，只留圖示 + 兩個字 */
-  .nav-item span {
-    letter-spacing: -0.5px; /* 縮小字距 */
+  /* 手機版：badge+title 同排，score+edit 靠右獨立一行 */
+  .title-row {
+    flex-wrap: wrap;
+    gap: 6px;
   }
 
-  /* 1. 讓父容器改為垂直排列 */
+  .badge {
+    order: 1;
+    flex-shrink: 0;
+  }
+
+  .title {
+    order: 2;
+    flex: 1;
+    min-width: 0;
+    font-size: 1.2rem;
+  }
+
+  /* 強制在 title 後換行 */
+  .title-row::after {
+    content: '';
+    flex-basis: 100%;
+    height: 0;
+    order: 3;
+  }
+
+  .avg-score {
+    order: 4;
+    margin-left: 0;
+  }
+
+  .edit-book-btn {
+    order: 5;
+    margin-left: auto;
+  }
+
+  .filter-panel-row {
+    padding: 12px 14px;
+    gap: 10px;
+  }
+
+  .filter-panel-label {
+    min-width: 36px;
+    font-size: 0.72rem;
+  }
+
+  .fbtn {
+    height: 36px;
+    padding: 0 12px;
+    font-size: 0.85rem;
+  }
+
+  .fbtn-reset {
+    margin-left: 0;
+    margin-top: 4px;
+  }
+
   .item-main {
     flex-direction: column;
-    align-items: center; /* 讓封面在中間，若要靠左請改為 flex-start */
-    /* text-align: center;  讓資訊文字也跟著置中（選用） */
+    align-items: center;
   }
 
-  /* 2. 重點修改：讓 .item-info 填滿寬度 */
   .item-info {
-    width: 100%; /* 強制填滿寬度，消除右側空白 */
-    min-width: 0; /* 解除原本的最小寬度限制 */
-    padding-left: 0; /* 移除原本在側邊時的間距 */
-    margin-top: 15px; /* 增加與上方封面的距離 */
-    display: block; /* 確保它以區塊元素呈現 */
+    width: 100%;
+    min-width: 0;
+    padding-left: 0;
+    margin-top: 15px;
+    display: block;
   }
 
-  /* 3. 調整封面外距 */
   .item-cover {
-    margin-right: 0; /* 移除原本並排時的右方間距 */
+    margin-right: 0;
     margin-bottom: 10px;
-    flex-shrink: 0; /* 保持封面形狀 */
+    flex-shrink: 0;
   }
 
-  /* 4. 標籤區域也改為置中 (如果 .item-main 設定了 center) */
   .tags {
-    /* justify-content: center; */
     flex-wrap: wrap;
     gap: 5px;
   }
 
   .add-review-action-area {
     width: 100%;
-    justify-content: center; /* 手機版居中 */
+    justify-content: center;
     margin-bottom: -12px;
     margin-top: -10px;
   }
@@ -691,22 +1152,17 @@ body {
   }
 
   .reset-btn {
-    width: 100%; /* 手機版按鈕撐滿比較好點擊 */
+    width: 100%;
     height: 40px;
   }
 
   .sort-group {
     padding: 15px;
-    display: flex;
-    flex-direction: column;
-    gap: 12px; /* 每行之間的間隔 */
-    position: relative; /* 讓重置按鈕可以相對於此框定位 */
-    padding-bottom: 20px; /* 為右下角按鈕預留空間 */
+    padding-bottom: 20px;
   }
 
   .filter-item {
-    display: flex;
-    align-items: center; /* 改為置中對齊，讓標籤與單行選單更整齊 */
+    align-items: center;
     gap: 10px;
   }
 
@@ -717,35 +1173,21 @@ body {
   .filter-label {
     min-width: 65px;
     font-size: 0.9em;
-    font-weight: bold;
     flex-shrink: 0;
-    color: #555;
   }
 
   .btn-group {
-    display: flex;
-    flex-wrap: wrap; /* 若按鈕過多仍會自動換行 */
-    gap: 8px;
     flex: 1;
   }
 
-  /* 針對獨立出來的下拉選單美化 */
   .filter-select {
-    width: 100%; /* 在自己的行內佔滿剩餘空間 */
-    max-width: 200px; /* 但不要太寬，以免在寬螢幕手機上太難看 */
+    width: 100%;
+    max-width: 200px;
     height: 36px;
-    padding: 0 30px 0 12px !important; /* 確保右側箭頭空間充足 */
-    border-radius: 8px;
-    border: 1px solid #ddd;
-    font-size: 0.9em;
-    background-color: #fff;
-    cursor: pointer;
+    padding: 0 30px 0 12px !important;
   }
 
   .reset-container {
-    display: flex;
-    align-items: center; /* 改為置中對齊，讓標籤與單行選單更整齊 */
-    gap: 10px;
     width: 100%;
     justify-content: center;
     margin-left: 0;
@@ -754,308 +1196,16 @@ body {
   }
 
   .item-links {
-    display: flex;
-    flex-direction: row; /* 維持橫向排列但允許換行 */
+    flex-direction: row;
     justify-content: flex-start;
     flex-wrap: wrap;
   }
 
   .add-review-btn.mobile-up-btn {
-    order: -1; /* 關鍵：強制排在所有連結之前 (最左/最上) */
-    margin-left: 0; /* 取消靠右 */ /* 與下方連結保持距離 */
-    width: 100%; /* 讓它在手機版變成長條狀，更好點擊 */
+    order: -1;
+    margin-left: 0;
+    width: 100%;
     text-align: center;
-    background: #ebf5fb; /* 換個顯眼的背景色 */
+    background: var(--accent-light);
   }
-}
-
-/* 電腦版預設樣式 */
-.item-links {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-  margin-top: 10px;
-}
-
-.add-review-action-area {
-  margin-left: auto; /* 電腦版靠右 */
-  display: flex;
-  justify-content: flex-end; /* 靠右對齊 (黃色位置) */
-  padding: 10px 0;
-}
-
-.add-review-btn.mobile-up-btn {
-  background: #fff;
-  border: 1.5px solid #3498db;
-  color: #3498db;
-  padding: 4px 10px;
-  border-radius: 6px;
-  font-size: 0.8rem;
-  font-weight: bold;
-  cursor: pointer;
-  white-space: nowrap;
-}
-
-/* --- Modal 內部按鈕與輸入框美化 --- */
-
-/* 評論者選擇按鈕 (Reno / 茶壺) */
-.reviewer-options {
-  display: flex;
-  gap: 12px;
-  margin: 10px 0 20px 0;
-}
-
-.rev-select-btn {
-  flex: 1;
-  padding: 12px;
-  border: 2px solid #edf2f7;
-  background: #fff;
-  color: #4a5568;
-  border-radius: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  font-size: 0.95rem;
-}
-
-.rev-select-btn:hover {
-  background: #f7fafc;
-  border-color: #cbd5e0;
-}
-
-.rev-select-btn.active {
-  background: #3498db;
-  color: white;
-  border-color: #3498db;
-  box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
-  transform: translateY(-2px);
-}
-
-/* Modal 底部動作按鈕容器 */
-.modal-footer {
-  display: flex;
-  gap: 12px;
-  margin-top: 30px;
-}
-
-/* 取消按鈕 */
-.cancel-btn {
-  flex: 1;
-  padding: 12px;
-  border: none;
-  background: #edf2f7;
-  color: #718096;
-  border-radius: 12px;
-  font-weight: 600;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.cancel-btn:hover {
-  background: #e2e8f0;
-  color: #4a5568;
-}
-
-/* 確認建立按鈕 (主要的送出按鈕) */
-.save-review-btn {
-  flex: 2; /* 讓確認按鈕寬一點，視覺重點 */
-  padding: 12px;
-  border: none;
-  background: linear-gradient(135deg, #3498db, #2980b9);
-  color: white;
-  border-radius: 12px;
-  font-weight: 600;
-  font-size: 1rem;
-  cursor: pointer;
-  box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
-  transition: all 0.2s;
-  letter-spacing: 1px;
-}
-
-.save-review-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(52, 152, 219, 0.4);
-}
-
-.save-review-btn:active {
-  transform: translateY(0);
-}
-
-.save-review-btn:disabled {
-  background: #cbd5e0;
-  box-shadow: none;
-  cursor: not-allowed;
-}
-
-.save-btn {
-  flex: 2; /* 讓確認按鈕寬一點，視覺重點 */
-  padding: 12px;
-  border: none;
-  background: linear-gradient(135deg, #3498db, #2980b9);
-  color: white;
-  border-radius: 12px;
-  font-weight: 600;
-  font-size: 1rem;
-  cursor: pointer;
-  box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
-  transition: all 0.2s;
-  letter-spacing: 1px;
-}
-
-.save-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(52, 152, 219, 0.4);
-}
-
-.save-btn:active {
-  transform: translateY(0);
-}
-
-.save-btn:disabled {
-  background: #cbd5e0;
-  box-shadow: none;
-  cursor: not-allowed;
-}
-
-/* 顏色定義與原本一致... */
-.text-green {
-  color: #2ecc71;
-  font-weight: bold;
-}
-.text-blue {
-  color: #3498db;
-  font-weight: bold;
-}
-.text-red {
-  color: #e74c3c;
-  font-weight: bold;
-}
-.badge {
-  font-size: 0.75rem;
-  padding: 2px 8px;
-  border-radius: 6px;
-  color: white;
-}
-.red {
-  background: #e74c3c;
-}
-.blue {
-  background: #3498db;
-}
-.green {
-  background: #2ecc71;
-}
-.orange {
-  background: #f39c12;
-}
-
-/* 評分顏色類別 */
-/* 綠色 - 避雷 (低分) */
-.rating-low {
-  border-color: #27ae60 !important;
-  color: #27ae60 !important;
-  box-shadow: 0 0 5px rgba(39, 174, 96, 0.2);
-}
-
-/* 藍色 - 一般 (中分) */
-.rating-mid {
-  border-color: #3498db !important;
-  color: #3498db !important;
-  box-shadow: 0 0 5px rgba(52, 152, 219, 0.2);
-}
-
-/* 紅色 - 推薦 (高分) */
-.rating-high {
-  border-color: #e74c3c !important;
-  color: #e74c3c !important;
-  box-shadow: 0 0 5px rgba(231, 76, 60, 0.2);
-}
-
-/* 基礎樣式 */
-#sync-toast {
-  position: fixed;
-  bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%) translateY(100px);
-  color: white;
-  padding: 12px 24px;
-  border-radius: 50px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-  transition:
-    transform 0.4s,
-    background-color 0.3s; /* 加入顏色變換動畫 */
-  z-index: 9999;
-  font-weight: bold;
-  pointer-events: none;
-  font-size: 14px;
-  white-space: nowrap;
-}
-
-/* 顯示狀態 */
-#sync-toast.show {
-  transform: translateX(-50%) translateY(0) !important;
-}
-
-/* --- 顏色定義 --- */
-.toast-success {
-  background-color: #27ae60 !important;
-} /* 綠色：更新成功 */
-.toast-info {
-  background-color: #3498db !important;
-} /* 藍色：已是最新 */
-.toast-error {
-  background-color: #e74c3c !important;
-} /* 紅色：發生錯誤 */
-
-/* 載入遮罩背景 */
-.loading-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(255, 255, 255, 0.85); /* 半透明白，帶點模糊感 */
-  backdrop-filter: blur(5px); /* 背景模糊 (毛玻璃效果) */
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 10000; /* 確保在最上層 */
-  transition: opacity 0.3s ease;
-}
-
-/* 內容容器 */
-.loading-content {
-  text-align: center;
-  color: #34495e;
-  font-family: sans-serif;
-}
-
-/* 旋轉圓圈動畫 */
-.spinner {
-  width: 40px;
-  height: 40px;
-  margin: 0 auto 15px;
-  border: 4px solid #f3f3f3;
-  border-top: 4px solid #3498db; /* 圓圈的主色調 */
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
-}
-
-/* 文字樣式 */
-.loading-content p {
-  margin: 0;
-  font-size: 16px;
-  font-weight: 500;
-  letter-spacing: 1px;
 }
