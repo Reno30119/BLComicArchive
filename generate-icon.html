@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <title>圖示產生器</title>
+  <style>
+    body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; margin: 0; background: #f4f4f5; gap: 20px; }
+    canvas { border-radius: 36px; box-shadow: 0 8px 32px rgba(0,0,0,0.2); }
+    p { color: #555; font-size: 0.95rem; margin: 0; }
+    a { display: inline-block; padding: 10px 24px; background: #5f77a8; color: #fff; border-radius: 8px; text-decoration: none; font-weight: 600; }
+    small { color: #999; font-size: 0.8rem; }
+  </style>
+</head>
+<body>
+  <p>書庫主畫面圖示預覽（180×180）</p>
+  <canvas id="c" width="180" height="180"></canvas>
+  <a id="dlBtn" download="apple-touch-icon.png">⬇ 下載圖示 PNG</a>
+  <small>下載後將 apple-touch-icon.png 放到與 index.html 相同的資料夾</small>
+
+  <script>
+    const canvas = document.getElementById("c");
+    const ctx = canvas.getContext("2d");
+    const W = 180, H = 180;
+
+    // ── 工具函式 ──
+    function roundRect(x, y, w, h, r) {
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.lineTo(x + w - r, y); ctx.arcTo(x + w, y, x + w, y + r, r);
+      ctx.lineTo(x + w, y + h - r); ctx.arcTo(x + w, y + h, x + w - r, y + h, r);
+      ctx.lineTo(x + r, y + h); ctx.arcTo(x, y + h, x, y + h - r, r);
+      ctx.lineTo(x, y + r); ctx.arcTo(x, y, x + r, y, r);
+      ctx.closePath();
+    }
+
+    // ── 背景 ──
+    const bgGrad = ctx.createLinearGradient(0, 0, W, H);
+    bgGrad.addColorStop(0, "#6b85b5");
+    bgGrad.addColorStop(1, "#3e5882");
+    ctx.fillStyle = bgGrad;
+    roundRect(0, 0, W, H, 36);
+    ctx.fill();
+
+    // 頂部光暈
+    const topGlow = ctx.createRadialGradient(90, 0, 0, 90, 0, 100);
+    topGlow.addColorStop(0, "rgba(255,255,255,0.18)");
+    topGlow.addColorStop(1, "rgba(255,255,255,0)");
+    ctx.fillStyle = topGlow;
+    roundRect(0, 0, W, H, 36);
+    ctx.fill();
+
+    // ── 畫書本 ──
+    const BW = 46, BH = 72;
+
+    function drawBook(tx, ty, angle, cover, spine) {
+      ctx.save();
+      ctx.translate(tx, ty);
+      ctx.rotate(angle);
+
+      // 陰影
+      ctx.shadowColor = "rgba(0,10,40,0.38)";
+      ctx.shadowBlur = 10;
+      ctx.shadowOffsetX = 2;
+      ctx.shadowOffsetY = 4;
+
+      // 封面
+      roundRect(-BW / 2, -BH / 2, BW, BH, 5);
+      ctx.fillStyle = cover;
+      ctx.fill();
+
+      // 取消陰影
+      ctx.shadowColor = "transparent";
+
+      // 書背
+      ctx.fillStyle = spine;
+      roundRect(-BW / 2, -BH / 2, 8, BH, 5);
+      ctx.fill();
+      // 蓋掉右半圓角讓書背右側是直邊
+      ctx.fillRect(-BW / 2 + 4, -BH / 2, 4, BH);
+
+      // 封面光澤
+      const shine = ctx.createLinearGradient(-BW / 2 + 8, 0, BW / 2, 0);
+      shine.addColorStop(0, "rgba(255,255,255,0.18)");
+      shine.addColorStop(0.45, "rgba(255,255,255,0.06)");
+      shine.addColorStop(1, "rgba(255,255,255,0)");
+      ctx.fillStyle = shine;
+      roundRect(-BW / 2, -BH / 2, BW, BH, 5);
+      ctx.fill();
+
+      // 幾條橫線暗示內頁排版
+      ctx.strokeStyle = "rgba(0,0,0,0.09)";
+      ctx.lineWidth = 1.5;
+      ctx.lineCap = "round";
+      [-22, -8, 6, 20].forEach(dy => {
+        ctx.beginPath();
+        ctx.moveTo(-BW / 2 + 13, dy);
+        ctx.lineTo(BW / 2 - 7, dy);
+        ctx.stroke();
+      });
+
+      ctx.restore();
+    }
+
+    const cx = 91, cy = 93;
+
+    // 左書（玫瑰粉，向左傾）
+    drawBook(cx - 40, cy + 5, -0.21, "#f0c4d0", "#c4849a");
+    // 右書（霧藍，向右傾）
+    drawBook(cx + 40, cy + 5,  0.21, "#c4d4ec", "#7898c0");
+    // 中書（奶油色，直立，最前）
+    drawBook(cx,      cy - 2,  0,    "#f5e8d8", "#c8a87c");
+
+    // ── 裝飾小愛心 ──
+    ctx.fillStyle = "rgba(255,255,255,0.82)";
+    ctx.beginPath();
+    const hx = cx, hy = cy + BH / 2 + 17, hs = 7;
+    ctx.moveTo(hx, hy + hs * 0.3);
+    ctx.bezierCurveTo(hx, hy - hs * 0.3, hx - hs, hy - hs * 0.3, hx - hs, hy + hs * 0.2);
+    ctx.bezierCurveTo(hx - hs, hy + hs * 0.8, hx, hy + hs * 1.2, hx, hy + hs * 1.5);
+    ctx.bezierCurveTo(hx, hy + hs * 1.2, hx + hs, hy + hs * 0.8, hx + hs, hy + hs * 0.2);
+    ctx.bezierCurveTo(hx + hs, hy - hs * 0.3, hx, hy - hs * 0.3, hx, hy + hs * 0.3);
+    ctx.fill();
+
+    // ── 設定下載 ──
+    document.getElementById("dlBtn").href = canvas.toDataURL("image/png");
+  </script>
+</body>
+</html>
