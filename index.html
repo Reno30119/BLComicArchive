@@ -7,7 +7,10 @@
     <link rel="stylesheet" href="style.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
     <link
       rel="icon"
       href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect x=%2215%22 y=%2220%22 width=%2220%22 height=%2260%22 fill=%22%23e74c3c%22 rx=%222%22/><rect x=%2240%22 y=%2210%22 width=%2220%22 height=%2270%22 fill=%22%233498db%22 rx=%222%22/><rect x=%2265%22 y=%2225%22 width=%2220%22 height=%2255%22 fill=%22%23f1c40f%22 rx=%222%22/></svg>"
@@ -23,6 +26,7 @@
     <nav class="top-nav">
       <a href="index.html" class="nav-item active">➕ 新增書籍</a>
       <a href="list.html" class="nav-item">🔍 查詢書庫</a>
+      <a href="wishlist.html" class="nav-item">🛍️ 待購清單</a>
       <a href="tags.html" class="nav-item">🏷️ 標籤管理</a>
     </nav>
 
@@ -75,10 +79,18 @@
         <div class="form-group">
           <label>分級</label>
           <div class="level-buttons">
-            <button type="button" class="level-btn" data-level="清水">💧 清水</button>
-            <button type="button" class="level-btn" data-level="肉少">🥗 肉少</button>
-            <button type="button" class="level-btn active" data-level="正常">🍛 正常</button>
-            <button type="button" class="level-btn" data-level="肉多">🥩 肉多</button>
+            <button type="button" class="level-btn" data-level="清水">
+              💧 清水
+            </button>
+            <button type="button" class="level-btn" data-level="肉少">
+              🥗 肉少
+            </button>
+            <button type="button" class="level-btn active" data-level="正常">
+              🍛 正常
+            </button>
+            <button type="button" class="level-btn" data-level="肉多">
+              🥩 肉多
+            </button>
           </div>
           <input type="hidden" id="level" name="level" value="正常" />
         </div>
@@ -166,11 +178,17 @@
         </div>
         <div class="form-row">
           <div class="form-group">
-            <label for="ebookUrl"><span class="url-platform-tag ebook-badge">BookWalker</span></label>
+            <label for="ebookUrl"
+              ><span class="url-platform-tag ebook-badge"
+                >BookWalker</span
+              ></label
+            >
             <input type="url" id="ebookUrl" name="ebookUrl" />
           </div>
           <div class="form-group">
-            <label for="chilUrl"><span class="url-platform-tag chil-badge">ちるちる</span></label>
+            <label for="chilUrl"
+              ><span class="url-platform-tag chil-badge">ちるちる</span></label
+            >
             <input type="url" id="chilUrl" name="chilUrl" />
           </div>
         </div>
@@ -255,6 +273,24 @@
 
       fetchAndRefreshStatus();
 
+      // 若從 wishlist.html 的「升級到書庫」按鈕跳轉而來，自動帶入欄位
+      (function prefillFromWishlist() {
+        const p = new URLSearchParams(window.location.search);
+        if (!p.get("prefill")) return;
+        if (p.get("title"))    document.getElementById("title").value    = p.get("title");
+        if (p.get("jpTitle"))  document.getElementById("jpTitle").value  = p.get("jpTitle");
+        if (p.get("author"))   document.getElementById("author").value   = p.get("author");
+        if (p.get("ebookUrl")) document.getElementById("ebookUrl").value = p.get("ebookUrl");
+        if (p.get("chilUrl"))  document.getElementById("chilUrl").value  = p.get("chilUrl");
+        if (p.get("coverUrl")) document.getElementById("coverUrl").value = p.get("coverUrl");
+        if (p.get("title")) {
+          const msg = document.getElementById("message");
+          msg.innerHTML = "✅ 已從待購清單帶入書籍資料，請補填評分與評語";
+          msg.className = "success show";
+          msg.classList.remove("hidden");
+        }
+      })();
+
       // 定義顏色切換函數
       function updateRatingColor(value) {
         const val = parseFloat(value);
@@ -269,51 +305,103 @@
         }
       }
 
-      // 1. 定義通用的自動抓取函式
+      // BookWalker 封面抓取（純字串推算，無需 HTTP 請求）
       async function autoFetchCover() {
         const bwUrl = document.getElementById("ebookUrl").value.trim();
-        const chilUrl = document.getElementById("chilUrl").value.trim();
+        if (!bwUrl) return;
+
+        const coverInput = document.getElementById("coverUrl");
         const msg = document.getElementById("message");
-        const coverInput = document.getElementById("coverUrl"); // 確保上面有加隱藏欄位
-
-        const targetUrl = bwUrl || chilUrl;
-        if (!targetUrl) return;
-
-        // 如果找不到 coverUrl 欄位，在控制台提醒但不要崩潰
-        if (!coverInput) {
-          console.warn("找不到 id='coverUrl' 的隱藏欄位，封面網址將無法存入。");
-        }
 
         try {
           const res = await fetch(
-            `${scriptURL}?action=fetchCover&url=${encodeURIComponent(
-              targetUrl,
-            )}`,
+            `${scriptURL}?action=fetchCover&url=${encodeURIComponent(bwUrl)}`,
           );
           const data = await res.json();
 
           if (data.coverUrl) {
-            if (coverInput) coverInput.value = data.coverUrl;
-            msg.innerHTML = "✅ 封面自動預抓成功！";
+            // BookWalker 封面優先，無條件覆蓋（即使 ちるちる 已填入封面）
+            coverInput.value = data.coverUrl;
+            msg.innerHTML = "✅ BookWalker 封面已帶入！";
             msg.className = "success show";
             msg.classList.remove("hidden");
             setTimeout(() => msg.classList.add("hidden"), 2000);
           }
         } catch (err) {
-          console.error("抓取失敗", err);
+          console.error("封面抓取失敗", err);
         }
       }
 
-      // 2. 同時綁定監聽器給兩個輸入框
-      // 不論哪一個填完離開游標（blur），都會觸發抓取
-      ["change"].forEach((evt) => {
-        document
-          .getElementById("ebookUrl")
-          .addEventListener(evt, autoFetchCover);
-        document
-          .getElementById("chilUrl")
-          .addEventListener(evt, autoFetchCover);
-      });
+      // ちるちる 書籍資料自動帶入（書名、日文書名、作者、封面）
+      // GAS 會用 UrlFetchApp 去抓 ちるちる 頁面 HTML，再解析回傳
+      async function fetchMetaAndFill() {
+        const chilUrl = document.getElementById("chilUrl").value.trim();
+        if (!chilUrl) return;
+
+        const msg = document.getElementById("message");
+        msg.innerHTML = "🔍 正在從 ちるちる 抓取書籍資料...";
+        msg.className = "info show";
+        msg.classList.remove("hidden");
+
+        try {
+          const res = await fetch(
+            `${scriptURL}?action=fetchMeta&url=${encodeURIComponent(chilUrl)}`,
+          );
+          const data = await res.json();
+
+          if (data.error) {
+            msg.classList.add("hidden");
+            return;
+          }
+
+          const filled = [];
+
+          // 只在欄位是空的時候才填入，不覆蓋已手動輸入的內容
+          const titleInput = document.getElementById("title");
+          const jpTitleInput = document.getElementById("jpTitle");
+          const authorInput = document.getElementById("author");
+          const coverInput = document.getElementById("coverUrl");
+
+          if (data.title && !titleInput.value.trim()) {
+            titleInput.value = data.title;
+            titleInput.dispatchEvent(new Event("input")); // 觸發重複書名檢查
+            filled.push("書名");
+          }
+          if (data.jpTitle && !jpTitleInput.value.trim()) {
+            jpTitleInput.value = data.jpTitle;
+            filled.push("日文書名");
+          }
+          if (data.author && !authorInput.value.trim()) {
+            authorInput.value = data.author;
+            filled.push("作者");
+          }
+          // 封面：若尚未有 BookWalker 封面才填入（BookWalker 優先）
+          if (data.coverUrl && !coverInput.value.trim()) {
+            coverInput.value = data.coverUrl;
+            filled.push("封面");
+          }
+
+          if (filled.length > 0) {
+            msg.innerHTML = `✅ 已自動帶入：${filled.join("、")}（中文書名請手動填寫）`;
+            msg.className = "success show";
+          } else {
+            msg.classList.add("hidden");
+          }
+          setTimeout(() => msg.classList.add("hidden"), 3000);
+        } catch (err) {
+          console.error("fetchMeta 失敗", err);
+          msg.classList.add("hidden");
+        }
+      }
+
+      // ebookUrl（BookWalker）→ 只抓封面，且優先覆蓋
+      // chilUrl（ちるちる）→ 抓書名、作者、日文書名、封面（封面為備用）
+      document
+        .getElementById("ebookUrl")
+        .addEventListener("change", autoFetchCover);
+      document
+        .getElementById("chilUrl")
+        .addEventListener("change", fetchMetaAndFill);
       // 監聽輸入事件 (打字或按上下鈕都會觸發)
       ratingInput.addEventListener("input", (e) => {
         updateRatingColor(e.target.value);
@@ -440,7 +528,9 @@
           updateRatingColor(5.0);
           revButtons.forEach((b) => b.classList.remove("active"));
           reviewerInput.value = "";
-          levelBtns.forEach((b) => b.classList.toggle("active", b.dataset.level === "正常"));
+          levelBtns.forEach((b) =>
+            b.classList.toggle("active", b.dataset.level === "正常"),
+          );
           levelInput.value = "正常";
           btn.disabled = false;
           btn.innerHTML = "確認送出資料";
@@ -628,7 +718,11 @@
             .forEach((b) => b.classList.remove("active"));
 
           // 重置分級按鈕至預設值
-          document.querySelectorAll(".level-btn").forEach((b) => b.classList.toggle("active", b.dataset.level === "正常"));
+          document
+            .querySelectorAll(".level-btn")
+            .forEach((b) =>
+              b.classList.toggle("active", b.dataset.level === "正常"),
+            );
           document.getElementById("level").value = "正常";
 
           form.reset();
