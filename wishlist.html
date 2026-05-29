@@ -7,8 +7,14 @@
     <link rel="stylesheet" href="list-style.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🛍️</text></svg>" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🛍️</text></svg>"
+    />
     <link rel="manifest" href="manifest.json" />
     <link rel="apple-touch-icon" href="apple-touch-icon.png" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -50,16 +56,21 @@
         font-family: var(--font-body);
         font-weight: 600;
         cursor: pointer;
-        transition: background 0.15s, box-shadow 0.15s, transform 0.1s;
-        box-shadow: 0 2px 8px rgba(79,70,229,0.25);
+        transition:
+          background 0.15s,
+          box-shadow 0.15s,
+          transform 0.1s;
+        box-shadow: 0 2px 8px rgba(79, 70, 229, 0.25);
         letter-spacing: 0.01em;
       }
       .add-btn:hover {
         background: #4338ca;
-        box-shadow: 0 4px 14px rgba(79,70,229,0.35);
+        box-shadow: 0 4px 14px rgba(79, 70, 229, 0.35);
         transform: translateY(-1px);
       }
-      .add-btn:active { transform: translateY(0); }
+      .add-btn:active {
+        transform: translateY(0);
+      }
 
       /* ── 篩選工具列 ── */
       .wl-filters {
@@ -99,7 +110,10 @@
         border-color: var(--accent);
         font-weight: 500;
       }
-      .wl-chip:hover:not(.active) { border-color: var(--accent); color: var(--accent); }
+      .wl-chip:hover:not(.active) {
+        border-color: var(--accent);
+        color: var(--accent);
+      }
 
       .wl-filter-sep {
         width: 1px;
@@ -120,7 +134,9 @@
         outline: none;
         transition: border-color 0.15s;
       }
-      .wl-status-select:focus { border-color: var(--accent); }
+      .wl-status-select:focus {
+        border-color: var(--accent);
+      }
 
       .show-purchased-chip {
         padding: 5px 13px;
@@ -141,7 +157,10 @@
         border-color: var(--accent);
         font-weight: 500;
       }
-      .show-purchased-chip:hover:not(.active) { border-color: var(--accent); color: var(--accent); }
+      .show-purchased-chip:hover:not(.active) {
+        border-color: var(--accent);
+        color: var(--accent);
+      }
 
       .wl-result-count {
         font-size: 0.8rem;
@@ -158,13 +177,17 @@
         border-radius: var(--radius);
         overflow: hidden;
         margin-bottom: 8px;
-        transition: box-shadow 0.2s, border-color 0.2s;
+        transition:
+          box-shadow 0.2s,
+          border-color 0.2s;
       }
       .wl-item:hover {
         box-shadow: var(--shadow);
         border-color: #d4d4d8;
       }
-      .wl-item.purchased { opacity: 0.5; }
+      .wl-item.purchased {
+        opacity: 0.5;
+      }
 
       /* 封面 */
       .wl-cover {
@@ -295,11 +318,26 @@
         white-space: nowrap;
         letter-spacing: 0.01em;
       }
-      .status-jp_physical  { background: #f1f2f3; color: #6b7280; }
-      .status-jp_ebook     { background: #dbeafe; color: #1d4ed8; }
-      .status-tw_physical  { background: #fef3c7; color: #b45309; }
-      .status-tw_ebook     { background: #dcfce7; color: #166534; }
-      .status-purchased    { background: #f4f4f5; color: #a1a1aa; }
+      .status-jp_physical {
+        background: #f1f2f3;
+        color: #6b7280;
+      }
+      .status-jp_ebook {
+        background: #dbeafe;
+        color: #1d4ed8;
+      }
+      .status-tw_physical {
+        background: #fef3c7;
+        color: #b45309;
+      }
+      .status-tw_ebook {
+        background: #dcfce7;
+        color: #166534;
+      }
+      .status-purchased {
+        background: #f4f4f5;
+        color: #a1a1aa;
+      }
 
       /* 書卡層級的狀態列 */
       .wl-status-row {
@@ -319,7 +357,10 @@
         font-family: var(--font-body);
         transition: all 0.15s;
       }
-      .edit-status-btn:hover { border-color: var(--accent); color: var(--accent); }
+      .edit-status-btn:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+      }
 
       .entry-actions {
         display: flex;
@@ -340,10 +381,25 @@
         white-space: nowrap;
         line-height: 1.5;
       }
-      .entry-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-light); }
-      .upgrade-btn { color: #166534; border-color: #86efac; }
-      .upgrade-btn:hover { background: #dcfce7; border-color: #4ade80; color: #14532d; }
-      .delete-btn:hover { border-color: #fca5a5; color: #dc2626; background: #fef2f2; }
+      .entry-btn:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+        background: var(--accent-light);
+      }
+      .upgrade-btn {
+        color: #166534;
+        border-color: #86efac;
+      }
+      .upgrade-btn:hover {
+        background: #dcfce7;
+        border-color: #4ade80;
+        color: #14532d;
+      }
+      .delete-btn:hover {
+        border-color: #fca5a5;
+        color: #dc2626;
+        background: #fef2f2;
+      }
 
       /* 備註 */
       .wl-notes {
@@ -356,7 +412,11 @@
         margin-top: 2px;
         line-height: 1.5;
       }
-      .wl-notes-label { font-weight: 600; color: #d97706; margin-right: 3px; }
+      .wl-notes-label {
+        font-weight: 600;
+        color: #d97706;
+        margin-right: 3px;
+      }
 
       /* 外部連結 */
       .wl-links {
@@ -374,9 +434,15 @@
         font-weight: 600;
         transition: filter 0.15s;
       }
-      .wl-link:hover { filter: brightness(0.88); }
-      .wl-link.ebook { background: #27ae60; }
-      .wl-link.chil  { background: #e91e63; }
+      .wl-link:hover {
+        filter: brightness(0.88);
+      }
+      .wl-link.ebook {
+        background: #27ae60;
+      }
+      .wl-link.chil {
+        background: #e91e63;
+      }
 
       /* 空狀態 */
       .empty-state {
@@ -391,7 +457,7 @@
       .modal {
         position: fixed;
         inset: 0;
-        background: rgba(0,0,0,0.35);
+        background: rgba(0, 0, 0, 0.35);
         display: flex;
         align-items: center;
         justify-content: center;
@@ -399,7 +465,9 @@
         padding: 16px;
         backdrop-filter: blur(2px);
       }
-      .modal.hidden { display: none; }
+      .modal.hidden {
+        display: none;
+      }
       .modal-box {
         background: white;
         border-radius: var(--radius-lg);
@@ -408,7 +476,7 @@
         max-width: 460px;
         max-height: 92vh;
         overflow-y: auto;
-        box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
       }
       .modal-box h3 {
         margin: 0 0 18px;
@@ -417,7 +485,9 @@
         color: var(--text-primary);
       }
 
-      .mf-group { margin-bottom: 14px; }
+      .mf-group {
+        margin-bottom: 14px;
+      }
       .mf-group label {
         display: block;
         font-size: 0.82rem;
@@ -445,11 +515,16 @@
       .mf-group select:focus {
         outline: none;
         border-color: var(--accent);
-        box-shadow: 0 0 0 3px rgba(95,119,168,0.1);
+        box-shadow: 0 0 0 3px rgba(95, 119, 168, 0.1);
       }
-      .mf-group textarea { resize: vertical; }
+      .mf-group textarea {
+        resize: vertical;
+      }
 
-      .rev-btn-group { display: flex; gap: 8px; }
+      .rev-btn-group {
+        display: flex;
+        gap: 8px;
+      }
       .rev-select-btn {
         flex: 1;
         padding: 9px;
@@ -463,7 +538,9 @@
         color: var(--text-secondary);
         font-weight: 500;
       }
-      .rev-select-btn:hover { border-color: var(--accent); }
+      .rev-select-btn:hover {
+        border-color: var(--accent);
+      }
       .rev-select-btn.active {
         border-color: var(--accent);
         background: var(--accent-light);
@@ -471,7 +548,11 @@
         font-weight: 600;
       }
 
-      .status-btn-group { display: flex; flex-direction: column; gap: 5px; }
+      .status-btn-group {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+      }
       .status-select-btn {
         padding: 9px 12px;
         border: 1.5px solid var(--border);
@@ -485,13 +566,36 @@
         color: var(--text-primary);
         line-height: 1.4;
       }
-      .status-select-btn:hover { border-color: var(--accent); background: var(--accent-light); }
-      .status-select-btn.active-jp_physical { border-color: #9ca3af; background: #f1f2f3; font-weight: 500; }
-      .status-select-btn.active-jp_ebook    { border-color: #60a5fa; background: #dbeafe; font-weight: 500; }
-      .status-select-btn.active-tw_physical { border-color: #fbbf24; background: #fef3c7; font-weight: 500; }
-      .status-select-btn.active-tw_ebook    { border-color: #4ade80; background: #dcfce7; font-weight: 500; }
+      .status-select-btn:hover {
+        border-color: var(--accent);
+        background: var(--accent-light);
+      }
+      .status-select-btn.active-jp_physical {
+        border-color: #9ca3af;
+        background: #f1f2f3;
+        font-weight: 500;
+      }
+      .status-select-btn.active-jp_ebook {
+        border-color: #60a5fa;
+        background: #dbeafe;
+        font-weight: 500;
+      }
+      .status-select-btn.active-tw_physical {
+        border-color: #fbbf24;
+        background: #fef3c7;
+        font-weight: 500;
+      }
+      .status-select-btn.active-tw_ebook {
+        border-color: #4ade80;
+        background: #dcfce7;
+        font-weight: 500;
+      }
 
-      .modal-footer { display: flex; gap: 8px; margin-top: 20px; }
+      .modal-footer {
+        display: flex;
+        gap: 8px;
+        margin-top: 20px;
+      }
       .modal-save-btn {
         flex: 1;
         padding: 10px;
@@ -505,7 +609,9 @@
         font-weight: 500;
         transition: background 0.15s;
       }
-      .modal-save-btn:hover { background: var(--accent-hover); }
+      .modal-save-btn:hover {
+        background: var(--accent-hover);
+      }
       .modal-cancel-btn {
         padding: 10px 18px;
         background: none;
@@ -517,13 +623,27 @@
         color: var(--text-secondary);
         transition: border-color 0.15s;
       }
-      .modal-cancel-btn:hover { border-color: var(--text-secondary); }
+      .modal-cancel-btn:hover {
+        border-color: var(--text-secondary);
+      }
 
-      .fetch-hint { font-size: 0.77rem; color: var(--text-muted); margin-top: 4px; }
-      .fetch-hint.success { color: #16a34a; }
-      .fetch-hint.loading { color: var(--accent); }
+      .fetch-hint {
+        font-size: 0.77rem;
+        color: var(--text-muted);
+        margin-top: 4px;
+      }
+      .fetch-hint.success {
+        color: #16a34a;
+      }
+      .fetch-hint.loading {
+        color: var(--accent);
+      }
 
-      .divider { border: none; border-top: 1px solid var(--border); margin: 12px 0; }
+      .divider {
+        border: none;
+        border-top: 1px solid var(--border);
+        margin: 12px 0;
+      }
 
       /* ── 手機 ── */
       @media (max-width: 540px) {
@@ -535,7 +655,9 @@
           background: none;
         }
         /* 書卡改為上下排列：封面在上，內容在下 */
-        .wl-item { flex-direction: column; }
+        .wl-item {
+          flex-direction: column;
+        }
         .wl-cover {
           width: 100%;
           height: 160px;
@@ -549,10 +671,19 @@
           object-fit: contain;
           border-radius: 0;
         }
-        .wl-body { padding: 10px 10px 8px; }
-        .entry-btn { padding: 3px 6px; font-size: 0.7rem; }
-        .wl-filters { gap: 5px; }
-        .show-purchased-chip { margin-left: 0; }
+        .wl-body {
+          padding: 10px 10px 8px;
+        }
+        .entry-btn {
+          padding: 3px 6px;
+          font-size: 0.7rem;
+        }
+        .wl-filters {
+          gap: 5px;
+        }
+        .show-purchased-chip {
+          margin-left: auto;
+        }
       }
     </style>
   </head>
@@ -577,14 +708,27 @@
         <button class="wl-chip" data-reviewer="茶壺">茶壺</button>
         <div class="wl-filter-sep"></div>
         <span class="wl-filter-label">狀態</span>
-        <select id="statusFilter" class="wl-status-select" onchange="currentStatus = this.value; renderWishlist()">
+        <select
+          id="statusFilter"
+          class="wl-status-select"
+          onchange="
+            currentStatus = this.value;
+            renderWishlist();
+          "
+        >
           <option value="all">全部</option>
           <option value="jp_physical">僅日版，僅實體</option>
           <option value="jp_ebook">僅日版，電子版</option>
           <option value="tw_physical">有台版，僅實體</option>
           <option value="tw_ebook">有台版，電子版</option>
         </select>
-        <button class="show-purchased-chip" id="showPurchasedBtn" onclick="toggleShowPurchased(this)">已購入</button>
+        <button
+          class="show-purchased-chip"
+          id="showPurchasedBtn"
+          onclick="toggleShowPurchased(this)"
+        >
+          已購入
+        </button>
       </div>
 
       <div id="resultCount" class="wl-result-count"></div>
@@ -597,18 +741,36 @@
         <h3>＋ 新增待購書籍</h3>
         <div class="mf-group">
           <label>ちるちる 網址（貼入後自動帶入資料）</label>
-          <input type="url" id="addChilUrl" placeholder="https://www.chil-chil.net/goodsDetail/..." autocomplete="off" />
+          <input
+            type="url"
+            id="addChilUrl"
+            placeholder="https://www.chil-chil.net/goodsDetail/..."
+            autocomplete="off"
+          />
           <div id="addFetchHint" class="fetch-hint"></div>
         </div>
         <div class="mf-group">
           <label>BookWalker 網址（選填，補充封面）</label>
-          <input type="url" id="addEbookUrl" placeholder="https://www.bookwalker.com.tw/..." autocomplete="off" />
+          <input
+            type="url"
+            id="addEbookUrl"
+            placeholder="https://www.bookwalker.com.tw/..."
+            autocomplete="off"
+          />
         </div>
-        <hr class="divider">
+        <hr class="divider" />
         <div class="mf-group">
-          <label>中文書名 <span style="color:#e74c3c">*</span></label>
-          <input type="text" id="addTitle" placeholder="請輸入中文書名" autocomplete="off" />
-          <div id="addTitleHint" style="font-size:0.77rem;margin-top:4px;line-height:1.5;"></div>
+          <label>中文書名 <span style="color: #e74c3c">*</span></label>
+          <input
+            type="text"
+            id="addTitle"
+            placeholder="請輸入中文書名"
+            autocomplete="off"
+          />
+          <div
+            id="addTitleHint"
+            style="font-size: 0.77rem; margin-top: 4px; line-height: 1.5"
+          ></div>
         </div>
         <div class="mf-group">
           <label>日文書名</label>
@@ -620,30 +782,76 @@
         </div>
         <input type="hidden" id="addCoverUrl" />
         <div class="mf-group">
-          <label>評論者 <span style="color:#e74c3c">*</span></label>
+          <label>評論者 <span style="color: #e74c3c">*</span></label>
           <div class="rev-btn-group">
-            <button type="button" class="rev-select-btn" onclick="setAddReviewer('Reno', this)">Reno</button>
-            <button type="button" class="rev-select-btn" onclick="setAddReviewer('茶壺', this)">茶壺</button>
+            <button
+              type="button"
+              class="rev-select-btn"
+              onclick="setAddReviewer('Reno', this)"
+            >
+              Reno
+            </button>
+            <button
+              type="button"
+              class="rev-select-btn"
+              onclick="setAddReviewer('茶壺', this)"
+            >
+              茶壺
+            </button>
           </div>
           <input type="hidden" id="addReviewer" />
         </div>
         <div class="mf-group">
-          <label>狀態 <span style="color:#e74c3c">*</span></label>
+          <label>狀態 <span style="color: #e74c3c">*</span></label>
           <div class="status-btn-group">
-            <button type="button" class="status-select-btn" data-status="jp_physical" onclick="setStatus(this)">僅日版，僅實體</button>
-            <button type="button" class="status-select-btn" data-status="jp_ebook" onclick="setStatus(this)">僅日版，電子版</button>
-            <button type="button" class="status-select-btn" data-status="tw_physical" onclick="setStatus(this)">有台版，僅實體</button>
-            <button type="button" class="status-select-btn" data-status="tw_ebook" onclick="setStatus(this)">有台版，電子版</button>
+            <button
+              type="button"
+              class="status-select-btn"
+              data-status="jp_physical"
+              onclick="setStatus(this)"
+            >
+              僅日版，僅實體
+            </button>
+            <button
+              type="button"
+              class="status-select-btn"
+              data-status="jp_ebook"
+              onclick="setStatus(this)"
+            >
+              僅日版，電子版
+            </button>
+            <button
+              type="button"
+              class="status-select-btn"
+              data-status="tw_physical"
+              onclick="setStatus(this)"
+            >
+              有台版，僅實體
+            </button>
+            <button
+              type="button"
+              class="status-select-btn"
+              data-status="tw_ebook"
+              onclick="setStatus(this)"
+            >
+              有台版，電子版
+            </button>
           </div>
           <input type="hidden" id="addStatus" />
         </div>
         <div class="mf-group">
           <label>備註（只有你自己看得到）</label>
-          <textarea id="addNotes" rows="2" placeholder="例：預計 2025 年台版上市、因為茶壺推薦..."></textarea>
+          <textarea
+            id="addNotes"
+            rows="2"
+            placeholder="例：預計 2025 年台版上市、因為茶壺推薦..."
+          ></textarea>
         </div>
         <div class="modal-footer">
           <button class="modal-save-btn" onclick="submitAdd()">確認新增</button>
-          <button class="modal-cancel-btn" onclick="closeAddModal()">取消</button>
+          <button class="modal-cancel-btn" onclick="closeAddModal()">
+            取消
+          </button>
         </div>
       </div>
     </div>
@@ -656,11 +864,17 @@
         <input type="hidden" id="editTitle" />
         <div class="mf-group">
           <label>備註（只有你自己看得到）</label>
-          <textarea id="editNotes" rows="3" placeholder="例：等特價、朋友推薦..."></textarea>
+          <textarea
+            id="editNotes"
+            rows="3"
+            placeholder="例：等特價、朋友推薦..."
+          ></textarea>
         </div>
         <div class="modal-footer">
           <button class="modal-save-btn" onclick="submitEdit()">儲存</button>
-          <button class="modal-cancel-btn" onclick="closeEditModal()">取消</button>
+          <button class="modal-cancel-btn" onclick="closeEditModal()">
+            取消
+          </button>
         </div>
       </div>
     </div>
@@ -672,29 +886,62 @@
         <input type="hidden" id="statusModalBookTitle" />
         <div class="mf-group">
           <div class="status-btn-group">
-            <button type="button" class="status-select-btn" data-status="jp_physical" onclick="setStatusModalStatus(this)">僅日版，僅實體</button>
-            <button type="button" class="status-select-btn" data-status="jp_ebook" onclick="setStatusModalStatus(this)">僅日版，電子版</button>
-            <button type="button" class="status-select-btn" data-status="tw_physical" onclick="setStatusModalStatus(this)">有台版，僅實體</button>
-            <button type="button" class="status-select-btn" data-status="tw_ebook" onclick="setStatusModalStatus(this)">有台版，電子版</button>
+            <button
+              type="button"
+              class="status-select-btn"
+              data-status="jp_physical"
+              onclick="setStatusModalStatus(this)"
+            >
+              僅日版，僅實體
+            </button>
+            <button
+              type="button"
+              class="status-select-btn"
+              data-status="jp_ebook"
+              onclick="setStatusModalStatus(this)"
+            >
+              僅日版，電子版
+            </button>
+            <button
+              type="button"
+              class="status-select-btn"
+              data-status="tw_physical"
+              onclick="setStatusModalStatus(this)"
+            >
+              有台版，僅實體
+            </button>
+            <button
+              type="button"
+              class="status-select-btn"
+              data-status="tw_ebook"
+              onclick="setStatusModalStatus(this)"
+            >
+              有台版，電子版
+            </button>
           </div>
           <input type="hidden" id="statusModalStatus" />
         </div>
         <div class="modal-footer">
-          <button class="modal-save-btn" onclick="submitStatusEdit()">儲存</button>
-          <button class="modal-cancel-btn" onclick="closeStatusModal()">取消</button>
+          <button class="modal-save-btn" onclick="submitStatusEdit()">
+            儲存
+          </button>
+          <button class="modal-cancel-btn" onclick="closeStatusModal()">
+            取消
+          </button>
         </div>
       </div>
     </div>
 
     <script>
-      const scriptURL = "https://script.google.com/macros/s/AKfycbwqnfCjBq_BYZSWAOU6TnVj2O6YvFF2jan4dY0smm3waf9xP-wOLmz2_4B_L3MND7PK9A/exec";
+      const scriptURL =
+        "https://script.google.com/macros/s/AKfycbwqnfCjBq_BYZSWAOU6TnVj2O6YvFF2jan4dY0smm3waf9xP-wOLmz2_4B_L3MND7PK9A/exec";
 
       const STATUS_CONFIG = {
-        jp_physical:  { label: "僅日版，僅實體", cls: "status-jp_physical" },
-        jp_ebook:     { label: "僅日版，電子版", cls: "status-jp_ebook" },
-        tw_physical:  { label: "有台版，僅實體", cls: "status-tw_physical" },
-        tw_ebook:     { label: "有台版，電子版", cls: "status-tw_ebook" },
-        purchased:    { label: "✅ 已購入",      cls: "status-purchased" }
+        jp_physical: { label: "僅日版，僅實體", cls: "status-jp_physical" },
+        jp_ebook: { label: "僅日版，電子版", cls: "status-jp_ebook" },
+        tw_physical: { label: "有台版，僅實體", cls: "status-tw_physical" },
+        tw_ebook: { label: "有台版，電子版", cls: "status-tw_ebook" },
+        purchased: { label: "✅ 已購入", cls: "status-purchased" },
       };
 
       let allItems = [];
@@ -705,9 +952,11 @@
       // ── 初始化 ──
       window.addEventListener("DOMContentLoaded", fetchWishlist);
 
-      document.querySelectorAll(".wl-chip[data-reviewer]").forEach(btn => {
-        btn.addEventListener("click", function() {
-          document.querySelectorAll(".wl-chip[data-reviewer]").forEach(b => b.classList.remove("active"));
+      document.querySelectorAll(".wl-chip[data-reviewer]").forEach((btn) => {
+        btn.addEventListener("click", function () {
+          document
+            .querySelectorAll(".wl-chip[data-reviewer]")
+            .forEach((b) => b.classList.remove("active"));
           this.classList.add("active");
           currentReviewer = this.dataset.reviewer;
           renderWishlist();
@@ -723,14 +972,42 @@
       }
 
       // ── 抓資料 ──
+      const WISHLIST_CACHE_KEY = "wishlistCache";
+
       async function fetchWishlist() {
+        // 1. 先從快取顯示，讓畫面立即有內容
+        const cached = localStorage.getItem(WISHLIST_CACHE_KEY);
+        if (cached) {
+          try {
+            const parsed = JSON.parse(cached);
+            if (Array.isArray(parsed)) {
+              allItems = parsed;
+              renderWishlist();
+            }
+          } catch {
+            localStorage.removeItem(WISHLIST_CACHE_KEY);
+          }
+        }
+
+        // 2. 背景抓最新資料
         try {
-          const res = await fetch(`${scriptURL}?action=readWishlist&t=${Date.now()}`);
-          allItems = await res.json();
-          renderWishlist();
+          const res = await fetch(
+            `${scriptURL}?action=readWishlist&t=${Date.now()}`,
+          );
+          const newData = await res.json();
+          const newStr = JSON.stringify(newData);
+
+          if (newStr !== cached) {
+            allItems = newData;
+            localStorage.setItem(WISHLIST_CACHE_KEY, newStr);
+            renderWishlist();
+          }
         } catch (e) {
           console.error("載入待購清單失敗", e);
-          document.getElementById("wishlistGrid").innerHTML = '<div class="empty-state">❌ 載入失敗，請重新整理</div>';
+          if (!cached) {
+            document.getElementById("wishlistGrid").innerHTML =
+              '<div class="empty-state">❌ 載入失敗，請重新整理</div>';
+          }
         }
       }
 
@@ -739,56 +1016,70 @@
         const grid = document.getElementById("wishlistGrid");
 
         // 過濾
-        let filtered = allItems.filter(item => {
+        let filtered = allItems.filter((item) => {
           if (!showPurchased && item.purchased === "purchased") return false;
-          if (currentReviewer !== "all" && item.reviewer !== currentReviewer) return false;
-          if (currentStatus !== "all" && item.status !== currentStatus) return false;
+          if (currentReviewer !== "all" && item.reviewer !== currentReviewer)
+            return false;
+          if (currentStatus !== "all" && item.status !== currentStatus)
+            return false;
           return true;
         });
 
         // 以書名合併
         const grouped = {};
-        filtered.forEach(item => {
+        filtered.forEach((item) => {
           const key = item.title.trim();
           if (!grouped[key]) grouped[key] = { ...item, entries: [] };
           grouped[key].entries.push(item);
         });
 
-        const groups = Object.values(grouped).map(book => {
+        const groups = Object.values(grouped).map((book) => {
           // 備註共用：從所有 entries 中取第一個非空的備註
-          book.notes = book.entries.map(e => e.notes).find(n => n && n.trim()) || "";
+          book.notes =
+            book.entries.map((e) => e.notes).find((n) => n && n.trim()) || "";
           return book;
         });
 
         const countEl = document.getElementById("resultCount");
-        countEl.textContent = groups.length > 0 ? `共 ${groups.length} 本書籍` : "";
+        countEl.textContent =
+          groups.length > 0 ? `共 ${groups.length} 本書籍` : "";
 
         if (groups.length === 0) {
-          grid.innerHTML = '<div class="empty-state">📭 目前沒有符合條件的待購書籍</div>';
+          grid.innerHTML =
+            '<div class="empty-state">📭 目前沒有符合條件的待購書籍</div>';
           return;
         }
 
-        grid.innerHTML = groups.map(book => {
-          const isShared = book.entries.length >= 2 ||
-            allItems.filter(i => i.title.trim() === book.title.trim() && i.purchased !== "purchased").length >= 2;
+        grid.innerHTML = groups
+          .map((book) => {
+            const isShared =
+              book.entries.length >= 2 ||
+              allItems.filter(
+                (i) =>
+                  i.title.trim() === book.title.trim() &&
+                  i.purchased !== "purchased",
+              ).length >= 2;
 
-          const coverHTML = book.coverUrl
-            ? `<img src="${book.coverUrl}" alt="封面" loading="lazy">`
-            : `<div class="no-cover-text">無封面</div>`;
+            const coverHTML = book.coverUrl
+              ? `<img src="${book.coverUrl}" alt="封面" loading="lazy">`
+              : `<div class="no-cover-text">無封面</div>`;
 
-          // 狀態是書籍屬性，取第一筆 entry 的狀態代表整本書
-          const bookStatus = book.status;
-          const bsc = STATUS_CONFIG[bookStatus] || {};
-          const statusRowHTML = `
+            // 狀態是書籍屬性，取第一筆 entry 的狀態代表整本書
+            const bookStatus = book.status;
+            const bsc = STATUS_CONFIG[bookStatus] || {};
+            const statusRowHTML = `
             <div class="wl-status-row">
-              <span class="status-chip ${bsc.cls || ''}">${bsc.label || bookStatus}</span>
+              <span class="status-chip ${bsc.cls || ""}">${bsc.label || bookStatus}</span>
               <button class="edit-status-btn" onclick="openStatusModal('${escQ(book.title)}', '${escQ(bookStatus)}')">✎ 狀態</button>
             </div>`;
 
-          const entriesHTML = book.entries.map(entry => {
-            const entryNotes = entry.notes ? `<div class="entry-notes">${escH(entry.notes)}</div>` : "";
-            const isPurchased = entry.purchased === "purchased";
-            return `
+            const entriesHTML = book.entries
+              .map((entry) => {
+                const entryNotes = entry.notes
+                  ? `<div class="entry-notes">${escH(entry.notes)}</div>`
+                  : "";
+                const isPurchased = entry.purchased === "purchased";
+                return `
               <div class="wl-entry">
                 <div class="entry-top-row">
                   <span class="wl-reviewer-name">${entry.reviewer}</span>
@@ -801,17 +1092,24 @@
                 </div>
                 ${entryNotes}
               </div>`;
-          }).join("");
+              })
+              .join("");
 
-          const notesHTML = "";
+            const notesHTML = "";
 
-          const linksHTML = [
-            book.ebookUrl ? `<a href="${book.ebookUrl}" target="_blank" class="wl-link ebook">📖 Bookwalker</a>` : "",
-            book.chilUrl  ? `<a href="${book.chilUrl}"  target="_blank" class="wl-link chil">🍒 ちるちる</a>`   : ""
-          ].filter(Boolean).join("");
+            const linksHTML = [
+              book.ebookUrl
+                ? `<a href="${book.ebookUrl}" target="_blank" class="wl-link ebook">📖 Bookwalker</a>`
+                : "",
+              book.chilUrl
+                ? `<a href="${book.chilUrl}"  target="_blank" class="wl-link chil">🍒 ちるちる</a>`
+                : "",
+            ]
+              .filter(Boolean)
+              .join("");
 
-          return `
-            <div class="wl-item${book.entries.every(e => e.purchased === "purchased") ? " purchased" : ""}">
+            return `
+            <div class="wl-item${book.entries.every((e) => e.purchased === "purchased") ? " purchased" : ""}">
               <div class="wl-cover">${coverHTML}</div>
               <div class="wl-body">
                 <div class="wl-title-row">
@@ -827,12 +1125,21 @@
                 ${linksHTML ? `<div class="wl-links">${linksHTML}</div>` : ""}
               </div>
             </div>`;
-        }).join("");
+          })
+          .join("");
       }
 
       // ── 工具函式 ──
-      function escH(s) { return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
-      function escQ(s) { return String(s||"").replace(/'/g,"\\'"); }
+      function escH(s) {
+        return String(s || "")
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;");
+      }
+      function escQ(s) {
+        return String(s || "").replace(/'/g, "\\'");
+      }
 
       // ── 新增 Modal ──
       let addReviewer = "";
@@ -854,16 +1161,24 @@
         document.getElementById("addFetchHint").textContent = "";
         document.getElementById("addTitleHint").textContent = "";
         document.getElementById("addTitleHint").style.color = "";
-        document.querySelectorAll(".rev-select-btn").forEach(b => b.classList.remove("active"));
-        document.querySelectorAll("#addModal .status-select-btn").forEach(b => b.className = "status-select-btn");
+        document
+          .querySelectorAll(".rev-select-btn")
+          .forEach((b) => b.classList.remove("active"));
+        document
+          .querySelectorAll("#addModal .status-select-btn")
+          .forEach((b) => (b.className = "status-select-btn"));
       }
 
-      function closeAddModal() { document.getElementById("addModal").classList.add("hidden"); }
+      function closeAddModal() {
+        document.getElementById("addModal").classList.add("hidden");
+      }
 
       function setAddReviewer(name, btn) {
         addReviewer = name;
         document.getElementById("addReviewer").value = name;
-        document.querySelectorAll(".rev-select-btn").forEach(b => b.classList.remove("active"));
+        document
+          .querySelectorAll(".rev-select-btn")
+          .forEach((b) => b.classList.remove("active"));
         btn.classList.add("active");
         checkTitleDuplicate(); // 選完評論者重新判斷
       }
@@ -872,14 +1187,16 @@
         const s = btn.dataset.status;
         addStatus = s;
         document.getElementById("addStatus").value = s;
-        document.querySelectorAll("#addModal .status-select-btn").forEach(b => {
-          b.className = "status-select-btn";
-        });
+        document
+          .querySelectorAll("#addModal .status-select-btn")
+          .forEach((b) => {
+            b.className = "status-select-btn";
+          });
         btn.classList.add("active-" + s);
 
         // 選「尚未有日版電子書」或「日文版待購」時，若中文書名空白且日文書名有值，自動帶入
         if (s === "jp_physical" || s === "jp_ebook") {
-          const titleEl   = document.getElementById("addTitle");
+          const titleEl = document.getElementById("addTitle");
           const jpTitleEl = document.getElementById("addJpTitle");
           if (!titleEl.value.trim() && jpTitleEl.value.trim()) {
             titleEl.value = jpTitleEl.value.trim();
@@ -891,19 +1208,29 @@
       // 新增書名重複偵測（書名輸入、選評論者時都觸發）
       function checkTitleDuplicate() {
         const hint = document.getElementById("addTitleHint");
-        const inputTitle = document.getElementById("addTitle").value.trim().toLowerCase();
-        if (!inputTitle) { hint.textContent = ""; return; }
+        const inputTitle = document
+          .getElementById("addTitle")
+          .value.trim()
+          .toLowerCase();
+        if (!inputTitle) {
+          hint.textContent = "";
+          return;
+        }
 
-        const matches = allItems.filter(i =>
-          i.purchased !== "purchased" &&
-          i.title.trim().toLowerCase() === inputTitle
+        const matches = allItems.filter(
+          (i) =>
+            i.purchased !== "purchased" &&
+            i.title.trim().toLowerCase() === inputTitle,
         );
 
-        if (matches.length === 0) { hint.textContent = ""; return; }
+        if (matches.length === 0) {
+          hint.textContent = "";
+          return;
+        }
 
         if (addReviewer) {
-          const mine = matches.find(i => i.reviewer === addReviewer);
-          const theirs = matches.find(i => i.reviewer !== addReviewer);
+          const mine = matches.find((i) => i.reviewer === addReviewer);
+          const theirs = matches.find((i) => i.reviewer !== addReviewer);
           if (mine) {
             const sc = STATUS_CONFIG[mine.status] || {};
             hint.textContent = `⚠️ 你已有這本書（${sc.label || mine.status}）`;
@@ -914,67 +1241,101 @@
           }
         } else {
           // 還沒選評論者時，顯示所有已有的人
-          const names = [...new Set(matches.map(i => i.reviewer))].join("、");
+          const names = [...new Set(matches.map((i) => i.reviewer))].join("、");
           hint.textContent = `📋 ${names} 的待購清單已有這本書`;
           hint.style.color = "#6b7280";
         }
       }
 
-      document.getElementById("addTitle").addEventListener("input", checkTitleDuplicate);
+      document
+        .getElementById("addTitle")
+        .addEventListener("input", checkTitleDuplicate);
 
       // ちるちる 自動帶入
-      document.getElementById("addChilUrl").addEventListener("change", async function() {
-        const url = this.value.trim();
-        if (!url || url.indexOf("chil-chil.net") === -1) return;
-        const hint = document.getElementById("addFetchHint");
-        hint.textContent = "🔍 正在抓取資料...";
-        hint.className = "fetch-hint loading";
-        try {
-          const res = await fetch(`${scriptURL}?action=fetchMeta&url=${encodeURIComponent(url)}`);
-          const data = await res.json();
-          const filled = [];
-          if (data.jpTitle && !document.getElementById("addJpTitle").value) { document.getElementById("addJpTitle").value = data.jpTitle; filled.push("日文書名"); }
-          if (data.author  && !document.getElementById("addAuthor").value)  { document.getElementById("addAuthor").value  = data.author;  filled.push("作者"); }
-          if (data.coverUrl && !document.getElementById("addCoverUrl").value) { document.getElementById("addCoverUrl").value = data.coverUrl; filled.push("封面"); }
-          hint.textContent = filled.length ? `✅ 已帶入：${filled.join("、")}（中文書名請手動填）` : "⚠️ 未能自動帶入";
-          hint.className = "fetch-hint " + (filled.length ? "success" : "");
-        } catch(e) {
-          hint.textContent = "❌ 抓取失敗";
-          hint.className = "fetch-hint";
-        }
-      });
+      document
+        .getElementById("addChilUrl")
+        .addEventListener("change", async function () {
+          const url = this.value.trim();
+          if (!url || url.indexOf("chil-chil.net") === -1) return;
+          const hint = document.getElementById("addFetchHint");
+          hint.textContent = "🔍 正在抓取資料...";
+          hint.className = "fetch-hint loading";
+          try {
+            const res = await fetch(
+              `${scriptURL}?action=fetchMeta&url=${encodeURIComponent(url)}`,
+            );
+            const data = await res.json();
+            const filled = [];
+            if (data.jpTitle && !document.getElementById("addJpTitle").value) {
+              document.getElementById("addJpTitle").value = data.jpTitle;
+              filled.push("日文書名");
+            }
+            if (data.author && !document.getElementById("addAuthor").value) {
+              document.getElementById("addAuthor").value = data.author;
+              filled.push("作者");
+            }
+            if (
+              data.coverUrl &&
+              !document.getElementById("addCoverUrl").value
+            ) {
+              document.getElementById("addCoverUrl").value = data.coverUrl;
+              filled.push("封面");
+            }
+            hint.textContent = filled.length
+              ? `✅ 已帶入：${filled.join("、")}（中文書名請手動填）`
+              : "⚠️ 未能自動帶入";
+            hint.className = "fetch-hint " + (filled.length ? "success" : "");
+          } catch (e) {
+            hint.textContent = "❌ 抓取失敗";
+            hint.className = "fetch-hint";
+          }
+        });
 
       // BookWalker 封面
-      document.getElementById("addEbookUrl").addEventListener("change", async function() {
-        const url = this.value.trim();
-        if (!url) return;
-        try {
-          const res = await fetch(`${scriptURL}?action=fetchCover&url=${encodeURIComponent(url)}`);
-          const data = await res.json();
-          if (data.coverUrl) document.getElementById("addCoverUrl").value = data.coverUrl;
-        } catch(e) {}
-      });
+      document
+        .getElementById("addEbookUrl")
+        .addEventListener("change", async function () {
+          const url = this.value.trim();
+          if (!url) return;
+          try {
+            const res = await fetch(
+              `${scriptURL}?action=fetchCover&url=${encodeURIComponent(url)}`,
+            );
+            const data = await res.json();
+            if (data.coverUrl)
+              document.getElementById("addCoverUrl").value = data.coverUrl;
+          } catch (e) {}
+        });
 
       async function submitAdd() {
-        const title    = document.getElementById("addTitle").value.trim();
+        const title = document.getElementById("addTitle").value.trim();
         const reviewer = document.getElementById("addReviewer").value;
-        const status   = document.getElementById("addStatus").value;
-        if (!title)    { alert("請填入中文書名"); return; }
-        if (!reviewer) { alert("請選擇評論者"); return; }
-        if (!status)   { alert("請選擇狀態"); return; }
+        const status = document.getElementById("addStatus").value;
+        if (!title) {
+          alert("請填入中文書名");
+          return;
+        }
+        if (!reviewer) {
+          alert("請選擇評論者");
+          return;
+        }
+        if (!status) {
+          alert("請選擇狀態");
+          return;
+        }
 
         const newItem = {
           timestamp: String(Date.now()),
           title,
-          jpTitle:  document.getElementById("addJpTitle").value.trim(),
-          author:   document.getElementById("addAuthor").value.trim(),
+          jpTitle: document.getElementById("addJpTitle").value.trim(),
+          author: document.getElementById("addAuthor").value.trim(),
           reviewer,
           status,
-          notes:    document.getElementById("addNotes").value.trim(),
+          notes: document.getElementById("addNotes").value.trim(),
           ebookUrl: document.getElementById("addEbookUrl").value.trim(),
-          chilUrl:  document.getElementById("addChilUrl").value.trim(),
+          chilUrl: document.getElementById("addChilUrl").value.trim(),
           coverUrl: document.getElementById("addCoverUrl").value.trim(),
-          purchased: ""
+          purchased: "",
         };
 
         // 樂觀更新：先把新項目加到畫面，不等 GAS 回應
@@ -983,24 +1344,24 @@
         closeAddModal();
 
         const fd = new FormData();
-        fd.append("action",   "addWishlist");
-        fd.append("title",    newItem.title);
-        fd.append("jpTitle",  newItem.jpTitle);
-        fd.append("author",   newItem.author);
+        fd.append("action", "addWishlist");
+        fd.append("title", newItem.title);
+        fd.append("jpTitle", newItem.jpTitle);
+        fd.append("author", newItem.author);
         fd.append("reviewer", newItem.reviewer);
-        fd.append("status",   newItem.status);
-        fd.append("notes",    newItem.notes);
+        fd.append("status", newItem.status);
+        fd.append("notes", newItem.notes);
         fd.append("ebookUrl", newItem.ebookUrl);
-        fd.append("chilUrl",  newItem.chilUrl);
+        fd.append("chilUrl", newItem.chilUrl);
         fd.append("coverUrl", newItem.coverUrl);
 
         try {
           await fetch(scriptURL, { method: "POST", body: fd, mode: "no-cors" });
-          // 背景重新抓資料，讓暫時的 timestamp 換成 GAS 的真實值
-          setTimeout(fetchWishlist, 3000);
-        } catch(e) {
+          localStorage.setItem(WISHLIST_CACHE_KEY, JSON.stringify(allItems));
+          setTimeout(fetchWishlist, 3000); // 3 秒後再確認 GAS 寫入的真實 timestamp
+        } catch (e) {
           alert("❌ 新增失敗：" + e.message);
-          allItems = allItems.filter(i => i.timestamp !== newItem.timestamp);
+          allItems = allItems.filter((i) => i.timestamp !== newItem.timestamp);
           renderWishlist();
         }
       }
@@ -1010,31 +1371,37 @@
         document.getElementById("editTimestamp").value = ts;
         document.getElementById("editTitle").value = title;
         document.getElementById("editNotes").value = notes || "";
-        document.getElementById("editModalTitle").textContent = `✎ 備註 —「${title}」`;
+        document.getElementById("editModalTitle").textContent =
+          `✎ 備註 —「${title}」`;
         document.getElementById("editModal").classList.remove("hidden");
       }
 
-      function closeEditModal() { document.getElementById("editModal").classList.add("hidden"); }
+      function closeEditModal() {
+        document.getElementById("editModal").classList.add("hidden");
+      }
 
       async function submitEdit() {
-        const ts    = document.getElementById("editTimestamp").value;
+        const ts = document.getElementById("editTimestamp").value;
         const title = document.getElementById("editTitle").value;
         const notes = document.getElementById("editNotes").value.trim();
 
         // 樂觀更新（只更新自己那筆）
-        allItems.forEach(item => { if (item.timestamp === ts) item.notes = notes; });
+        allItems.forEach((item) => {
+          if (item.timestamp === ts) item.notes = notes;
+        });
         renderWishlist();
         closeEditModal();
 
         const fd = new FormData();
-        fd.append("action",    "updateWishlist");
+        fd.append("action", "updateWishlist");
         fd.append("timestamp", ts);
-        fd.append("notes",     notes);
+        fd.append("notes", notes);
 
         try {
           await fetch(scriptURL, { method: "POST", body: fd, mode: "no-cors" });
+          localStorage.setItem(WISHLIST_CACHE_KEY, JSON.stringify(allItems));
           setTimeout(fetchWishlist, 3000);
-        } catch(e) {
+        } catch (e) {
           alert("❌ 更新失敗：" + e.message);
         }
       }
@@ -1043,32 +1410,43 @@
       function openStatusModal(title, currentStatus) {
         document.getElementById("statusModalBookTitle").value = title;
         document.getElementById("statusModalStatus").value = currentStatus;
-        document.getElementById("statusModalTitle").textContent = `✎ 書籍狀態 —「${title}」`;
-        document.querySelectorAll("#statusModal .status-select-btn").forEach(b => {
-          b.className = "status-select-btn";
-          if (b.dataset.status === currentStatus) b.classList.add("active-" + currentStatus);
-        });
+        document.getElementById("statusModalTitle").textContent =
+          `✎ 書籍狀態 —「${title}」`;
+        document
+          .querySelectorAll("#statusModal .status-select-btn")
+          .forEach((b) => {
+            b.className = "status-select-btn";
+            if (b.dataset.status === currentStatus)
+              b.classList.add("active-" + currentStatus);
+          });
         document.getElementById("statusModal").classList.remove("hidden");
       }
 
-      function closeStatusModal() { document.getElementById("statusModal").classList.add("hidden"); }
+      function closeStatusModal() {
+        document.getElementById("statusModal").classList.add("hidden");
+      }
 
       function setStatusModalStatus(btn) {
         const s = btn.dataset.status;
         document.getElementById("statusModalStatus").value = s;
-        document.querySelectorAll("#statusModal .status-select-btn").forEach(b => {
-          b.className = "status-select-btn";
-        });
+        document
+          .querySelectorAll("#statusModal .status-select-btn")
+          .forEach((b) => {
+            b.className = "status-select-btn";
+          });
         btn.classList.add("active-" + s);
       }
 
       async function submitStatusEdit() {
-        const title  = document.getElementById("statusModalBookTitle").value;
+        const title = document.getElementById("statusModalBookTitle").value;
         const status = document.getElementById("statusModalStatus").value;
-        if (!status) { alert("請選擇狀態"); return; }
+        if (!status) {
+          alert("請選擇狀態");
+          return;
+        }
 
         // 樂觀更新：同書名的所有項目都更新
-        allItems.forEach(item => {
+        allItems.forEach((item) => {
           if (item.title.trim() === title.trim()) item.status = status;
         });
         renderWishlist();
@@ -1076,31 +1454,47 @@
 
         const fd = new FormData();
         fd.append("action", "updateWishlist");
-        fd.append("title",  title);
+        fd.append("title", title);
         fd.append("status", status);
 
         try {
           await fetch(scriptURL, { method: "POST", body: fd, mode: "no-cors" });
+          localStorage.setItem(WISHLIST_CACHE_KEY, JSON.stringify(allItems));
           setTimeout(fetchWishlist, 3000);
-        } catch(e) {
+        } catch (e) {
           alert("❌ 更新失敗：" + e.message);
         }
       }
 
       // ── 升級到書庫 ──
-      async function upgradeToArchive(ts, title, jpTitle, author, ebookUrl, chilUrl, coverUrl) {
-        if (!confirm(`將《${title}》升級到書庫，並標記此待購項目為已購入？`)) return;
+      async function upgradeToArchive(
+        ts,
+        title,
+        jpTitle,
+        author,
+        ebookUrl,
+        chilUrl,
+        coverUrl,
+      ) {
+        if (!confirm(`將《${title}》升級到書庫，並標記此待購項目為已購入？`))
+          return;
 
         // 標記已購入
         const fd = new FormData();
-        fd.append("action",    "updateWishlist");
+        fd.append("action", "updateWishlist");
         fd.append("timestamp", ts);
         fd.append("purchased", "purchased");
         await fetch(scriptURL, { method: "POST", body: fd, mode: "no-cors" });
 
         // 帶資料前往 index.html
         const params = new URLSearchParams({
-          prefill: "1", title, jpTitle, author, ebookUrl, chilUrl, coverUrl
+          prefill: "1",
+          title,
+          jpTitle,
+          author,
+          ebookUrl,
+          chilUrl,
+          coverUrl,
         });
         window.location.href = "index.html?" + params.toString();
       }
@@ -1110,16 +1504,17 @@
         if (!confirm("確定要刪除這筆待購紀錄嗎？")) return;
 
         // 樂觀更新
-        allItems = allItems.filter(i => i.timestamp !== ts);
+        allItems = allItems.filter((i) => i.timestamp !== ts);
         renderWishlist();
 
         const fd = new FormData();
-        fd.append("action",    "deleteWishlist");
+        fd.append("action", "deleteWishlist");
         fd.append("timestamp", ts);
         try {
           await fetch(scriptURL, { method: "POST", body: fd, mode: "no-cors" });
+          localStorage.setItem(WISHLIST_CACHE_KEY, JSON.stringify(allItems));
           setTimeout(fetchWishlist, 3000);
-        } catch(e) {
+        } catch (e) {
           alert("❌ 刪除失敗：" + e.message);
         }
       }

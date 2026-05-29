@@ -766,7 +766,8 @@ input:-webkit-autofill:focus {
   }
 
   .nav-item {
-    font-size: 0.85rem;
-    padding: 7px 10px;
+    font-size: 0.78rem;
+    padding: 6px 8px;
+    letter-spacing: 0;
   }
 }

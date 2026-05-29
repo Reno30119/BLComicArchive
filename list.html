@@ -353,13 +353,13 @@
         const refreshBtn = document.getElementById("refreshBtn");
         const CACHE_KEY = "allBooksCache";
 
-        // --- 1. 判斷是否顯示全螢幕提示 ---
-        // 只有在「非手動按鈕觸發」時，才顯示全螢幕 loading
-        if (!isManual && loadingEl) {
+        const cachedData = localStorage.getItem(CACHE_KEY);
+
+        // 有快取時直接顯示，不擋畫面；沒快取才顯示 loading 遮罩
+        if (!isManual && !cachedData && loadingEl) {
           loadingEl.style.display = "flex";
         }
 
-        // --- 2. 無論如何都給予按鈕視覺回饋 (避免重複點擊) ---
         if (refreshBtn) {
           refreshBtn.disabled = true;
           refreshBtn.innerHTML = "🔄 同步中...";
@@ -367,8 +367,7 @@
         }
 
         try {
-          // 優先從快取顯示
-          const cachedData = localStorage.getItem(CACHE_KEY);
+          // 有快取：立即渲染，隱藏遮罩，背景靜默更新
           if (cachedData && allBooks.length === 0) {
             try {
               const parsed = JSON.parse(cachedData);
@@ -376,6 +375,7 @@
                 allBooks = parsed;
                 buildMergedBooks();
                 applyFilters();
+                if (loadingEl) loadingEl.style.display = "none";
               } else {
                 localStorage.removeItem(CACHE_KEY);
               }
@@ -392,7 +392,6 @@
           const newData = await response.json();
           const newDataString = JSON.stringify(newData);
 
-          // --- 3. 處理更新 ---
           if (newDataString !== cachedData) {
             allBooks = newData;
             localStorage.setItem(CACHE_KEY, newDataString);
@@ -400,24 +399,18 @@
             applyFilters();
             showSyncToast("✅ 資料已更新", "success");
           } else if (isManual) {
-            // 手動按時才跳出「已是最新」的提示，自動執行時保持安靜
             showSyncToast("✨ 目前已是最新資料", "info");
           }
         } catch (error) {
           console.error("更新失敗:", error);
           showSyncToast("❌ 同步失敗", "error");
         } finally {
-          // --- 4. 恢復狀態 ---
           if (refreshBtn) {
             refreshBtn.disabled = false;
             refreshBtn.innerHTML = "🔄 更新數據";
             refreshBtn.style.opacity = "1";
           }
-
-          // 關閉全螢幕提示 (如果有開啟的話)
-          if (loadingEl) {
-            loadingEl.style.display = "none";
-          }
+          if (loadingEl) loadingEl.style.display = "none";
         }
       }
 

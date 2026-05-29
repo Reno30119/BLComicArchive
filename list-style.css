@@ -1050,8 +1050,9 @@ body {
   }
 
   .nav-item {
-    padding: 7px 10px;
-    font-size: 0.85rem;
+    padding: 6px 8px;
+    font-size: 0.78rem;
+    letter-spacing: 0;
   }
 
   /* 手機版：badge+title 同排，score+edit 靠右獨立一行 */
