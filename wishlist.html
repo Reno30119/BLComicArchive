@@ -932,9 +932,34 @@
       </div>
     </div>
 
+    <div id="wl-toast" style="position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(100px);background:#27ae60;color:white;padding:10px 20px;border-radius:50px;box-shadow:0 4px 15px rgba(0,0,0,.2);transition:transform .4s;z-index:9999;font-weight:bold;pointer-events:none;"></div>
+
     <script>
       const scriptURL =
         "https://script.google.com/macros/s/AKfycbwqnfCjBq_BYZSWAOU6TnVj2O6YvFF2jan4dY0smm3waf9xP-wOLmz2_4B_L3MND7PK9A/exec";
+
+      async function fetchWithTimeout(url, timeoutMs = 15000) {
+        const controller = new AbortController();
+        const id = setTimeout(() => controller.abort(), timeoutMs);
+        try {
+          const res = await fetch(url, { signal: controller.signal });
+          clearTimeout(id);
+          return res;
+        } catch (err) {
+          clearTimeout(id);
+          throw err;
+        }
+      }
+
+      function showToast(message, type = "success") {
+        const el = document.getElementById("wl-toast");
+        if (!el) return;
+        el.style.background = type === "error" ? "#e74c3c" : type === "info" ? "#5f77a8" : "#27ae60";
+        el.textContent = message;
+        el.style.transform = "translateX(-50%) translateY(0)";
+        clearTimeout(el._timer);
+        el._timer = setTimeout(() => { el.style.transform = "translateX(-50%) translateY(100px)"; }, 3000);
+      }
 
       const STATUS_CONFIG = {
         jp_physical: { label: "僅日版，僅實體", cls: "status-jp_physical" },
@@ -973,10 +998,15 @@
 
       // ── 抓資料 ──
       const WISHLIST_CACHE_KEY = "wishlistCache";
+      const WISHLIST_CACHE_TS_KEY = "wishlistCacheTs";
+      const WISHLIST_CACHE_TTL = 3 * 60 * 1000; // 3 分鐘
 
-      async function fetchWishlist() {
+      async function fetchWishlist(isManual = false) {
         // 1. 先從快取顯示，讓畫面立即有內容
         const cached = localStorage.getItem(WISHLIST_CACHE_KEY);
+        const cachedTs = parseInt(localStorage.getItem(WISHLIST_CACHE_TS_KEY) || "0");
+        const isFresh = cached && (Date.now() - cachedTs) < WISHLIST_CACHE_TTL;
+
         if (cached) {
           try {
             const parsed = JSON.parse(cached);
@@ -986,23 +1016,36 @@
             }
           } catch {
             localStorage.removeItem(WISHLIST_CACHE_KEY);
+            localStorage.removeItem(WISHLIST_CACHE_TS_KEY);
           }
         }
 
+        // 快取新鮮且非手動更新，跳過背景同步
+        if (isFresh && !isManual) return;
+
         // 2. 背景抓最新資料
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 12000);
+
         try {
           const res = await fetch(
             `${scriptURL}?action=readWishlist&t=${Date.now()}`,
+            { signal: controller.signal }
           );
+          clearTimeout(timeoutId);
           const newData = await res.json();
           const newStr = JSON.stringify(newData);
 
           if (newStr !== cached) {
             allItems = newData;
             localStorage.setItem(WISHLIST_CACHE_KEY, newStr);
+            localStorage.setItem(WISHLIST_CACHE_TS_KEY, String(Date.now()));
             renderWishlist();
+          } else {
+            localStorage.setItem(WISHLIST_CACHE_TS_KEY, String(Date.now()));
           }
         } catch (e) {
+          clearTimeout(timeoutId);
           console.error("載入待購清單失敗", e);
           if (!cached) {
             document.getElementById("wishlistGrid").innerHTML =
@@ -1261,7 +1304,7 @@
           hint.textContent = "🔍 正在抓取資料...";
           hint.className = "fetch-hint loading";
           try {
-            const res = await fetch(
+            const res = await fetchWithTimeout(
               `${scriptURL}?action=fetchMeta&url=${encodeURIComponent(url)}`,
             );
             const data = await res.json();
@@ -1298,7 +1341,7 @@
           const url = this.value.trim();
           if (!url) return;
           try {
-            const res = await fetch(
+            const res = await fetchWithTimeout(
               `${scriptURL}?action=fetchCover&url=${encodeURIComponent(url)}`,
             );
             const data = await res.json();
@@ -1312,15 +1355,15 @@
         const reviewer = document.getElementById("addReviewer").value;
         const status = document.getElementById("addStatus").value;
         if (!title) {
-          alert("請填入中文書名");
+          showToast("❌ 請填入中文書名", "error");
           return;
         }
         if (!reviewer) {
-          alert("請選擇評論者");
+          showToast("❌ 請選擇評論者", "error");
           return;
         }
         if (!status) {
-          alert("請選擇狀態");
+          showToast("❌ 請選擇狀態", "error");
           return;
         }
 
@@ -1342,6 +1385,7 @@
         allItems.push(newItem);
         renderWishlist();
         closeAddModal();
+        showToast("✅ 已加入待購清單", "success");
 
         const fd = new FormData();
         fd.append("action", "addWishlist");
@@ -1358,9 +1402,9 @@
         try {
           await fetch(scriptURL, { method: "POST", body: fd, mode: "no-cors" });
           localStorage.setItem(WISHLIST_CACHE_KEY, JSON.stringify(allItems));
-          setTimeout(fetchWishlist, 3000); // 3 秒後再確認 GAS 寫入的真實 timestamp
+          setTimeout(() => fetchWishlist(true), 3000); // 3 秒後再確認 GAS 寫入的真實 timestamp
         } catch (e) {
-          alert("❌ 新增失敗：" + e.message);
+          showToast("❌ 新增失敗：" + e.message, "error");
           allItems = allItems.filter((i) => i.timestamp !== newItem.timestamp);
           renderWishlist();
         }
@@ -1391,6 +1435,7 @@
         });
         renderWishlist();
         closeEditModal();
+        showToast("✅ 備註已更新", "success");
 
         const fd = new FormData();
         fd.append("action", "updateWishlist");
@@ -1400,9 +1445,9 @@
         try {
           await fetch(scriptURL, { method: "POST", body: fd, mode: "no-cors" });
           localStorage.setItem(WISHLIST_CACHE_KEY, JSON.stringify(allItems));
-          setTimeout(fetchWishlist, 3000);
+          setTimeout(() => fetchWishlist(true), 3000);
         } catch (e) {
-          alert("❌ 更新失敗：" + e.message);
+          showToast("❌ 更新失敗：" + e.message, "error");
         }
       }
 
@@ -1441,7 +1486,7 @@
         const title = document.getElementById("statusModalBookTitle").value;
         const status = document.getElementById("statusModalStatus").value;
         if (!status) {
-          alert("請選擇狀態");
+          showToast("❌ 請選擇狀態", "error");
           return;
         }
 
@@ -1451,6 +1496,7 @@
         });
         renderWishlist();
         closeStatusModal();
+        showToast("✅ 狀態已更新", "success");
 
         const fd = new FormData();
         fd.append("action", "updateWishlist");
@@ -1460,9 +1506,9 @@
         try {
           await fetch(scriptURL, { method: "POST", body: fd, mode: "no-cors" });
           localStorage.setItem(WISHLIST_CACHE_KEY, JSON.stringify(allItems));
-          setTimeout(fetchWishlist, 3000);
+          setTimeout(() => fetchWishlist(true), 3000);
         } catch (e) {
-          alert("❌ 更新失敗：" + e.message);
+          showToast("❌ 更新失敗：" + e.message, "error");
         }
       }
 
@@ -1506,6 +1552,7 @@
         // 樂觀更新
         allItems = allItems.filter((i) => i.timestamp !== ts);
         renderWishlist();
+        showToast("🗑️ 已刪除待購紀錄", "info");
 
         const fd = new FormData();
         fd.append("action", "deleteWishlist");
@@ -1513,9 +1560,9 @@
         try {
           await fetch(scriptURL, { method: "POST", body: fd, mode: "no-cors" });
           localStorage.setItem(WISHLIST_CACHE_KEY, JSON.stringify(allItems));
-          setTimeout(fetchWishlist, 3000);
+          setTimeout(() => fetchWishlist(true), 3000);
         } catch (e) {
-          alert("❌ 刪除失敗：" + e.message);
+          showToast("❌ 刪除失敗：" + e.message, "error");
         }
       }
     </script>

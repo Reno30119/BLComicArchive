@@ -66,8 +66,8 @@
           <div class="filter-panel-row">
             <span class="filter-panel-label">排序</span>
             <div class="filter-btn-group">
-              <button class="fbtn sort-chip active-chip" data-sort="date" onclick="sortData('date')">📅 最新</button>
-              <button class="fbtn sort-chip" data-sort="updated" onclick="sortData('updated')">🕐 近期更新</button>
+              <button class="fbtn sort-chip" data-sort="date" onclick="sortData('date')">📅 最新</button>
+              <button class="fbtn sort-chip active-chip" data-sort="updated" onclick="sortData('updated')">🕐 近期更新</button>
               <button class="fbtn sort-chip" data-sort="rating" onclick="sortData('rating')">⭐ 評分</button>
               <button class="fbtn sort-chip" data-sort="author" onclick="sortData('author')">🖋️ 作者</button>
               <button class="fbtn sort-chip" data-sort="title" onclick="sortData('title')">📜 書名</button>
@@ -254,6 +254,9 @@
               name="reviewer"
               required
             />
+            <div id="dupReviewWarning" style="display:none; margin-top:8px; padding:8px 12px; background:#fff8e1; border-left:3px solid #f39c12; border-radius:4px; font-size:0.85em; color:#7d5a00;">
+              ⚠️ <span id="dupReviewMsg"></span>
+            </div>
           </div>
 
           <div class="form-group">
@@ -352,8 +355,12 @@
         const loadingEl = document.getElementById("loading");
         const refreshBtn = document.getElementById("refreshBtn");
         const CACHE_KEY = "allBooksCache";
+        const CACHE_TS_KEY = "allBooksCacheTs";
+        const CACHE_TTL = 3 * 60 * 1000; // 3 分鐘
 
         const cachedData = localStorage.getItem(CACHE_KEY);
+        const cachedTs = parseInt(localStorage.getItem(CACHE_TS_KEY) || "0");
+        const isFresh = cachedData && (Date.now() - cachedTs) < CACHE_TTL;
 
         // 有快取時直接顯示，不擋畫面；沒快取才顯示 loading 遮罩
         if (!isManual && !cachedData && loadingEl) {
@@ -367,7 +374,7 @@
         }
 
         try {
-          // 有快取：立即渲染，隱藏遮罩，背景靜默更新
+          // 有快取：立即渲染，隱藏遮罩
           if (cachedData && allBooks.length === 0) {
             try {
               const parsed = JSON.parse(cachedData);
@@ -378,15 +385,37 @@
                 if (loadingEl) loadingEl.style.display = "none";
               } else {
                 localStorage.removeItem(CACHE_KEY);
+                localStorage.removeItem(CACHE_TS_KEY);
               }
             } catch {
               localStorage.removeItem(CACHE_KEY);
+              localStorage.removeItem(CACHE_TS_KEY);
             }
           }
 
-          const response = await fetch(
-            `${scriptURL}?action=read&t=${new Date().getTime()}`,
-          );
+          // 快取新鮮且非手動更新，跳過背景同步
+          if (isFresh && !isManual) return;
+
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 12000);
+
+          let response;
+          try {
+            response = await fetch(
+              `${scriptURL}?action=read&t=${new Date().getTime()}`,
+              { signal: controller.signal }
+            );
+            clearTimeout(timeoutId);
+          } catch (err) {
+            clearTimeout(timeoutId);
+            if (err.name === "AbortError") {
+              showSyncToast(cachedData ? "⚠️ 同步逾時，顯示快取資料" : "❌ 連線逾時，請稍後再試", "error");
+            } else {
+              showSyncToast(cachedData ? "⚠️ 同步失敗，顯示快取資料" : "❌ 同步失敗", "error");
+            }
+            return;
+          }
+
           if (!response.ok) throw new Error("網路回應錯誤");
 
           const newData = await response.json();
@@ -395,11 +424,13 @@
           if (newDataString !== cachedData) {
             allBooks = newData;
             localStorage.setItem(CACHE_KEY, newDataString);
+            localStorage.setItem(CACHE_TS_KEY, String(Date.now()));
             buildMergedBooks();
             applyFilters();
             showSyncToast("✅ 資料已更新", "success");
-          } else if (isManual) {
-            showSyncToast("✨ 目前已是最新資料", "info");
+          } else {
+            localStorage.setItem(CACHE_TS_KEY, String(Date.now()));
+            if (isManual) showSyncToast("✨ 目前已是最新資料", "info");
           }
         } catch (error) {
           console.error("更新失敗:", error);
@@ -499,7 +530,11 @@
           row.dataset.ratingTier = ratingVal < 5.5 ? "low" : ratingVal <= 7 ? "mid" : "high";
 
           const coverHTML = book.coverUrl && book.coverUrl !== ""
-            ? `<img src="${book.coverUrl}" alt="封面" loading="lazy">`
+            ? `<img src="${book.coverUrl}" alt="封面" loading="lazy"
+                data-title="${(book.title || '').replace(/"/g, '&quot;')}"
+                data-bw="${(book.ebookUrl || '').replace(/"/g, '&quot;')}"
+                data-chil="${(book.chilUrl || '').replace(/"/g, '&quot;')}"
+                onerror="handleCoverError(this)">`
             : `<div class="no-cover">
                  <span>無封面</span>
                  <button onclick="reFetchCover('${book.title.replace(/'/g, "\\'")}', '${book.ebookUrl || ""}', '${book.chilUrl || ""}', event)">🔍 抓取</button>
@@ -559,6 +594,26 @@
 
         grid.appendChild(fragment);
       }
+      async function fetchWithTimeout(url, timeoutMs = 15000) {
+        const controller = new AbortController();
+        const id = setTimeout(() => controller.abort(), timeoutMs);
+        try {
+          const res = await fetch(url, { signal: controller.signal });
+          clearTimeout(id);
+          return res;
+        } catch (err) {
+          clearTimeout(id);
+          throw err;
+        }
+      }
+
+      function handleCoverError(img) {
+        const title = img.dataset.title || "";
+        const bw = img.dataset.bw || "";
+        const chil = img.dataset.chil || "";
+        img.parentElement.innerHTML = `<div class="no-cover"><span>無封面</span><button onclick="reFetchCover('${title.replace(/'/g, "\\'")}', '${bw.replace(/'/g, "\\'")}', '${chil.replace(/'/g, "\\'")}', event)">🔍 抓取</button></div>`;
+      }
+
       // 1. 抓取封面的補救功能
       async function reFetchCover(title, bwUrl, chilUrl, event) {
         // 優先順序：BookWalker > Chil-Chil
@@ -574,7 +629,7 @@
         }
 
         if (!urlToFetch) {
-          alert("❌ 缺少 BookWalker 或 Chil-Chil 網址，請先編輯書籍資訊。");
+          showSyncToast("❌ 缺少 BookWalker 或 ちるちる 網址，請先編輯書籍資訊", "error");
           return;
         }
 
@@ -587,7 +642,7 @@
           const fetchUrl = `${scriptURL}?action=fetchCover&url=${encodeURIComponent(
             urlToFetch,
           )}`;
-          const res = await fetch(fetchUrl);
+          const res = await fetchWithTimeout(fetchUrl);
           const data = await res.json();
 
           if (data.coverUrl) {
@@ -600,15 +655,15 @@
             formData.append("action", "updateCoverOnly");
 
             fetch(scriptURL, { method: "POST", body: formData });
-            alert("✅ 封面抓取成功！");
+            showSyncToast("✅ 封面抓取成功", "success");
           } else {
             coverContainer.innerHTML = originalContent;
-            alert("❌ 抓取失敗：" + (data.error || "找不到圖片"));
+            showSyncToast("❌ 抓取失敗：" + (data.error || "找不到圖片"), "error");
           }
         } catch (e) {
           coverContainer.innerHTML = originalContent;
           console.error("抓取錯誤:", e);
-          alert("❌ 連線錯誤，請檢查網路或 GAS 狀態。");
+          showSyncToast(e.name === "AbortError" ? "❌ 抓取逾時，請稍後再試" : "❌ 連線錯誤，請檢查網路或 GAS 狀態", "error");
         }
       }
 
@@ -723,12 +778,11 @@
             mode: "no-cors",
           });
 
-          alert("✅ 資料已提交更新！");
+          showSyncToast("✅ 資料已提交更新", "success");
           closeModal();
-          // 重新抓取資料以看到更新後的書名
-          setTimeout(fetchData, 1500);
+          setTimeout(() => fetchData(true), 1500);
         } catch (err) {
-          alert("❌ 更新失敗：" + err.message);
+          showSyncToast("❌ 更新失敗：" + err.message, "error");
         } finally {
           btn.innerText = "儲存修改";
           btn.disabled = false;
@@ -763,7 +817,7 @@
         window.scrollTo({ top: 0, behavior: "smooth" });
       }
 
-      let currentSortType = "date"; // 預設依日期
+      let currentSortType = "updated"; // 預設依最近更新
 
       // 統一排序入口
       function sortData(type) {
@@ -843,6 +897,7 @@
           } else {
             // B 模式：一般模糊比對 (手動輸入時)
             const matchTitle = book.title.toLowerCase().includes(query);
+            const matchJpTitle = (book.jpTitle || "").toLowerCase().includes(query);
             const matchAuthor = (book.author || "")
               .toLowerCase()
               .includes(query);
@@ -855,7 +910,7 @@
             // 這裡用 some + includes，讓手動輸入時依然保有彈性
             const matchTags = tagList.some((t) => t.includes(query));
 
-            matchSearch = matchTitle || matchAuthor || matchTags;
+            matchSearch = matchTitle || matchJpTitle || matchAuthor || matchTags;
           }
           // --- 【搜尋邏輯修正結束】 ---
 
@@ -931,9 +986,9 @@
           }
         });
 
-        currentSortType = "date";
+        currentSortType = "updated";
         document.querySelectorAll(".sort-chip").forEach((chip) => {
-          chip.classList.toggle("active-chip", chip.dataset.sort === "date");
+          chip.classList.toggle("active-chip", chip.dataset.sort === "updated");
         });
 
         applyFilters();
@@ -948,7 +1003,7 @@
 
         if (!bookData) {
           console.error("❌ 找不到資料！請檢查 allBooks 陣列中是否有這個 TS");
-          alert("系統錯誤：找不到書籍資訊");
+          showSyncToast("❌ 系統錯誤：找不到書籍資訊", "error");
           return;
         }
 
@@ -991,6 +1046,7 @@
           .querySelectorAll(".rev-select-btn")
           .forEach((b) => b.classList.remove("active"));
         document.getElementById("addCommentReviewer").value = "";
+        document.getElementById("dupReviewWarning").style.display = "none";
       }
 
       // 評論者選擇切換
@@ -1000,6 +1056,20 @@
           .querySelectorAll(".rev-select-btn")
           .forEach((b) => b.classList.remove("active"));
         btn.classList.add("active");
+
+        // 重複評論偵測
+        const title = document.getElementById("addCommentTargetTitle").value;
+        const warning = document.getElementById("dupReviewWarning");
+        const msg = document.getElementById("dupReviewMsg");
+        const alreadyReviewed = allBooks.some(
+          (b) => String(b.title).trim() === String(title).trim() && String(b.reviewer).trim() === name
+        );
+        if (alreadyReviewed) {
+          msg.textContent = `${name} 已評過這本書，確定要新增第二筆嗎？`;
+          warning.style.display = "block";
+        } else {
+          warning.style.display = "none";
+        }
       }
 
       // 處理表單送出
@@ -1008,7 +1078,7 @@
 
         const reviewer = document.getElementById("addCommentReviewer").value;
         if (!reviewer) {
-          alert("請選擇評論者 (Reno 或 茶壺)！");
+          showSyncToast("❌ 請先選擇評論者", "error");
           return;
         }
 
@@ -1029,15 +1099,12 @@
             mode: "no-cors", // 避免跨域阻擋
           });
 
-          // 由於 no-cors 模式無法讀取回應，我們直接假設成功並給予提示
-          alert("✅ 評論已成功建立！(資料同步可能需要幾秒鐘)");
           closeAddCommentModal();
-
-          // 3. 延遲一下再重新讀取，確保 Google 試算表已寫入完畢
-          setTimeout(fetchData, 1500);
+          showSyncToast("✅ 評論已建立，資料同步中...", "success");
+          setTimeout(() => fetchData(true), 1500);
         } catch (err) {
           console.error("儲存失敗:", err);
-          alert("❌ 儲存失敗：" + err.message);
+          showSyncToast("❌ 儲存失敗：" + err.message, "error");
         } finally {
           btn.disabled = false;
           btn.innerText = "確認送出";

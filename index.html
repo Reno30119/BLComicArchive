@@ -232,6 +232,29 @@
       // 取得評分輸入框
       const ratingInput = document.getElementById("rating");
 
+      async function fetchWithTimeout(url, timeoutMs = 15000) {
+        const controller = new AbortController();
+        const id = setTimeout(() => controller.abort(), timeoutMs);
+        try {
+          const res = await fetch(url, { signal: controller.signal });
+          clearTimeout(id);
+          return res;
+        } catch (err) {
+          clearTimeout(id);
+          throw err;
+        }
+      }
+
+      function showToast(message, type = "success") {
+        const el = document.getElementById("idx-toast");
+        if (!el) return;
+        el.style.background = type === "error" ? "#e74c3c" : type === "info" ? "#5f77a8" : "#27ae60";
+        el.textContent = message;
+        el.style.transform = "translateX(-50%) translateY(0)";
+        clearTimeout(el._timer);
+        el._timer = setTimeout(() => { el.style.transform = "translateX(-50%) translateY(100px)"; }, 3000);
+      }
+
       // 1. 先定義所有需要的變數
       const scriptURL =
         "https://script.google.com/macros/s/AKfycbwqnfCjBq_BYZSWAOU6TnVj2O6YvFF2jan4dY0smm3waf9xP-wOLmz2_4B_L3MND7PK9A/exec";
@@ -242,31 +265,43 @@
         const dbCountBadge = document.getElementById("dbCountBadge");
         const dbTimeBadge = document.getElementById("dbTimeBadge");
 
-        try {
-          // 1. 抓取資料庫
-          const response = await fetch(scriptURL + "?action=read");
-          allBooks = await response.json();
-
-          // 2. 計算「不重複書籍」數量 (使用你寫好的異體字標準化邏輯)
+        function updateBadges() {
           const uniqueTitles = new Set(
             allBooks.map((book) => normalizeText(String(book.title || ""))),
           );
-
-          // 3. 取得目前時間
           const now = new Date();
           const timeStr = `${now.getHours().toString().padStart(2, "0")}:${now.getMinutes().toString().padStart(2, "0")}`;
+          if (dbCountBadge) dbCountBadge.innerHTML = `📖 書籍：${uniqueTitles.size} 本 (共 ${allBooks.length} 筆評論)`;
+          if (dbTimeBadge) dbTimeBadge.innerHTML = `🕒 更新：${timeStr}`;
+        }
 
-          // 4. 更新畫面上的美化標籤
-          if (dbCountBadge) {
-            dbCountBadge.innerHTML = `📖 書籍：${uniqueTitles.size} 本 (共 ${allBooks.length} 筆評論)`;
+        // 1. 先用 localStorage 快取立即顯示（重複偵測用）
+        try {
+          const cached = localStorage.getItem("allBooksCache");
+          if (cached) {
+            const parsed = JSON.parse(cached);
+            if (Array.isArray(parsed)) {
+              allBooks = parsed;
+              updateBadges();
+            }
           }
-          if (dbTimeBadge) {
-            dbTimeBadge.innerHTML = `🕒 更新：${timeStr}`;
-          }
+        } catch(e) {}
 
-          console.log(`同步完成：目前有 ${uniqueTitles.size} 本漫畫。`);
+        // 2. 背景抓最新（確保重複偵測資料是最新的）
+        try {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 12000);
+          const response = await fetch(scriptURL + "?action=read", { signal: controller.signal });
+          clearTimeout(timeoutId);
+          const freshData = await response.json();
+          if (Array.isArray(freshData)) {
+            allBooks = freshData;
+            localStorage.setItem("allBooksCache", JSON.stringify(freshData));
+            localStorage.setItem("allBooksCacheTs", String(Date.now()));
+            updateBadges();
+          }
         } catch (error) {
-          if (dbCountBadge) dbCountBadge.innerHTML = "❌ 連線失敗";
+          if (!allBooks.length && dbCountBadge) dbCountBadge.innerHTML = "❌ 連線失敗";
           console.error("資料讀取失敗:", error);
         }
       }
@@ -314,7 +349,7 @@
         const msg = document.getElementById("message");
 
         try {
-          const res = await fetch(
+          const res = await fetchWithTimeout(
             `${scriptURL}?action=fetchCover&url=${encodeURIComponent(bwUrl)}`,
           );
           const data = await res.json();
@@ -344,7 +379,7 @@
         msg.classList.remove("hidden");
 
         try {
-          const res = await fetch(
+          const res = await fetchWithTimeout(
             `${scriptURL}?action=fetchMeta&url=${encodeURIComponent(chilUrl)}`,
           );
           const data = await res.json();
@@ -454,7 +489,7 @@
         e.preventDefault();
 
         if (!reviewerInput.value) {
-          alert("請選擇一位評論者！");
+          showToast("❌ 請先選擇評論者", "error");
           return;
         }
 
@@ -698,39 +733,21 @@
         if (book.coverUrl) {
           document.getElementById("coverUrl").value = book.coverUrl;
         }
-        alert("✅ 資料已成功帶入。");
+        showToast("✅ 資料已從待購清單帶入", "success");
       }
 
       function clearFullForm() {
-        if (confirm("確定要清空目前填寫的所有資料嗎？")) {
-          // 修正這裡：你的 form ID 是 bookForm
-          const form = document.getElementById("bookForm");
-
-          form.reset();
-
-          // 額外重置隱藏欄位與按鈕狀態
-          document.getElementById("coverUrl").value = "";
-          document.getElementById("reviewer").value = "";
-
-          // 移除評論者按鈕的選中狀態
-          document
-            .querySelectorAll(".rev-btn")
-            .forEach((b) => b.classList.remove("active"));
-
-          // 重置分級按鈕至預設值
-          document
-            .querySelectorAll(".level-btn")
-            .forEach((b) =>
-              b.classList.toggle("active", b.dataset.level === "正常"),
-            );
-          document.getElementById("level").value = "正常";
-
-          form.reset();
-          // 回復預設評分顏色
-          updateRatingColor(5.0);
-
-          console.log("表單已完全清空");
-        }
+        const form = document.getElementById("bookForm");
+        form.reset();
+        document.getElementById("coverUrl").value = "";
+        document.getElementById("reviewer").value = "";
+        document.querySelectorAll(".rev-btn").forEach((b) => b.classList.remove("active"));
+        document.querySelectorAll(".level-btn").forEach((b) =>
+          b.classList.toggle("active", b.dataset.level === "正常")
+        );
+        document.getElementById("level").value = "正常";
+        updateRatingColor(5.0);
+        showToast("🗑️ 表單已清空", "info");
       }
 
       // 新增：專門用來隱藏搜尋回饋與重設狀態的函式
@@ -890,5 +907,6 @@
 
       window.addEventListener("load", initTagFeatures);
     </script>
+    <div id="idx-toast" style="position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(100px);background:#27ae60;color:white;padding:10px 20px;border-radius:50px;box-shadow:0 4px 15px rgba(0,0,0,.2);transition:transform .4s;z-index:9999;font-weight:bold;pointer-events:none;"></div>
   </body>
 </html>
