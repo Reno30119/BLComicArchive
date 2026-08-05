@@ -323,18 +323,18 @@
       ✅ 資料已同步至最新版本
     </div>
 
+    <script src="app.js"></script>
     <script>
       /**
        * ⚠️ 重要提示：
        * 每次修改 GAS 程式碼後，請點擊「部署」->「管理部署」->「編輯」->「版本：新版本」
        * 這樣才能確保 scriptURL 維持不變。
        */
-      const scriptURL =
-        "https://script.google.com/macros/s/AKfycbwqnfCjBq_BYZSWAOU6TnVj2O6YvFF2jan4dY0smm3waf9xP-wOLmz2_4B_L3MND7PK9A/exec";
+      const scriptURL = BookArchive.SCRIPT_URL;
 
       let allBooks = [];
       let mergedBooks = [];
-      let activeSyncController = null;
+      let isSyncing = false;
       let syncToastTimer = null;
 
       window.addEventListener("DOMContentLoaded", () => {
@@ -363,10 +363,11 @@
         const cachedTs = Number(localStorage.getItem(CACHE_TS_KEY)) || 0;
         const isFresh = cachedData && Date.now() - cachedTs < CACHE_TTL;
 
-        if (activeSyncController) {
+        if (isSyncing) {
           if (isManual) showSyncToast("⚠️ 資料仍在同步中，請稍候", "info");
           return;
         }
+        isSyncing = true;
 
         if (!isManual && !cachedData && loadingEl) loadingEl.style.display = "flex";
 
@@ -394,36 +395,15 @@
 
           if (isFresh && !isManual) return;
 
-          activeSyncController = new AbortController();
-          const timeoutId = setTimeout(() => activeSyncController?.abort(), 30000);
-          const params = new URLSearchParams({
-            action: "read",
-            t: String(Date.now()),
-            refresh: isManual ? "1" : "0",
+          const newData = await BookArchive.fetchJson("read", {}, {
+            refresh: isManual,
+            timeoutMs: 30000,
+            retries: 1,
           });
-
-          let response;
-          try {
-            response = await fetch(`${scriptURL}?${params}`, {
-              signal: activeSyncController.signal,
-              cache: "no-store",
-              redirect: "follow",
-            });
-          } finally {
-            clearTimeout(timeoutId);
-          }
-
-          if (!response.ok) throw new Error(`網路回應錯誤 (${response.status})`);
-
-          const newData = await response.json();
-          if (!Array.isArray(newData)) {
-            throw new Error(newData?.error || "伺服器回傳的資料格式不正確");
-          }
 
           const newDataString = JSON.stringify(newData);
           allBooks = newData;
-          localStorage.setItem(CACHE_KEY, newDataString);
-          localStorage.setItem(CACHE_TS_KEY, String(Date.now()));
+          BookArchive.setCachedData(CACHE_KEY, CACHE_TS_KEY, newData);
           buildMergedBooks();
           applyFilters();
 
@@ -443,7 +423,7 @@
             "error",
           );
         } finally {
-          activeSyncController = null;
+          isSyncing = false;
           if (refreshBtn) {
             refreshBtn.disabled = false;
             refreshBtn.innerHTML = "🔄 更新數據";
@@ -782,15 +762,32 @@
         btn.disabled = true;
 
         try {
-          await fetch(scriptURL, {
-            method: "POST",
-            body: formData,
-            mode: "no-cors",
+          await BookArchive.postForm(formData);
+          showSyncToast("⏳ 資料已送出，正在確認同步結果...", "info");
+
+          const targetTimestamp = String(formData.get("timestamp") || "");
+          const confirmedBooks = await BookArchive.waitForCollection({
+            action: "read",
+            matches: (books) => books.some((book) => {
+              if (String(book.timestamp) !== targetTimestamp) return false;
+              return String(book.title || "") === String(formData.get("title") || "") &&
+                String(book.jpTitle || "") === String(formData.get("jpTitle") || "") &&
+                String(book.author || "") === String(formData.get("author") || "") &&
+                String(book.level || "") === String(formData.get("level") || "") &&
+                String(book.tags || "") === String(formData.get("tags") || "") &&
+                String(book.twStatus || "") === String(formData.get("twStatus") || "") &&
+                String(book.jpStatus || "") === String(formData.get("jpStatus") || "") &&
+                String(book.rating) === String(formData.get("rating") || "") &&
+                String(book.comment || "") === String(formData.get("comment") || "");
+            }),
           });
 
-          showSyncToast("✅ 資料已提交更新", "success");
+          allBooks = confirmedBooks;
+          BookArchive.setCachedData("allBooksCache", "allBooksCacheTs", confirmedBooks);
+          buildMergedBooks();
+          applyFilters();
+          showSyncToast("✅ 資料已確認更新", "success");
           closeModal();
-          setTimeout(() => fetchData(true), 1500);
         } catch (err) {
           showSyncToast("❌ 更新失敗：" + err.message, "error");
         } finally {
@@ -1102,16 +1099,27 @@
         formData.append("action", "processForm");
 
         try {
-          // 2. 改用 fetch 送出資料到 scriptURL
-          await fetch(scriptURL, {
-            method: "POST",
-            body: formData,
-            mode: "no-cors", // 避免跨域阻擋
+          await BookArchive.postForm(formData);
+          showSyncToast("⏳ 評論已送出，正在確認同步結果...", "info");
+
+          const expectedTitle = String(formData.get("title") || "");
+          const expectedReviewer = String(formData.get("reviewer") || "");
+          const expectedComment = String(formData.get("comment") || "");
+          const confirmedBooks = await BookArchive.waitForCollection({
+            action: "read",
+            matches: (books) => books.some((book) =>
+              String(book.title) === expectedTitle &&
+              String(book.reviewer) === expectedReviewer &&
+              String(book.comment || "") === expectedComment,
+            ),
           });
 
+          allBooks = confirmedBooks;
+          BookArchive.setCachedData("allBooksCache", "allBooksCacheTs", confirmedBooks);
+          buildMergedBooks();
+          applyFilters();
           closeAddCommentModal();
-          showSyncToast("✅ 評論已建立，資料同步中...", "success");
-          setTimeout(() => fetchData(true), 1500);
+          showSyncToast("✅ 評論已確認建立", "success");
         } catch (err) {
           console.error("儲存失敗:", err);
           showSyncToast("❌ 儲存失敗：" + err.message, "error");

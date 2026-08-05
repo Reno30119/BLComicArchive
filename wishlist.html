@@ -934,9 +934,9 @@
 
     <div id="wl-toast" style="position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(100px);background:#27ae60;color:white;padding:10px 20px;border-radius:50px;box-shadow:0 4px 15px rgba(0,0,0,.2);transition:transform .4s;z-index:9999;font-weight:bold;pointer-events:none;"></div>
 
+    <script src="app.js"></script>
     <script>
-      const scriptURL =
-        "https://script.google.com/macros/s/AKfycbwqnfCjBq_BYZSWAOU6TnVj2O6YvFF2jan4dY0smm3waf9xP-wOLmz2_4B_L3MND7PK9A/exec";
+      const scriptURL = BookArchive.SCRIPT_URL;
 
       async function fetchWithTimeout(url, timeoutMs = 15000) {
         const controller = new AbortController();
@@ -1001,6 +1001,20 @@
       const WISHLIST_CACHE_TS_KEY = "wishlistCacheTs";
       const WISHLIST_CACHE_TTL = 3 * 60 * 1000; // 3 分鐘
 
+      async function confirmWishlistWrite(matches) {
+        const confirmedItems = await BookArchive.waitForCollection({
+          action: "readWishlist",
+          matches,
+        });
+        allItems = confirmedItems;
+        BookArchive.setCachedData(
+          WISHLIST_CACHE_KEY,
+          WISHLIST_CACHE_TS_KEY,
+          confirmedItems,
+        );
+        renderWishlist();
+      }
+
       async function fetchWishlist(isManual = false) {
         // 1. 先從快取顯示，讓畫面立即有內容
         const cached = localStorage.getItem(WISHLIST_CACHE_KEY);
@@ -1024,28 +1038,22 @@
         if (isFresh && !isManual) return;
 
         // 2. 背景抓最新資料
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 12000);
-
         try {
-          const res = await fetch(
-            `${scriptURL}?action=readWishlist&t=${Date.now()}`,
-            { signal: controller.signal }
-          );
-          clearTimeout(timeoutId);
-          const newData = await res.json();
+          const newData = await BookArchive.fetchJson("readWishlist", {}, {
+            refresh: isManual,
+            timeoutMs: 30000,
+            retries: 1,
+          });
           const newStr = JSON.stringify(newData);
 
           if (newStr !== cached) {
             allItems = newData;
-            localStorage.setItem(WISHLIST_CACHE_KEY, newStr);
-            localStorage.setItem(WISHLIST_CACHE_TS_KEY, String(Date.now()));
+            BookArchive.setCachedData(WISHLIST_CACHE_KEY, WISHLIST_CACHE_TS_KEY, newData);
             renderWishlist();
           } else {
             localStorage.setItem(WISHLIST_CACHE_TS_KEY, String(Date.now()));
           }
         } catch (e) {
-          clearTimeout(timeoutId);
           console.error("載入待購清單失敗", e);
           if (!cached) {
             document.getElementById("wishlistGrid").innerHTML =
@@ -1400,13 +1408,18 @@
         fd.append("coverUrl", newItem.coverUrl);
 
         try {
-          await fetch(scriptURL, { method: "POST", body: fd, mode: "no-cors" });
-          localStorage.setItem(WISHLIST_CACHE_KEY, JSON.stringify(allItems));
-          setTimeout(() => fetchWishlist(true), 3000); // 3 秒後再確認 GAS 寫入的真實 timestamp
+          showToast("⏳ 已送出，正在確認儲存...", "info");
+          await BookArchive.postForm(fd);
+          await confirmWishlistWrite((items) => items.some((item) =>
+            item.title === newItem.title &&
+            item.reviewer === newItem.reviewer &&
+            item.status === newItem.status &&
+            item.notes === newItem.notes,
+          ));
+          showToast("✅ 已確認加入待購清單", "success");
         } catch (e) {
-          showToast("❌ 新增失敗：" + e.message, "error");
-          allItems = allItems.filter((i) => i.timestamp !== newItem.timestamp);
-          renderWishlist();
+          showToast("⚠️ 尚未確認新增結果，請稍後重新同步確認", "error");
+          await fetchWishlist(true);
         }
       }
 
@@ -1443,11 +1456,15 @@
         fd.append("notes", notes);
 
         try {
-          await fetch(scriptURL, { method: "POST", body: fd, mode: "no-cors" });
-          localStorage.setItem(WISHLIST_CACHE_KEY, JSON.stringify(allItems));
-          setTimeout(() => fetchWishlist(true), 3000);
+          showToast("⏳ 已送出，正在確認更新...", "info");
+          await BookArchive.postForm(fd);
+          await confirmWishlistWrite((items) => items.some((item) =>
+            String(item.timestamp) === ts && item.notes === notes,
+          ));
+          showToast("✅ 備註已確認更新", "success");
         } catch (e) {
-          showToast("❌ 更新失敗：" + e.message, "error");
+          showToast("⚠️ 尚未確認更新結果，請稍後重新同步確認", "error");
+          await fetchWishlist(true);
         }
       }
 
@@ -1504,11 +1521,16 @@
         fd.append("status", status);
 
         try {
-          await fetch(scriptURL, { method: "POST", body: fd, mode: "no-cors" });
-          localStorage.setItem(WISHLIST_CACHE_KEY, JSON.stringify(allItems));
-          setTimeout(() => fetchWishlist(true), 3000);
+          showToast("⏳ 已送出，正在確認更新...", "info");
+          await BookArchive.postForm(fd);
+          await confirmWishlistWrite((items) =>
+            items.filter((item) => item.title.trim() === title.trim())
+              .every((item) => item.status === status),
+          );
+          showToast("✅ 書籍狀態已確認更新", "success");
         } catch (e) {
-          showToast("❌ 更新失敗：" + e.message, "error");
+          showToast("⚠️ 尚未確認更新結果，請稍後重新同步確認", "error");
+          await fetchWishlist(true);
         }
       }
 
@@ -1525,12 +1547,21 @@
         if (!confirm(`將《${title}》升級到書庫，並標記此待購項目為已購入？`))
           return;
 
-        // 標記已購入
+        // 確認已購入標記寫入後，才帶資料前往新增書庫頁。
         const fd = new FormData();
         fd.append("action", "updateWishlist");
         fd.append("timestamp", ts);
         fd.append("purchased", "purchased");
-        await fetch(scriptURL, { method: "POST", body: fd, mode: "no-cors" });
+        try {
+          showToast("⏳ 正在確認已購入狀態...", "info");
+          await BookArchive.postForm(fd);
+          await confirmWishlistWrite((items) => items.some((item) =>
+            String(item.timestamp) === String(ts) && item.purchased === "purchased",
+          ));
+        } catch (error) {
+          showToast("⚠️ 尚未確認已購入狀態，請先重新同步後再試", "error");
+          return;
+        }
 
         // 帶資料前往 index.html
         const params = new URLSearchParams({
@@ -1558,11 +1589,15 @@
         fd.append("action", "deleteWishlist");
         fd.append("timestamp", ts);
         try {
-          await fetch(scriptURL, { method: "POST", body: fd, mode: "no-cors" });
-          localStorage.setItem(WISHLIST_CACHE_KEY, JSON.stringify(allItems));
-          setTimeout(() => fetchWishlist(true), 3000);
+          showToast("⏳ 已送出，正在確認刪除...", "info");
+          await BookArchive.postForm(fd);
+          await confirmWishlistWrite((items) =>
+            !items.some((item) => String(item.timestamp) === String(ts)),
+          );
+          showToast("✅ 已確認刪除待購紀錄", "success");
         } catch (e) {
-          showToast("❌ 刪除失敗：" + e.message, "error");
+          showToast("⚠️ 尚未確認刪除結果，請稍後重新同步確認", "error");
+          await fetchWishlist(true);
         }
       }
     </script>

@@ -61,6 +61,18 @@
             </div>
           </div>
           <div id="searchFeedback" class="search-feedback"></div>
+          <div id="duplicateBookCard" class="duplicate-book-card hidden" aria-live="polite">
+            <div class="duplicate-book-card-header">
+              <strong>書庫已有這本書</strong>
+              <button type="button" class="duplicate-dismiss-btn" onclick="dismissDuplicateCard()" aria-label="關閉重複書籍提示">✕</button>
+            </div>
+            <p id="duplicateBookDetails" class="duplicate-book-details"></p>
+            <p class="duplicate-book-hint">可帶入書籍共用資訊，再填寫這次的評論；也可以保留目前內容繼續建立。</p>
+            <div class="duplicate-book-actions">
+              <button type="button" id="duplicateAutofillBtn" class="duplicate-primary-btn">帶入書籍資訊</button>
+              <button type="button" class="duplicate-secondary-btn" onclick="dismissDuplicateCard()">保留目前內容</button>
+            </div>
+          </div>
         </div>
         <div class="form-group">
           <label for="jpTitle">日文書名</label>
@@ -228,6 +240,7 @@
       <div id="message" class="hidden"></div>
     </div>
 
+    <script src="app.js"></script>
     <script>
       // 取得評分輸入框
       const ratingInput = document.getElementById("rating");
@@ -256,8 +269,7 @@
       }
 
       // 1. 先定義所有需要的變數
-      const scriptURL =
-        "https://script.google.com/macros/s/AKfycbwqnfCjBq_BYZSWAOU6TnVj2O6YvFF2jan4dY0smm3waf9xP-wOLmz2_4B_L3MND7PK9A/exec";
+      const scriptURL = BookArchive.SCRIPT_URL;
       let allBooks = []; // 用來存放抓取回來的資料
 
       // 統一的同步函式：負責抓資料、更新記憶體 (allBooks)、更新美化狀態欄
@@ -289,17 +301,13 @@
 
         // 2. 背景抓最新（確保重複偵測資料是最新的）
         try {
-          const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 12000);
-          const response = await fetch(scriptURL + "?action=read", { signal: controller.signal });
-          clearTimeout(timeoutId);
-          const freshData = await response.json();
-          if (Array.isArray(freshData)) {
-            allBooks = freshData;
-            localStorage.setItem("allBooksCache", JSON.stringify(freshData));
-            localStorage.setItem("allBooksCacheTs", String(Date.now()));
-            updateBadges();
-          }
+          const freshData = await BookArchive.fetchJson("read", {}, {
+            timeoutMs: 30000,
+            retries: 1,
+          });
+          allBooks = freshData;
+          BookArchive.setCachedData("allBooksCache", "allBooksCacheTs", freshData);
+          updateBadges();
         } catch (error) {
           if (!allBooks.length && dbCountBadge) dbCountBadge.innerHTML = "❌ 連線失敗";
           console.error("資料讀取失敗:", error);
@@ -539,27 +547,30 @@
             }
           }
 
-          // 2. 傳送資料到 GAS
-          await fetch(scriptURL, {
-            method: "POST",
-            body: formData,
-            mode: "no-cors", // 由於 Google Apps Script 的特性，必須使用 no-cors
+          // 2. 送出後輪詢讀取資料，確認 GAS 已實際寫入。
+          await BookArchive.postForm(formData);
+          msg.innerHTML = "⏳ 資料已送出，正在確認同步結果...";
+          msg.className = "info show";
+          const expectedTitle = normalizeText(data.title);
+          const expectedReviewer = data.reviewer;
+          const expectedComment = data.comment || "";
+          const confirmedBooks = await BookArchive.waitForCollection({
+            action: "read",
+            matches: (books) => books.some((book) =>
+              normalizeText(book.title) === expectedTitle &&
+              String(book.reviewer) === expectedReviewer &&
+              String(book.comment || "") === expectedComment,
+            ),
           });
 
-          // --- 在 form submit 的成功處理區段 ---
-          // 3. 成功後的處理
-          msg.innerHTML = "✅ 資料已成功同步！";
-
-          // 修正：確保移除所有可能阻擋顯示的類別
-          msg.classList.remove("hidden");
-          msg.style.display = "block"; // 強制讓元素佔據空間
-
-          // 確保套用正確的樣式
+          allBooks = confirmedBooks;
+          BookArchive.setCachedData("allBooksCache", "allBooksCacheTs", confirmedBooks);
+          msg.innerHTML = "✅ 資料已確認儲存！";
           msg.className = "success show";
 
           form.reset();
-          fetchAndRefreshStatus(); // 更新 📖 狀態欄
-          resetSearchFeedback(); // 清除「已有此書」提示
+          fetchAndRefreshStatus();
+          resetSearchFeedback();
           updateRatingColor(5.0);
           revButtons.forEach((b) => b.classList.remove("active"));
           reviewerInput.value = "";
@@ -570,13 +581,12 @@
           btn.disabled = false;
           btn.innerHTML = "確認送出資料";
 
-          window.scrollTo({ top: 0, behavior: "smooth" }); // 捲回頂部看提示
+          window.scrollTo({ top: 0, behavior: "smooth" });
 
-          // 3秒後自動隱藏
           setTimeout(() => {
             msg.classList.remove("show");
             msg.classList.add("hidden");
-            msg.style.display = "none"; // 徹底隱藏避免佔位
+            msg.style.display = "none";
           }, 3000);
         } catch (error) {
           console.error("傳送失敗:", error);
@@ -613,9 +623,11 @@
       // 監聽書名輸入
       const titleInput = document.getElementById("title");
       const feedback = document.getElementById("searchFeedback");
-      let lastAlertedTitle = ""; // 避免針對同一個書名重複跳出 confirm
+      const duplicateBookCard = document.getElementById("duplicateBookCard");
+      const duplicateBookDetails = document.getElementById("duplicateBookDetails");
+      const duplicateAutofillBtn = document.getElementById("duplicateAutofillBtn");
       const titleRecList = document.getElementById("titleRecommendationList");
-      let searchTimeout; // 1. 用來存放計時器的變數
+      let searchTimeout;
 
       titleInput.addEventListener("input", function () {
         const inputVal = this.value.trim();
@@ -625,7 +637,7 @@
           feedback.innerHTML = "";
           feedback.className = "search-feedback";
           titleRecList.style.display = "none";
-          lastAlertedTitle = "";
+          dismissDuplicateCard();
           return;
         }
 
@@ -668,26 +680,39 @@
         if (existingBook) {
           feedback.innerHTML = "⚠️ 書庫內已有此書";
           feedback.className = "search-feedback active status-found";
-
-          // 4. 保留你要求的邏輯，但包在定時器內並確保只會執行最後一次輸入的判定
-          if (lastAlertedTitle !== normalizedInput) {
-            searchTimeout = setTimeout(() => {
-              if (
-                confirm(
-                  `📢 發現重複書籍！\n「${existingBook.title}」已存在。\n是否要自動填入書籍資料？`,
-                )
-              ) {
-                autoFillForm(existingBook);
-              }
-              lastAlertedTitle = normalizedInput;
-            }, 400); // 保留你要求的 400 毫秒延遲
-          }
+          showDuplicateCard(existingBook);
         } else {
           feedback.innerHTML = "✨ 書庫內尚未有此書";
           feedback.className = "search-feedback active status-new";
-          lastAlertedTitle = "";
+          dismissDuplicateCard();
         }
       });
+
+      function showDuplicateCard(book) {
+        const reviewers = [...new Set(
+          allBooks
+            .filter((item) => normalizeText(String(item.title)) === normalizeText(book.title))
+            .map((item) => item.reviewer)
+            .filter(Boolean),
+        )];
+        const ratings = allBooks
+          .filter((item) => normalizeText(String(item.title)) === normalizeText(book.title))
+          .map((item) => Number(item.rating))
+          .filter((rating) => Number.isFinite(rating));
+        const average = ratings.length
+          ? (ratings.reduce((sum, rating) => sum + rating, 0) / ratings.length).toFixed(1)
+          : "尚無評分";
+        const reviewerText = reviewers.length ? reviewers.join("、") : "尚無評論者";
+
+        duplicateBookDetails.textContent =
+          `《${book.title}》｜${book.author || "作者未填"}｜${reviewerText} 已評論｜平均 ${average}`;
+        duplicateAutofillBtn.onclick = () => autoFillForm(book);
+        duplicateBookCard.classList.remove("hidden");
+      }
+
+      window.dismissDuplicateCard = function () {
+        duplicateBookCard.classList.add("hidden");
+      };
 
       // 新增：處理點選推薦項目的函式
       window.selectTitleFromRec = function (title) {
@@ -714,8 +739,7 @@
         // 1. 強制填入中文書名
         titleField.value = book.title || "";
 
-        // 2. 重要：立刻更新「最後警告過的書名」，防止 input 事件再次觸發導致判定重疊
-        lastAlertedTitle = normalizeText(book.title);
+        dismissDuplicateCard();
 
         document.getElementById("jpTitle").value = book.jpTitle || "";
         document.getElementById("author").value = book.author || "";
@@ -757,7 +781,7 @@
           feedback.innerHTML = "";
           feedback.className = "search-feedback"; // 移除 active 類別使其隱藏
         }
-        lastAlertedTitle = ""; // 清除最後比對紀錄，讓下次輸入同書名時能再次觸發提示
+        dismissDuplicateCard();
       }
 
       let allTags = []; // 儲存從 GAS 抓回來的標籤
