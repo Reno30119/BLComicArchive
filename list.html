@@ -334,6 +334,8 @@
 
       let allBooks = [];
       let mergedBooks = [];
+      let activeSyncController = null;
+      let syncToastTimer = null;
 
       window.addEventListener("DOMContentLoaded", () => {
         // 若從標籤管理頁點擊標籤跳轉而來，自動填入篩選條件
@@ -356,16 +358,17 @@
         const refreshBtn = document.getElementById("refreshBtn");
         const CACHE_KEY = "allBooksCache";
         const CACHE_TS_KEY = "allBooksCacheTs";
-        const CACHE_TTL = 3 * 60 * 1000; // 3 分鐘
-
+        const CACHE_TTL = 3 * 60 * 1000;
         const cachedData = localStorage.getItem(CACHE_KEY);
-        const cachedTs = parseInt(localStorage.getItem(CACHE_TS_KEY) || "0");
-        const isFresh = cachedData && (Date.now() - cachedTs) < CACHE_TTL;
+        const cachedTs = Number(localStorage.getItem(CACHE_TS_KEY)) || 0;
+        const isFresh = cachedData && Date.now() - cachedTs < CACHE_TTL;
 
-        // 有快取時直接顯示，不擋畫面；沒快取才顯示 loading 遮罩
-        if (!isManual && !cachedData && loadingEl) {
-          loadingEl.style.display = "flex";
+        if (activeSyncController) {
+          if (isManual) showSyncToast("⚠️ 資料仍在同步中，請稍候", "info");
+          return;
         }
+
+        if (!isManual && !cachedData && loadingEl) loadingEl.style.display = "flex";
 
         if (refreshBtn) {
           refreshBtn.disabled = true;
@@ -374,68 +377,73 @@
         }
 
         try {
-          // 有快取：立即渲染，隱藏遮罩
           if (cachedData && allBooks.length === 0) {
             try {
               const parsed = JSON.parse(cachedData);
-              if (Array.isArray(parsed)) {
-                allBooks = parsed;
-                buildMergedBooks();
-                applyFilters();
-                if (loadingEl) loadingEl.style.display = "none";
-              } else {
-                localStorage.removeItem(CACHE_KEY);
-                localStorage.removeItem(CACHE_TS_KEY);
-              }
-            } catch {
+              if (!Array.isArray(parsed)) throw new Error("快取資料格式錯誤");
+              allBooks = parsed;
+              buildMergedBooks();
+              applyFilters();
+              if (loadingEl) loadingEl.style.display = "none";
+            } catch (error) {
+              console.warn("無法讀取本機快取，將重新下載資料：", error);
               localStorage.removeItem(CACHE_KEY);
               localStorage.removeItem(CACHE_TS_KEY);
             }
           }
 
-          // 快取新鮮且非手動更新，跳過背景同步
           if (isFresh && !isManual) return;
 
-          const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 12000);
+          activeSyncController = new AbortController();
+          const timeoutId = setTimeout(() => activeSyncController?.abort(), 30000);
+          const params = new URLSearchParams({
+            action: "read",
+            t: String(Date.now()),
+            refresh: isManual ? "1" : "0",
+          });
 
           let response;
           try {
-            response = await fetch(
-              `${scriptURL}?action=read&t=${new Date().getTime()}`,
-              { signal: controller.signal }
-            );
+            response = await fetch(`${scriptURL}?${params}`, {
+              signal: activeSyncController.signal,
+              cache: "no-store",
+              redirect: "follow",
+            });
+          } finally {
             clearTimeout(timeoutId);
-          } catch (err) {
-            clearTimeout(timeoutId);
-            if (err.name === "AbortError") {
-              showSyncToast(cachedData ? "⚠️ 同步逾時，顯示快取資料" : "❌ 連線逾時，請稍後再試", "error");
-            } else {
-              showSyncToast(cachedData ? "⚠️ 同步失敗，顯示快取資料" : "❌ 同步失敗", "error");
-            }
-            return;
           }
 
-          if (!response.ok) throw new Error("網路回應錯誤");
+          if (!response.ok) throw new Error(`網路回應錯誤 (${response.status})`);
 
           const newData = await response.json();
-          const newDataString = JSON.stringify(newData);
+          if (!Array.isArray(newData)) {
+            throw new Error(newData?.error || "伺服器回傳的資料格式不正確");
+          }
 
-          if (newDataString !== cachedData) {
-            allBooks = newData;
-            localStorage.setItem(CACHE_KEY, newDataString);
-            localStorage.setItem(CACHE_TS_KEY, String(Date.now()));
-            buildMergedBooks();
-            applyFilters();
-            showSyncToast("✅ 資料已更新", "success");
-          } else {
-            localStorage.setItem(CACHE_TS_KEY, String(Date.now()));
-            if (isManual) showSyncToast("✨ 目前已是最新資料", "info");
+          const newDataString = JSON.stringify(newData);
+          allBooks = newData;
+          localStorage.setItem(CACHE_KEY, newDataString);
+          localStorage.setItem(CACHE_TS_KEY, String(Date.now()));
+          buildMergedBooks();
+          applyFilters();
+
+          if (isManual) {
+            showSyncToast(
+              newDataString === cachedData ? "✨ 目前已是最新資料" : "✅ 資料已更新",
+              newDataString === cachedData ? "info" : "success",
+            );
           }
         } catch (error) {
+          const timedOut = error.name === "AbortError";
           console.error("更新失敗:", error);
-          showSyncToast("❌ 同步失敗", "error");
+          showSyncToast(
+            cachedData
+              ? timedOut ? "⚠️ 同步逾時，正在顯示快取資料" : "⚠️ 同步失敗，正在顯示快取資料"
+              : timedOut ? "❌ 連線逾時，請稍後再試" : `❌ 同步失敗：${error.message}`,
+            "error",
+          );
         } finally {
+          activeSyncController = null;
           if (refreshBtn) {
             refreshBtn.disabled = false;
             refreshBtn.innerHTML = "🔄 更新數據";
@@ -459,9 +467,11 @@
         toastEl.innerText = message;
         toastEl.classList.add("show");
 
-        // 4. 3秒後自動消失
-        setTimeout(() => {
+        // 避免短時間內連續訊息讓舊計時器提早關閉新提示
+        if (syncToastTimer) clearTimeout(syncToastTimer);
+        syncToastTimer = setTimeout(() => {
           toastEl.classList.remove("show");
+          syncToastTimer = null;
         }, 3000);
       }
 
