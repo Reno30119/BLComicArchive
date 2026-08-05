@@ -176,8 +176,12 @@ body {
   cursor: pointer;
 }
 
-#searchRecommendationList .tag-item:hover {
-  background: var(--accent-light);
+#searchRecommendationList .tag-item:hover,
+#searchRecommendationList .tag-item.keyboard-active,
+.custom-tag-list .tag-item.keyboard-active {
+  background: #eef2ff;
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
 }
 
 #searchRecommendationList .rec-author {

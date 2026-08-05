@@ -339,6 +339,12 @@ input:-webkit-autofill:focus {
   border: 1px solid #c4b5fd;
 }
 
+.custom-tag-list .tag-item.keyboard-active {
+  background: #eef2ff;
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
 .show {
   display: block;
 }

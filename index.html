@@ -279,11 +279,16 @@
 
         function updateBadges() {
           const uniqueTitles = new Set(
-            allBooks.map((book) => normalizeText(String(book.title || ""))),
+            allBooks
+              .filter((book) => book && book.title)
+              .map((book) => normalizeText(String(book.title))),
           );
           const now = new Date();
           const timeStr = `${now.getHours().toString().padStart(2, "0")}:${now.getMinutes().toString().padStart(2, "0")}`;
-          if (dbCountBadge) dbCountBadge.innerHTML = `📖 書籍：${uniqueTitles.size} 本 (共 ${allBooks.length} 筆評論)`;
+          if (dbCountBadge) {
+            dbCountBadge.innerHTML = `📖 書籍：${uniqueTitles.size} 本 (共 ${allBooks.length} 筆評論)`;
+            dbCountBadge.className = "status-badge connected";
+          }
           if (dbTimeBadge) dbTimeBadge.innerHTML = `🕒 更新：${timeStr}`;
         }
 
@@ -309,7 +314,14 @@
           BookArchive.setCachedData("allBooksCache", "allBooksCacheTs", freshData);
           updateBadges();
         } catch (error) {
-          if (!allBooks.length && dbCountBadge) dbCountBadge.innerHTML = "❌ 連線失敗";
+          if (dbCountBadge) {
+            dbCountBadge.innerHTML = allBooks.length
+              ? `⚠️ 使用快取：${allBooks.length} 筆評論`
+              : "❌ 連線失敗";
+            dbCountBadge.className = allBooks.length
+              ? "status-badge cached"
+              : "status-badge error";
+          }
           console.error("資料讀取失敗:", error);
         }
       }
@@ -547,25 +559,9 @@
             }
           }
 
-          // 2. 送出後輪詢讀取資料，確認 GAS 已實際寫入。
+          // GAS 的 POST 使用 no-cors，前端無法讀取伺服器回應，因此不再輪詢判定是否寫入成功。
           await BookArchive.postForm(formData);
-          msg.innerHTML = "⏳ 資料已送出，正在確認同步結果...";
-          msg.className = "info show";
-          const expectedTitle = normalizeText(data.title);
-          const expectedReviewer = data.reviewer;
-          const expectedComment = data.comment || "";
-          const confirmedBooks = await BookArchive.waitForCollection({
-            action: "read",
-            matches: (books) => books.some((book) =>
-              normalizeText(book.title) === expectedTitle &&
-              String(book.reviewer) === expectedReviewer &&
-              String(book.comment || "") === expectedComment,
-            ),
-          });
-
-          allBooks = confirmedBooks;
-          BookArchive.setCachedData("allBooksCache", "allBooksCacheTs", confirmedBooks);
-          msg.innerHTML = "✅ 資料已確認儲存！";
+          msg.innerHTML = "✅ 資料已送出，請稍後重新整理書庫查看。";
           msg.className = "success show";
 
           form.reset();
@@ -589,11 +585,11 @@
             msg.style.display = "none";
           }, 3000);
         } catch (error) {
-          console.error("傳送失敗:", error);
-          msg.innerHTML = "❌ 傳送失敗，請檢查網路。";
-          msg.className = "error show";
+          console.error("送出請求時發生錯誤:", error);
+          msg.innerHTML = "⚠️ 無法確認送出狀態，請稍後到書庫查看，避免重複送出。";
+          msg.className = "info show";
           btn.disabled = false;
-          btn.innerHTML = "再試一次";
+          btn.innerHTML = "確認送出資料";
         }
       });
 
@@ -659,7 +655,7 @@
             .map((t) => {
               const book = allBooks.find((b) => b.title === t);
               return `
-      <div class="tag-item" onclick="selectTitleFromRec('${t.replace(/'/g, "\\'")}')">
+      <div class="tag-item" data-title="${t.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;")}" onclick="selectTitleFromRec('${t.replace(/'/g, "\\'")}')">
         <div style="display:flex; justify-content:space-between;">
           <strong>${t}</strong>
           <span style="color:#a5b1c2; font-size:0.85rem;">${book.author || ""}</span>
@@ -671,6 +667,8 @@
         } else {
           titleRecList.style.display = "none"; // 沒資料就隱藏
         }
+
+        titleRecList.removeAttribute("data-active-index");
 
         // --- B. 重複檢查邏輯 (完全符合) ---
         const existingBook = allBooks.find(
@@ -714,10 +712,60 @@
         duplicateBookCard.classList.add("hidden");
       };
 
+      function updateTitleRecommendationHighlight(index) {
+        const items = titleRecList.querySelectorAll(".tag-item");
+        if (!items.length) {
+          titleRecList.removeAttribute("data-active-index");
+          return;
+        }
+
+        const safeIndex = (index + items.length) % items.length;
+        items.forEach((item, itemIndex) => {
+          const isActive = itemIndex === safeIndex;
+          item.classList.toggle("keyboard-active", isActive);
+          item.setAttribute("aria-selected", String(isActive));
+        });
+        titleRecList.setAttribute("data-active-index", String(safeIndex));
+        items[safeIndex].scrollIntoView({ block: "nearest" });
+      }
+
+      function chooseTitleRecommendation(index) {
+        const item = titleRecList.querySelectorAll(".tag-item")[index];
+        if (!item) return;
+        const title = item.dataset.title;
+        if (title) window.selectTitleFromRec(title);
+      }
+
+      // 推薦清單開啟時可使用上下方向鍵，Enter 確認選項，Escape 關閉清單。
+      titleInput.addEventListener("keydown", (event) => {
+        const items = titleRecList.querySelectorAll(".tag-item");
+        const isVisible = titleRecList.style.display !== "none" && items.length > 0;
+        if (!isVisible) return;
+
+        const activeIndex = Number(titleRecList.dataset.activeIndex);
+        if (event.key === "ArrowDown") {
+          event.preventDefault();
+          updateTitleRecommendationHighlight(Number.isInteger(activeIndex) ? activeIndex + 1 : 0);
+        } else if (event.key === "ArrowUp") {
+          event.preventDefault();
+          updateTitleRecommendationHighlight(Number.isInteger(activeIndex) ? activeIndex - 1 : items.length - 1);
+        } else if (event.key === "Enter") {
+          if (Number.isInteger(activeIndex) && activeIndex >= 0) {
+            event.preventDefault();
+            chooseTitleRecommendation(activeIndex);
+          }
+        } else if (event.key === "Escape") {
+          event.preventDefault();
+          titleRecList.style.display = "none";
+          titleRecList.removeAttribute("data-active-index");
+        }
+      });
+
       // 新增：處理點選推薦項目的函式
       window.selectTitleFromRec = function (title) {
         titleInput.value = title;
         titleRecList.style.display = "none";
+        titleRecList.removeAttribute("data-active-index");
 
         // 找出該書的完整資料並帶入
         const fullBook = allBooks.find((b) => b.title === title);
@@ -870,6 +918,7 @@
 
         if (currentQuery === "") {
           customList.style.display = "none";
+          customList.removeAttribute("data-active-index");
           return;
         }
 
@@ -881,7 +930,7 @@
           customList.innerHTML = matches
             .map(
               (t) => `
-      <div class="tag-item" onclick="addTagFromUI('${t.name}')">
+      <div class="tag-item" data-tag-name="${t.name.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;")}" onclick="addTagFromUI('${t.name.replace(/'/g, "\\'")}')">
         <strong>${t.name}</strong>
         <span class="tag-desc">${t.definition || ""}</span>
       </div>
@@ -892,7 +941,46 @@
         } else {
           customList.style.display = "none";
         }
+        customList.removeAttribute("data-active-index");
       });
+
+      tagInput.addEventListener("keydown", (event) => {
+        const items = customList.querySelectorAll(".tag-item");
+        const isVisible = customList.style.display !== "none" && items.length > 0;
+        if (!isVisible) return;
+
+        const activeIndex = Number(customList.dataset.activeIndex);
+        if (event.key === "ArrowDown") {
+          event.preventDefault();
+          updateTagRecommendationHighlight(Number.isInteger(activeIndex) ? activeIndex + 1 : 0);
+        } else if (event.key === "ArrowUp") {
+          event.preventDefault();
+          updateTagRecommendationHighlight(Number.isInteger(activeIndex) ? activeIndex - 1 : items.length - 1);
+        } else if (event.key === "Enter") {
+          if (Number.isInteger(activeIndex) && activeIndex >= 0) {
+            event.preventDefault();
+            const tagName = items[activeIndex].dataset.tagName;
+            if (tagName) addTagFromUI(tagName);
+          }
+        } else if (event.key === "Escape") {
+          event.preventDefault();
+          customList.style.display = "none";
+          customList.removeAttribute("data-active-index");
+        }
+      });
+
+      function updateTagRecommendationHighlight(index) {
+        const items = customList.querySelectorAll(".tag-item");
+        if (!items.length) return;
+        const safeIndex = (index + items.length) % items.length;
+        items.forEach((item, itemIndex) => {
+          const isActive = itemIndex === safeIndex;
+          item.classList.toggle("keyboard-active", isActive);
+          item.setAttribute("aria-selected", String(isActive));
+        });
+        customList.setAttribute("data-active-index", String(safeIndex));
+        items[safeIndex].scrollIntoView({ block: "nearest" });
+      }
 
       window.addTagFromUI = function (tagName) {
         const tagInput = document.getElementById("tags");
@@ -906,6 +994,7 @@
 
         // 關鍵：選完標籤後隱藏推薦清單，讓標籤雲重新露出來
         document.getElementById("customTagList").style.display = "none";
+        document.getElementById("customTagList").removeAttribute("data-active-index");
         tagInput.focus();
       };
 

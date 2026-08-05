@@ -1,0 +1,442 @@
+/**
+ * 程式夥伴優化版：提升讀取速度並整理結構
+ *
+ * 這版重點：
+ * 1. 支援綁定試算表與獨立部署兩種模式
+ * 2. 讀取時不會因為缺少工作表就意外建立空白表
+ * 3. 自動判斷有沒有標題列，避免第一筆資料被誤切掉
+ * 4. 保留快取，但在讀取流程中加入更穩定的防呆
+ */
+
+// 定時觸發器：每 5 分鐘執行一次，避免 GAS 冷啟動
+// 設定方式：GAS 編輯器 → 觸發條件 → 新增觸發條件 → 函式 keepAlive → 時間驅動 → 每 5 分鐘
+function keepAlive() {}
+
+var CACHE_BOOKS = 'booksData';
+var CACHE_TAGS = 'tagsData';
+var CACHE_WISHLIST = 'wishlistData';
+var CACHE_TTL = 300; // 秒，5 分鐘
+var SPREADSHEET_ID_PROP = 'SPREADSHEET_ID';
+
+function doGet(e) {
+  try {
+    var params = (e && e.parameter) || {};
+    var action = String(params.action || '');
+    var ss = getSpreadsheet_();
+    var scriptCache = CacheService.getScriptCache();
+
+    switch (action) {
+      case 'readTags':
+        var cachedTags = scriptCache.get(CACHE_TAGS);
+        if (cachedTags) return createRawJsonResponse(cachedTags);
+
+        var tags = readTags_(ss);
+        var tagsJson = JSON.stringify(tags);
+        try { scriptCache.put(CACHE_TAGS, tagsJson, CACHE_TTL); } catch (err) {}
+        return createRawJsonResponse(tagsJson);
+
+      case 'fetchCover':
+        return handleFetchCover(params.url);
+
+      case 'readWishlist':
+        var cachedWl = scriptCache.get(CACHE_WISHLIST);
+        if (cachedWl) return createRawJsonResponse(cachedWl);
+
+        var wishlist = readWishlist_(ss);
+        var wJson = JSON.stringify(wishlist);
+        try { scriptCache.put(CACHE_WISHLIST, wJson, CACHE_TTL); } catch (err2) {}
+        return createRawJsonResponse(wJson);
+
+      case 'read':
+        // 手動刷新時略過伺服器快取，避免剛寫入的資料仍顯示舊版本。
+        var bypassBooksCache = params.refresh === '1';
+        var cachedBooks = bypassBooksCache ? null : scriptCache.get(CACHE_BOOKS);
+        if (cachedBooks) return createRawJsonResponse(cachedBooks);
+
+        var books = readBooks_(ss);
+        var booksJson = JSON.stringify(books);
+        try { scriptCache.put(CACHE_BOOKS, booksJson, CACHE_TTL); } catch (err3) {}
+        return createRawJsonResponse(booksJson);
+
+      default:
+        return createJsonResponse({ error: '無效的 action 指令' });
+    }
+  } catch (err) {
+    return createJsonResponse({ error: '系統錯誤', detail: String(err) });
+  }
+}
+
+function getSpreadsheet_() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  if (ss) return ss;
+
+  var spreadsheetId = PropertiesService.getScriptProperties().getProperty(SPREADSHEET_ID_PROP);
+  if (spreadsheetId) return SpreadsheetApp.openById(spreadsheetId);
+
+  throw new Error('找不到試算表。若這是獨立部署的 Web App，請先在 Script Properties 設定 SPREADSHEET_ID。');
+}
+
+function getSheet_(ss, sheetName, createIfMissing) {
+  var sheet = ss.getSheetByName(sheetName);
+  if (sheet || !createIfMissing) return sheet;
+  return ss.insertSheet(sheetName);
+}
+
+function readBooks_(ss) {
+  var sheet = getSheet_(ss, 'Books', false);
+  if (!sheet) return [];
+
+  var lastRow = sheet.getLastRow();
+  var lastCol = sheet.getLastColumn();
+  if (lastRow <= 0 || lastCol <= 0) return [];
+
+  var rows = sheet.getRange(1, 1, lastRow, lastCol).getValues();
+  if (rows.length === 0) return [];
+
+  var startRow = hasBooksHeader_(rows[0]) ? 1 : 0;
+  if (rows.length <= startRow) return [];
+
+  return rows
+    .slice(startRow)
+    .filter(function (row) { return row[1]; })
+    .map(function (row) {
+      return {
+        timestamp: row[0] ? String(row[0]) : '',
+        title: row[1] || '',
+        jpTitle: row[2] || '',
+        author: row[3] || '',
+        level: row[4] || '',
+        reviewer: row[5] || '',
+        rating: row[6] || 0,
+        tags: row[7] || '',
+        ebookUrl: row[8] || '',
+        chilUrl: row[9] || '',
+        comment: row[10] || '',
+        coverUrl: row[11] || '',
+        twStatus: row[12] || '',
+        jpStatus: row[13] || ''
+      };
+    });
+}
+
+function readWishlist_(ss) {
+  var sheet = getSheet_(ss, 'Wishlist', false);
+  if (!sheet) return [];
+
+  var lastRow = sheet.getLastRow();
+  var lastCol = sheet.getLastColumn();
+  if (lastRow <= 0 || lastCol <= 0) return [];
+
+  var rows = sheet.getRange(1, 1, lastRow, lastCol).getValues();
+  if (rows.length === 0) return [];
+
+  var startRow = hasWishlistHeader_(rows[0]) ? 1 : 0;
+  if (rows.length <= startRow) return [];
+
+  return rows
+    .slice(startRow)
+    .filter(function (row) { return row[1]; })
+    .map(function (row) {
+      return {
+        timestamp: String(row[0] || ''),
+        title: row[1] || '',
+        jpTitle: row[2] || '',
+        author: row[3] || '',
+        reviewer: row[4] || '',
+        status: row[5] || '',
+        notes: row[6] || '',
+        ebookUrl: row[7] || '',
+        chilUrl: row[8] || '',
+        coverUrl: row[9] || '',
+        purchased: row[10] || ''
+      };
+    });
+}
+
+function readTags_(ss) {
+  var sheet = getSheet_(ss, 'Tags', false);
+  if (!sheet) return [];
+
+  var lastRow = sheet.getLastRow();
+  var lastCol = sheet.getLastColumn();
+  if (lastRow <= 0 || lastCol <= 0) return [];
+
+  var rows = sheet.getRange(1, 1, lastRow, lastCol).getValues();
+  if (rows.length === 0) return [];
+
+  var startRow = hasTagsHeader_(rows[0]) ? 1 : 0;
+  if (rows.length <= startRow) return [];
+
+  return rows
+    .slice(startRow)
+    .filter(function (row) { return row[0]; })
+    .map(function (row) {
+      return { name: row[0], definition: row[1] || '' };
+    });
+}
+
+function hasBooksHeader_(row) {
+  var text = rowToText_(row);
+  if (!text) return false;
+  return /書名|中文書名|日文書名|作者|分級|評分|標籤|評論/.test(text) || /timestamp|title|jptitle|author|level|rating|tags|comment/i.test(text);
+}
+
+function hasWishlistHeader_(row) {
+  var text = rowToText_(row);
+  if (!text) return false;
+  return /timestamp|書名|中文書名|日文書名|作者|狀態|備註|已購入|購入/i.test(text);
+}
+
+function hasTagsHeader_(row) {
+  var text = rowToText_(row);
+  if (!text) return false;
+  return /tag|標籤|定義|definition/i.test(text);
+}
+
+function rowToText_(row) {
+  if (!row || !row.length) return '';
+  return row
+    .map(function (cell) { return String(cell || '').trim(); })
+    .join(' ')
+    .trim();
+}
+
+/**
+ * 處理封面抓取邏輯 (獨立出來讓結構更清晰)
+ */
+function handleFetchCover(targetUrl) {
+  if (!targetUrl) return createJsonResponse({ error: '未提供 URL' });
+
+  try {
+    var coverUrl = deriveCoverUrl_(targetUrl);
+    if (coverUrl) return createJsonResponse({ coverUrl: coverUrl });
+    return createJsonResponse({ error: '無法識別此網址格式' });
+  } catch (err) {
+    return createJsonResponse({ error: '解析封面失敗', detail: String(err) });
+  }
+}
+
+function deriveCoverUrl_(targetUrl) {
+  var url = String(targetUrl || '').trim();
+  if (!url) return '';
+
+  var productMatch = url.match(/\/product\/(\d+)/);
+  if (productMatch) {
+    return 'https://taiwan-image.bookwalker.com.tw/product/' + productMatch[1] + '/' + productMatch[1] + '_1.jpg';
+  }
+
+  var serialMatch = url.match(/\/serial\/(\d+)/);
+  if (serialMatch) {
+    return 'https://taiwan-image.bookwalker.com.tw/series/' + serialMatch[1] + '.jpg';
+  }
+
+  if (url.indexOf('chil-chil.net/goodsDetail/') !== -1) {
+    var goodsMatch = url.match(/goods_id\/(\d+)\/?/);
+    if (goodsMatch) {
+      return 'https://img.chil-chil.net/goods_img/XL/' + String(goodsMatch[1]).padStart(8, '0') + '_XL.jpg';
+    }
+  }
+
+  return '';
+}
+
+/**
+ * 統一格式化 JSON 回傳
+ */
+function createJsonResponse(data) {
+  return ContentService.createTextOutput(JSON.stringify(data))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+// 已有 JSON 字串時直接回傳，省去再序列化的時間
+function createRawJsonResponse(jsonString) {
+  return ContentService.createTextOutput(jsonString)
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+// 清除所有讀取快取（寫入後呼叫，確保下次讀到最新資料）
+function clearReadCache(keys) {
+  var c = CacheService.getScriptCache();
+  c.removeAll(keys);
+}
+
+function doPost(e) {
+  try {
+    var p = (e && e.parameter) || {};
+    var ss = getSpreadsheet_();
+
+    // --- 待購清單：新增 ---
+    if (p.action === 'addWishlist') {
+      var wSheet = getSheet_(ss, 'Wishlist', true);
+      var wishlistCoverUrl = String(p.coverUrl || '').trim();
+
+      // 前端的封面請求若尚未完成，送出的 coverUrl 可能是空白。
+      // GAS 端再依網址補算一次，避免資料已新增但 J 欄沒有封面。
+      if (!wishlistCoverUrl) {
+        wishlistCoverUrl = deriveCoverUrl_(p.ebookUrl) || deriveCoverUrl_(p.chilUrl);
+      }
+
+      wSheet.appendRow([
+        new Date(), p.title || '', p.jpTitle || '', p.author || '',
+        p.reviewer || '', p.status || '', p.notes || '',
+        p.ebookUrl || '', p.chilUrl || '', wishlistCoverUrl, ''
+      ]);
+      SpreadsheetApp.flush();
+      clearReadCache([CACHE_WISHLIST]);
+      return createJsonResponse({ status: 'Wishlist Add Success', coverUrl: wishlistCoverUrl });
+    }
+
+    // --- 待購清單：更新 ---
+    if (p.action === 'updateWishlist') {
+      var wSheet2 = getSheet_(ss, 'Wishlist', false);
+      if (!wSheet2) return createJsonResponse({ error: '找不到 Wishlist 工作表' });
+      var wData = wSheet2.getDataRange().getValues();
+
+      // 狀態是書籍屬性，以書名同步更新所有同名列
+      if (p.status !== undefined && p.title) {
+        for (var i = 0; i < wData.length; i++) {
+          if (String(wData[i][1]).trim() === String(p.title).trim()) {
+            wSheet2.getRange(i + 1, 6).setValue(p.status);
+          }
+        }
+      }
+
+      // 備註和已購入是個人屬性，以 timestamp 更新特定列
+      if (p.timestamp) {
+        for (var j = 0; j < wData.length; j++) {
+          if (String(wData[j][0]).trim() === String(p.timestamp).trim()) {
+            if (p.purchased !== undefined) wSheet2.getRange(j + 1, 11).setValue(p.purchased);
+            if (p.notes !== undefined) wSheet2.getRange(j + 1, 7).setValue(p.notes);
+            break;
+          }
+        }
+      }
+
+      clearReadCache([CACHE_WISHLIST]);
+      return createJsonResponse({ status: 'Wishlist Update Success' });
+    }
+
+    // --- 待購清單：刪除 ---
+    if (p.action === 'deleteWishlist') {
+      var wSheet3 = getSheet_(ss, 'Wishlist', false);
+      if (!wSheet3) return createJsonResponse({ error: '找不到 Wishlist 工作表' });
+      var wData2 = wSheet3.getDataRange().getValues();
+      for (var k = 0; k < wData2.length; k++) {
+        if (String(wData2[k][0]).trim() === String(p.timestamp).trim()) {
+          wSheet3.deleteRow(k + 1);
+          break;
+        }
+      }
+      clearReadCache([CACHE_WISHLIST]);
+      return createJsonResponse({ status: 'Wishlist Delete Success' });
+    }
+
+    // --- 分支：新增或更新標籤 ---
+    if (p.action === 'upsertTag') {
+      var tagSheet = getSheet_(ss, 'Tags', true);
+      var tagData = tagSheet.getDataRange().getValues();
+      var found = false;
+      for (var t = 1; t < tagData.length; t++) {
+        if (tagData[t][0] === p.tagName) {
+          tagSheet.getRange(t + 1, 2).setValue(p.definition);
+          found = true;
+          break;
+        }
+      }
+      if (!found) tagSheet.appendRow([p.tagName, p.definition]);
+      clearReadCache([CACHE_TAGS]);
+      return createJsonResponse({ status: 'Tag Success' });
+    }
+
+    // --- 分支：刪除標籤 ---
+    if (p.action === 'deleteTag') {
+      var tagSheet2 = getSheet_(ss, 'Tags', false);
+      if (!tagSheet2) return createJsonResponse({ error: '找不到 Tags 工作表' });
+      var tagData2 = tagSheet2.getDataRange().getValues();
+      for (var u = 1; u < tagData2.length; u++) {
+        if (tagData2[u][0] === p.tagName) {
+          tagSheet2.deleteRow(u + 1);
+          break;
+        }
+      }
+      clearReadCache([CACHE_TAGS]);
+      return createJsonResponse({ status: 'Delete Success' });
+    }
+
+    var sheet = getSheet_(ss, 'Books', false);
+    if (!sheet) return createJsonResponse({ error: '找不到 Books 工作表' });
+    var data = sheet.getDataRange().getValues();
+
+    // --- 分支一：封面自動同步 (updateCoverOnly) ---
+    if (p.action === 'updateCoverOnly') {
+      for (var c = 1; c < data.length; c++) {
+        if (String(data[c][1]).trim() === String(p.title).trim()) {
+          sheet.getRange(c + 1, 12).setValue(p.coverUrl); // L: 封面
+        }
+      }
+      clearReadCache([CACHE_BOOKS]);
+      return createJsonResponse({ status: 'Cover Sync Success' });
+    }
+
+    // --- 分支二：更新資訊與評語 (update) ---
+    if (p.action === 'update') {
+      var oldTitle = p.oldTitle ? String(p.oldTitle).trim() : '';
+      var targetTs = String(p.timestamp || '').trim();
+
+      for (var m = 1; m < data.length; m++) {
+        var sheetTs = String(data[m][0]).trim();
+        var sheetTitle = String(data[m][1]).trim();
+
+        // 1. 同步更新書籍基本資訊（用 !== undefined 確保空字串也能清空欄位）
+        if (oldTitle !== '' && sheetTitle === oldTitle) {
+          if (p.title !== undefined) sheet.getRange(m + 1, 2).setValue(p.title); // B: 書名
+          if (p.jpTitle !== undefined) sheet.getRange(m + 1, 3).setValue(p.jpTitle); // C: 日文
+          if (p.author !== undefined) sheet.getRange(m + 1, 4).setValue(p.author); // D: 作者
+          if (p.level !== undefined) sheet.getRange(m + 1, 5).setValue(p.level); // E: 分級
+          if (p.tags !== undefined) sheet.getRange(m + 1, 8).setValue(p.tags); // H: 標籤
+          if (p.ebookUrl !== undefined) sheet.getRange(m + 1, 9).setValue(p.ebookUrl); // I: 電子書
+          if (p.chilUrl !== undefined) sheet.getRange(m + 1, 10).setValue(p.chilUrl); // J: ちるちる
+          if (p.twStatus !== undefined) sheet.getRange(m + 1, 13).setValue(p.twStatus); // M: 台灣狀態
+          if (p.jpStatus !== undefined) sheet.getRange(m + 1, 14).setValue(p.jpStatus); // N: 日本狀態
+        }
+
+        // 2. 更新個人評語（精確鎖定時間戳）
+        if (sheetTs === targetTs) {
+          if (p.rating !== undefined) sheet.getRange(m + 1, 7).setValue(p.rating); // G: 評分
+          if (p.comment !== undefined) sheet.getRange(m + 1, 11).setValue(p.comment); // K: 評語
+        }
+      }
+      clearReadCache([CACHE_BOOKS]);
+      return createJsonResponse({ status: 'Update Success' });
+    }
+
+    // --- 預設：新增一筆評論 ---
+    var rowData = [
+      new Date(), // A: 時間戳
+      p.title || '', // B: 書名
+      p.jpTitle || '', // C: 日文
+      p.author || '', // D: 作者
+      p.level || '', // E: 分級
+      p.reviewer || '', // F: 評論者
+      p.rating || '', // G: 評分
+      p.tags || '', // H: 標籤
+      p.ebookUrl || '', // I: 電子書網址
+      p.chilUrl || '', // J: ちるちる網址
+      p.comment || '', // K: 評語
+      p.coverUrl || '', // L: 封面網址
+      p.twStatus || '', // M: 台灣狀態
+      p.jpStatus || '' // N: 日本狀態
+    ];
+    sheet.appendRow(rowData);
+    clearReadCache([CACHE_BOOKS]);
+    return createJsonResponse({ status: 'Insert Success' });
+  } catch (err) {
+    return createJsonResponse({ error: '系統錯誤', detail: String(err) });
+  }
+}
+
+// 輔助函式：統一回傳 JSON
+function createJsonResponse(obj) {
+  return ContentService.createTextOutput(JSON.stringify(obj))
+    .setMimeType(ContentService.MimeType.JSON);
+}

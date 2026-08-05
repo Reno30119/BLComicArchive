@@ -569,7 +569,7 @@
                 </div>
                 <div class="tags">${tagsHTML}</div>
                 <div class="item-links">
-                  ${book.ebookUrl ? `<a href="${book.ebookUrl}" target="_blank" class="link-icon ebook">📖 Bookwalker</a>` : ""}
+                  ${book.ebookUrl ? `<a href="${book.ebookUrl}" target="_blank" class="link-icon ebook">📖 BookWalker</a>` : ""}
                   ${book.chilUrl ? `<a href="${book.chilUrl}" target="_blank" class="link-icon chil">🍒 ちるちる</a>` : ""}
                   <div class="add-review-action-area">
                     <button class="add-review-btn mobile-up-btn" onclick="openAddCommentModal('${book.reviews[0]?.timestamp || ""}')">📝 新增評論</button>
@@ -1212,6 +1212,7 @@
 
         if (currentQuery === "") {
           customList.style.display = "none";
+          customList.removeAttribute("data-active-index");
           return;
         }
 
@@ -1223,7 +1224,7 @@
           customList.innerHTML = matches
             .map(
               (t) => `
-      <div class="tag-item" onclick="applyTagToEdit('${t.name}')">
+      <div class="tag-item" data-tag-name="${t.name.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;")}" onclick="applyTagToEdit('${t.name.replace(/'/g, "\\'")}')">
         <strong>${t.name}</strong>
         <span class="tag-desc">${t.definition || ""}</span>
       </div>
@@ -1234,7 +1235,46 @@
         } else {
           customList.style.display = "none";
         }
+        customList.removeAttribute("data-active-index");
       });
+
+      editTagInput.addEventListener("keydown", (event) => {
+        const items = customList.querySelectorAll(".tag-item");
+        const isVisible = customList.style.display !== "none" && items.length > 0;
+        if (!isVisible) return;
+
+        const activeIndex = Number(customList.dataset.activeIndex);
+        if (event.key === "ArrowDown") {
+          event.preventDefault();
+          updateEditTagRecommendationHighlight(Number.isInteger(activeIndex) ? activeIndex + 1 : 0);
+        } else if (event.key === "ArrowUp") {
+          event.preventDefault();
+          updateEditTagRecommendationHighlight(Number.isInteger(activeIndex) ? activeIndex - 1 : items.length - 1);
+        } else if (event.key === "Enter") {
+          if (Number.isInteger(activeIndex) && activeIndex >= 0) {
+            event.preventDefault();
+            const tagName = items[activeIndex].dataset.tagName;
+            if (tagName) applyTagToEdit(tagName);
+          }
+        } else if (event.key === "Escape") {
+          event.preventDefault();
+          customList.style.display = "none";
+          customList.removeAttribute("data-active-index");
+        }
+      });
+
+      function updateEditTagRecommendationHighlight(index) {
+        const items = customList.querySelectorAll(".tag-item");
+        if (!items.length) return;
+        const safeIndex = (index + items.length) % items.length;
+        items.forEach((item, itemIndex) => {
+          const isActive = itemIndex === safeIndex;
+          item.classList.toggle("keyboard-active", isActive);
+          item.setAttribute("aria-selected", String(isActive));
+        });
+        customList.setAttribute("data-active-index", String(safeIndex));
+        items[safeIndex].scrollIntoView({ block: "nearest" });
+      }
 
       // 3. 點選推薦標籤後的動作
       window.applyTagToEdit = function (tagName) {
@@ -1249,6 +1289,7 @@
             .join(", ") + ", ";
 
         customList.style.display = "none";
+        customList.removeAttribute("data-active-index");
         editTagInput.focus();
       };
 
@@ -1271,6 +1312,7 @@
 
         if (!val) {
           searchRecList.style.display = "none";
+          searchRecList.removeAttribute("data-active-index");
           return;
         }
 
@@ -1326,7 +1368,7 @@
           searchRecList.innerHTML = uniqueMatches
             .map(
               (item) => `
-      <div class="tag-item" onclick="selectSearchRec('${item.text.replace(/'/g, "\\'")}', '${item.type}')">
+      <div class="tag-item" data-value="${item.text.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;")}" data-type="${item.type}" onclick="selectSearchRec('${item.text.replace(/'/g, "\\'")}', '${item.type}')">
         <div style="display:flex; justify-content:space-between; align-items:center;">
           <span>${item.icon} ${item.text}</span>
           <span class="rec-author">${item.sub}</span>
@@ -1336,8 +1378,58 @@
             )
             .join("");
           searchRecList.style.display = "block";
+          searchRecList.removeAttribute("data-active-index");
         } else {
           searchRecList.style.display = "none";
+          searchRecList.removeAttribute("data-active-index");
+        }
+      });
+
+      function updateSearchRecommendationHighlight(index) {
+        const items = searchRecList.querySelectorAll(".tag-item");
+        if (!items.length) {
+          searchRecList.removeAttribute("data-active-index");
+          return;
+        }
+
+        const safeIndex = (index + items.length) % items.length;
+        items.forEach((item, itemIndex) => {
+          const isActive = itemIndex === safeIndex;
+          item.classList.toggle("keyboard-active", isActive);
+          item.setAttribute("aria-selected", String(isActive));
+        });
+        searchRecList.setAttribute("data-active-index", String(safeIndex));
+        items[safeIndex].scrollIntoView({ block: "nearest" });
+      }
+
+      function chooseSearchRecommendation(index) {
+        const item = searchRecList.querySelectorAll(".tag-item")[index];
+        if (!item) return;
+        selectSearchRec(item.dataset.value, item.dataset.type);
+      }
+
+      // 推薦清單開啟時可使用上下方向鍵，Enter 確認選項，Escape 關閉清單。
+      searchInput.addEventListener("keydown", (event) => {
+        const items = searchRecList.querySelectorAll(".tag-item");
+        const isVisible = searchRecList.style.display !== "none" && items.length > 0;
+        if (!isVisible) return;
+
+        const activeIndex = Number(searchRecList.dataset.activeIndex);
+        if (event.key === "ArrowDown") {
+          event.preventDefault();
+          updateSearchRecommendationHighlight(Number.isInteger(activeIndex) ? activeIndex + 1 : 0);
+        } else if (event.key === "ArrowUp") {
+          event.preventDefault();
+          updateSearchRecommendationHighlight(Number.isInteger(activeIndex) ? activeIndex - 1 : items.length - 1);
+        } else if (event.key === "Enter") {
+          if (Number.isInteger(activeIndex) && activeIndex >= 0) {
+            event.preventDefault();
+            chooseSearchRecommendation(activeIndex);
+          }
+        } else if (event.key === "Escape") {
+          event.preventDefault();
+          searchRecList.style.display = "none";
+          searchRecList.removeAttribute("data-active-index");
         }
       });
 
@@ -1356,7 +1448,10 @@
         }
 
         if (clearBtn) clearBtn.style.display = "block";
-        if (searchRecList) searchRecList.style.display = "none";
+        if (searchRecList) {
+          searchRecList.style.display = "none";
+          searchRecList.removeAttribute("data-active-index");
+        }
 
         // 執行你原本的過濾邏輯
         if (typeof applyFilters === "function") {
