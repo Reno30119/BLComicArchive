@@ -740,7 +740,7 @@
       <div class="modal-box">
         <h3>＋ 新增待購書籍</h3>
         <div class="mf-group">
-          <label>ちるちる 網址（貼入後自動帶入資料）</label>
+          <label>ちるちる 網址（選填，可自動補入封面）</label>
           <input
             type="url"
             id="addChilUrl"
@@ -1150,7 +1150,7 @@
 
             const linksHTML = [
               book.ebookUrl
-                ? `<a href="${book.ebookUrl}" target="_blank" class="wl-link ebook">📖 Bookwalker</a>`
+                ? `<a href="${book.ebookUrl}" target="_blank" class="wl-link ebook">📖 BookWalker</a>`
                 : "",
               book.chilUrl
                 ? `<a href="${book.chilUrl}"  target="_blank" class="wl-link chil">🍒 ちるちる</a>`
@@ -1302,60 +1302,50 @@
         .getElementById("addTitle")
         .addEventListener("input", checkTitleDuplicate);
 
-      // ちるちる 自動帶入
-      document
-        .getElementById("addChilUrl")
-        .addEventListener("change", async function () {
-          const url = this.value.trim();
-          if (!url || url.indexOf("chil-chil.net") === -1) return;
-          const hint = document.getElementById("addFetchHint");
-          hint.textContent = "🔍 正在抓取資料...";
+      async function fillWishlistCover(url, showHint = false) {
+        if (!url) return "";
+
+        const hint = document.getElementById("addFetchHint");
+        if (showHint) {
+          hint.textContent = "正在取得封面...";
           hint.className = "fetch-hint loading";
-          try {
-            const res = await fetchWithTimeout(
-              `${scriptURL}?action=fetchMeta&url=${encodeURIComponent(url)}`,
-            );
-            const data = await res.json();
-            const filled = [];
-            if (data.jpTitle && !document.getElementById("addJpTitle").value) {
-              document.getElementById("addJpTitle").value = data.jpTitle;
-              filled.push("日文書名");
-            }
-            if (data.author && !document.getElementById("addAuthor").value) {
-              document.getElementById("addAuthor").value = data.author;
-              filled.push("作者");
-            }
-            if (
-              data.coverUrl &&
-              !document.getElementById("addCoverUrl").value
-            ) {
-              document.getElementById("addCoverUrl").value = data.coverUrl;
-              filled.push("封面");
-            }
-            hint.textContent = filled.length
-              ? `✅ 已帶入：${filled.join("、")}（中文書名請手動填）`
-              : "⚠️ 未能自動帶入";
-            hint.className = "fetch-hint " + (filled.length ? "success" : "");
-          } catch (e) {
-            hint.textContent = "❌ 抓取失敗";
+        }
+
+        try {
+          const data = await BookArchive.fetchJson(
+            "fetchCover",
+            { url },
+            { expected: "object", timeoutMs: 15000, retries: 1 },
+          );
+          if (!data.coverUrl) return "";
+
+          document.getElementById("addCoverUrl").value = data.coverUrl;
+          if (showHint) {
+            hint.textContent = "已帶入封面";
+            hint.className = "fetch-hint success";
+          }
+          return data.coverUrl;
+        } catch (error) {
+          if (showHint) {
+            hint.textContent = "暫時無法取得封面，送出時會再嘗試";
             hint.className = "fetch-hint";
           }
+          return "";
+        }
+      }
+
+      // ちるちる 只補封面，不再抓取書名與作者。
+      document
+        .getElementById("addChilUrl")
+        .addEventListener("change", function () {
+          return fillWishlistCover(this.value.trim(), true);
         });
 
       // BookWalker 封面
       document
         .getElementById("addEbookUrl")
-        .addEventListener("change", async function () {
-          const url = this.value.trim();
-          if (!url) return;
-          try {
-            const res = await fetchWithTimeout(
-              `${scriptURL}?action=fetchCover&url=${encodeURIComponent(url)}`,
-            );
-            const data = await res.json();
-            if (data.coverUrl)
-              document.getElementById("addCoverUrl").value = data.coverUrl;
-          } catch (e) {}
+        .addEventListener("change", function () {
+          return fillWishlistCover(this.value.trim(), false);
         });
 
       async function submitAdd() {
@@ -1375,6 +1365,15 @@
           return;
         }
 
+        const ebookUrl = document.getElementById("addEbookUrl").value.trim();
+        const chilUrl = document.getElementById("addChilUrl").value.trim();
+        let coverUrl = document.getElementById("addCoverUrl").value.trim();
+
+        // 不依賴 change 事件是否已完成；按下新增時再確保封面已算出。
+        if (!coverUrl) {
+          coverUrl = await fillWishlistCover(ebookUrl || chilUrl, false);
+        }
+
         const newItem = {
           timestamp: String(Date.now()),
           title,
@@ -1383,9 +1382,9 @@
           reviewer,
           status,
           notes: document.getElementById("addNotes").value.trim(),
-          ebookUrl: document.getElementById("addEbookUrl").value.trim(),
-          chilUrl: document.getElementById("addChilUrl").value.trim(),
-          coverUrl: document.getElementById("addCoverUrl").value.trim(),
+          ebookUrl,
+          chilUrl,
+          coverUrl,
           purchased: "",
         };
 
