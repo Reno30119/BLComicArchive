@@ -136,6 +136,14 @@
                 <option value="6">6–7 分</option>
                 <option value="0">5 分以下</option>
               </select>
+              <select
+                id="commentFilter"
+                class="fbtn fbtn-select"
+                onchange="applyFilters()"
+              >
+                <option value="all">💬 評語狀態</option>
+                <option value="ratedWithoutComment">⭐ 已評分但無評語</option>
+              </select>
             </div>
           </div>
           <div class="filter-panel-divider"></div>
@@ -981,6 +989,7 @@
 
         const ratingThreshold = document.getElementById("ratingFilter").value;
         const levelThreshold = document.getElementById("levelFilter").value;
+        const commentStatus = document.getElementById("commentFilter").value;
 
         // 執行過濾
         let filtered = mergedBooks.filter((book) => {
@@ -1034,7 +1043,21 @@
           const matchLevel =
             levelThreshold === "all" || book.level === levelThreshold;
 
-          return matchSearch && matchRating && matchReviewer && matchLevel;
+          // E. 找出已有有效評分，但評語仍為空白的評論。
+          const matchCommentStatus =
+            commentStatus === "all" ||
+            book.reviews.some(
+              (review) =>
+                review.rating > 0 && !String(review.comment || "").trim(),
+            );
+
+          return (
+            matchSearch &&
+            matchRating &&
+            matchReviewer &&
+            matchLevel &&
+            matchCommentStatus
+          );
         });
 
         // 4. 排序邏輯
@@ -1081,6 +1104,7 @@
         renderActiveTagFilters();
 
         document.getElementById("ratingFilter").value = "all";
+        document.getElementById("commentFilter").value = "all";
         if (document.getElementById("levelFilter")) {
           document.getElementById("levelFilter").value = "all";
         }
