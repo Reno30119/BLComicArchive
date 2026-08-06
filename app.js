@@ -3,6 +3,8 @@
     "https://script.google.com/macros/s/AKfycbwqnfCjBq_BYZSWAOU6TnVj2O6YvFF2jan4dY0smm3waf9xP-wOLmz2_4B_L3MND7PK9A/exec";
 
   const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+  const BOOKS_CACHE_KEY = "allBooksCache";
+  const BOOKS_CACHE_TS_KEY = "allBooksCacheTs";
 
   function getCachedArray(key) {
     try {
@@ -80,6 +82,32 @@
     });
   }
 
+  function getBooksCache() {
+    return {
+      data: getCachedArray(BOOKS_CACHE_KEY),
+      cachedAt: Number(localStorage.getItem(BOOKS_CACHE_TS_KEY)) || 0,
+    };
+  }
+
+  function setBooksCache(data) {
+    setCachedData(BOOKS_CACHE_KEY, BOOKS_CACHE_TS_KEY, data);
+  }
+
+  async function loadBooks({ refresh = false } = {}) {
+    const cached = getBooksCache();
+    if (cached.data && !refresh) {
+      return { data: cached.data, source: "cache", cachedAt: cached.cachedAt };
+    }
+
+    const data = await fetchJson(
+      "read",
+      refresh ? { refreshToken: Date.now() } : {},
+      { refresh, cache: "no-store", timeoutMs: 30000, retries: 1 },
+    );
+    setBooksCache(data);
+    return { data, source: "network", cachedAt: Date.now() };
+  }
+
   async function waitForCollection({
     action,
     matches,
@@ -120,9 +148,14 @@
 
   window.BookArchive = {
     SCRIPT_URL,
+    BOOKS_CACHE_KEY,
+    BOOKS_CACHE_TS_KEY,
     fetchJson,
     getCachedArray,
     setCachedData,
+    getBooksCache,
+    setBooksCache,
+    loadBooks,
     postForm,
     waitForCollection,
     syncCollection,

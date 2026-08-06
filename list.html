@@ -7,7 +7,10 @@
     <link rel="stylesheet" href="list-style.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
     <link
       rel="icon"
       href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎨</text></svg>"
@@ -62,29 +65,72 @@
             🔄 更新數據
           </button>
         </div>
+        <div
+          id="activeTagFilters"
+          class="active-tag-filters"
+          aria-live="polite"
+        ></div>
         <div class="filter-panel">
           <div class="filter-panel-row">
             <span class="filter-panel-label">排序</span>
             <div class="filter-btn-group">
-              <button class="fbtn sort-chip" data-sort="date" onclick="sortData('date')">📅 最新</button>
-              <button class="fbtn sort-chip active-chip" data-sort="updated" onclick="sortData('updated')">🕐 近期更新</button>
-              <button class="fbtn sort-chip" data-sort="rating" onclick="sortData('rating')">⭐ 評分</button>
-              <button class="fbtn sort-chip" data-sort="author" onclick="sortData('author')">🖋️ 作者</button>
-              <button class="fbtn sort-chip" data-sort="title" onclick="sortData('title')">📜 書名</button>
+              <button
+                class="fbtn sort-chip"
+                data-sort="date"
+                onclick="sortData('date')"
+              >
+                📅 最新
+              </button>
+              <button
+                class="fbtn sort-chip active-chip"
+                data-sort="updated"
+                onclick="sortData('updated')"
+              >
+                🕐 近期更新
+              </button>
+              <button
+                class="fbtn sort-chip"
+                data-sort="rating"
+                onclick="sortData('rating')"
+              >
+                ⭐ 評分
+              </button>
+              <button
+                class="fbtn sort-chip"
+                data-sort="author"
+                onclick="sortData('author')"
+              >
+                🖋️ 作者
+              </button>
+              <button
+                class="fbtn sort-chip"
+                data-sort="title"
+                onclick="sortData('title')"
+              >
+                📜 書名
+              </button>
             </div>
           </div>
           <div class="filter-panel-divider"></div>
           <div class="filter-panel-row">
             <span class="filter-panel-label">篩選</span>
             <div class="filter-btn-group">
-              <select id="levelFilter" class="fbtn fbtn-select" onchange="applyFilters()">
+              <select
+                id="levelFilter"
+                class="fbtn fbtn-select"
+                onchange="applyFilters()"
+              >
                 <option value="all">🍙 分級</option>
                 <option value="肉多">🥩 肉多</option>
                 <option value="正常">🍛 正常</option>
                 <option value="肉少">🥗 肉少</option>
                 <option value="清水">💧 清水</option>
               </select>
-              <select id="ratingFilter" class="fbtn fbtn-select" onchange="applyFilters()">
+              <select
+                id="ratingFilter"
+                class="fbtn fbtn-select"
+                onchange="applyFilters()"
+              >
                 <option value="all">💎 評分</option>
                 <option value="8">8 分以上 ✨</option>
                 <option value="6">6–7 分</option>
@@ -96,11 +142,19 @@
           <div class="filter-panel-row">
             <span class="filter-panel-label">評論者</span>
             <div class="filter-btn-group">
-              <button class="fbtn filter-btn active" data-reviewer="all">全部</button>
+              <button class="fbtn filter-btn active" data-reviewer="all">
+                全部
+              </button>
               <button class="fbtn filter-btn" data-reviewer="Reno">Reno</button>
               <button class="fbtn filter-btn" data-reviewer="茶壺">茶壺</button>
             </div>
-            <button class="fbtn fbtn-reset" id="resetAllBtn" onclick="resetAllFilters()">🧹 重置條件</button>
+            <button
+              class="fbtn fbtn-reset"
+              id="resetAllBtn"
+              onclick="resetAllFilters()"
+            >
+              🧹 重置條件
+            </button>
           </div>
         </div>
         <div id="resultCount" class="result-count"></div>
@@ -254,7 +308,19 @@
               name="reviewer"
               required
             />
-            <div id="dupReviewWarning" style="display:none; margin-top:8px; padding:8px 12px; background:#fff8e1; border-left:3px solid #f39c12; border-radius:4px; font-size:0.85em; color:#7d5a00;">
+            <div
+              id="dupReviewWarning"
+              style="
+                display: none;
+                margin-top: 8px;
+                padding: 8px 12px;
+                background: #fff8e1;
+                border-left: 3px solid #f39c12;
+                border-radius: 4px;
+                font-size: 0.85em;
+                color: #7d5a00;
+              "
+            >
               ⚠️ <span id="dupReviewMsg"></span>
             </div>
           </div>
@@ -341,9 +407,9 @@
         // 若從標籤管理頁點擊標籤跳轉而來，自動填入篩選條件
         const tagParam = new URLSearchParams(window.location.search).get("tag");
         if (tagParam) {
-          const si = document.getElementById("searchInput");
           const cb = document.getElementById("clearSearch");
-          si.value = "#" + tagParam;
+          selectedSearchTags = [tagParam];
+          renderActiveTagFilters();
           if (cb) cb.style.display = "block";
         }
         fetchData(false);
@@ -356,12 +422,8 @@
       async function fetchData(isManual = false) {
         const loadingEl = document.getElementById("loading");
         const refreshBtn = document.getElementById("refreshBtn");
-        const CACHE_KEY = "allBooksCache";
-        const CACHE_TS_KEY = "allBooksCacheTs";
-        const CACHE_TTL = 3 * 60 * 1000;
-        const cachedData = localStorage.getItem(CACHE_KEY);
-        const cachedTs = Number(localStorage.getItem(CACHE_TS_KEY)) || 0;
-        const isFresh = cachedData && Date.now() - cachedTs < CACHE_TTL;
+        const cached = BookArchive.getBooksCache();
+        const cachedData = cached.data;
 
         if (isSyncing) {
           if (isManual) showSyncToast("⚠️ 資料仍在同步中，請稍候", "info");
@@ -369,7 +431,8 @@
         }
         isSyncing = true;
 
-        if (!isManual && !cachedData && loadingEl) loadingEl.style.display = "flex";
+        if (!isManual && !cachedData && loadingEl)
+          loadingEl.style.display = "flex";
 
         if (refreshBtn) {
           refreshBtn.disabled = true;
@@ -379,38 +442,28 @@
 
         try {
           if (cachedData && allBooks.length === 0) {
-            try {
-              const parsed = JSON.parse(cachedData);
-              if (!Array.isArray(parsed)) throw new Error("快取資料格式錯誤");
-              allBooks = parsed;
-              buildMergedBooks();
-              applyFilters();
-              if (loadingEl) loadingEl.style.display = "none";
-            } catch (error) {
-              console.warn("無法讀取本機快取，將重新下載資料：", error);
-              localStorage.removeItem(CACHE_KEY);
-              localStorage.removeItem(CACHE_TS_KEY);
-            }
+            allBooks = cachedData;
+            buildMergedBooks();
+            applyFilters();
+            if (loadingEl) loadingEl.style.display = "none";
           }
 
-          if (isFresh && !isManual) return;
+          // 一般進入頁面只使用 index/list 共用資料；只有按「更新數據」才讀 Google Sheet。
+          if (cachedData && !isManual) return;
 
-          const newData = await BookArchive.fetchJson("read", {}, {
-            refresh: isManual,
-            timeoutMs: 30000,
-            retries: 1,
-          });
-
-          const newDataString = JSON.stringify(newData);
-          allBooks = newData;
-          BookArchive.setCachedData(CACHE_KEY, CACHE_TS_KEY, newData);
+          const result = await BookArchive.loadBooks({ refresh: isManual });
+          const previousDataString = JSON.stringify(cachedData || []);
+          const newDataString = JSON.stringify(result.data);
+          allBooks = result.data;
           buildMergedBooks();
           applyFilters();
 
           if (isManual) {
             showSyncToast(
-              newDataString === cachedData ? "✨ 目前已是最新資料" : "✅ 資料已更新",
-              newDataString === cachedData ? "info" : "success",
+              newDataString === previousDataString
+                ? "✨ 目前已是最新資料"
+                : "✅ 資料已更新",
+              newDataString === previousDataString ? "info" : "success",
             );
           }
         } catch (error) {
@@ -418,8 +471,12 @@
           console.error("更新失敗:", error);
           showSyncToast(
             cachedData
-              ? timedOut ? "⚠️ 同步逾時，正在顯示快取資料" : "⚠️ 同步失敗，正在顯示快取資料"
-              : timedOut ? "❌ 連線逾時，請稍後再試" : `❌ 同步失敗：${error.message}`,
+              ? timedOut
+                ? "⚠️ 同步逾時，正在顯示共用資料"
+                : "⚠️ 同步失敗，正在顯示共用資料"
+              : timedOut
+                ? "❌ 連線逾時，請稍後再試"
+                : `❌ 同步失敗：${error.message}`,
             "error",
           );
         } finally {
@@ -505,9 +562,10 @@
 
         const countEl = document.getElementById("resultCount");
         if (countEl) {
-          countEl.textContent = filteredData.length > 0
-            ? `共 ${filteredData.length} 本書籍`
-            : "無符合條件的書籍";
+          countEl.textContent =
+            filteredData.length > 0
+              ? `共 ${filteredData.length} 本書籍`
+              : "無符合條件的書籍";
         }
 
         filteredData.forEach((book) => {
@@ -517,15 +575,17 @@
 
           const avgRating = parseFloat(book.avgRating || 0).toFixed(1);
           const ratingVal = parseFloat(avgRating);
-          row.dataset.ratingTier = ratingVal < 5.5 ? "low" : ratingVal <= 7 ? "mid" : "high";
+          row.dataset.ratingTier =
+            ratingVal < 5.5 ? "low" : ratingVal <= 7 ? "mid" : "high";
 
-          const coverHTML = book.coverUrl && book.coverUrl !== ""
-            ? `<img src="${book.coverUrl}" alt="封面" loading="lazy"
-                data-title="${(book.title || '').replace(/"/g, '&quot;')}"
-                data-bw="${(book.ebookUrl || '').replace(/"/g, '&quot;')}"
-                data-chil="${(book.chilUrl || '').replace(/"/g, '&quot;')}"
+          const coverHTML =
+            book.coverUrl && book.coverUrl !== ""
+              ? `<img src="${book.coverUrl}" alt="封面" loading="lazy"
+                data-title="${(book.title || "").replace(/"/g, "&quot;")}"
+                data-bw="${(book.ebookUrl || "").replace(/"/g, "&quot;")}"
+                data-chil="${(book.chilUrl || "").replace(/"/g, "&quot;")}"
                 onerror="handleCoverError(this)">`
-            : `<div class="no-cover">
+              : `<div class="no-cover">
                  <span>無封面</span>
                  <button onclick="reFetchCover('${book.title.replace(/'/g, "\\'")}', '${book.ebookUrl || ""}', '${book.chilUrl || ""}', event)">🔍 抓取</button>
                </div>`;
@@ -533,12 +593,15 @@
           const tagsHTML = (book.tags ? String(book.tags).split(",") : [])
             .map((t) => {
               const tag = t.trim();
-              return tag ? `<span class="tag-badge" onclick="quickSearch('${tag.replace(/'/g, "\\'")}')">#${tag}</span>` : "";
+              return tag
+                ? `<span class="tag-badge" onclick="quickSearch('${tag.replace(/'/g, "\\'")}', 'tag')">#${tag}</span>`
+                : "";
             })
             .join("");
 
           const reviewsHTML = (book.reviews || [])
-            .map((r) => `
+            .map(
+              (r) => `
               <div class="mini-review">
                 <span class="rev-name">${r.reviewer}</span>
                 <span class="rev-sep">|</span>
@@ -546,7 +609,8 @@
                 <span class="rev-comment">${r.comment}</span>
                 <button class="small-edit-btn" onclick="openCommentModal('${r.timestamp}')">✎</button>
               </div>
-            `)
+            `,
+            )
             .join("");
 
           row.innerHTML = `
@@ -619,7 +683,10 @@
         }
 
         if (!urlToFetch) {
-          showSyncToast("❌ 缺少 BookWalker 或 ちるちる 網址，請先編輯書籍資訊", "error");
+          showSyncToast(
+            "❌ 缺少 BookWalker 或 ちるちる 網址，請先編輯書籍資訊",
+            "error",
+          );
           return;
         }
 
@@ -648,12 +715,20 @@
             showSyncToast("✅ 封面抓取成功", "success");
           } else {
             coverContainer.innerHTML = originalContent;
-            showSyncToast("❌ 抓取失敗：" + (data.error || "找不到圖片"), "error");
+            showSyncToast(
+              "❌ 抓取失敗：" + (data.error || "找不到圖片"),
+              "error",
+            );
           }
         } catch (e) {
           coverContainer.innerHTML = originalContent;
           console.error("抓取錯誤:", e);
-          showSyncToast(e.name === "AbortError" ? "❌ 抓取逾時，請稍後再試" : "❌ 連線錯誤，請檢查網路或 GAS 狀態", "error");
+          showSyncToast(
+            e.name === "AbortError"
+              ? "❌ 抓取逾時，請稍後再試"
+              : "❌ 連線錯誤，請檢查網路或 GAS 狀態",
+            "error",
+          );
         }
       }
 
@@ -747,7 +822,6 @@
         document.getElementById("editRating").dispatchEvent(new Event("input"));
       }
 
-
       function closeModal() {
         document.getElementById("editModal").classList.add("hidden");
         document.getElementById("editForm").reset();
@@ -768,22 +842,38 @@
           const targetTimestamp = String(formData.get("timestamp") || "");
           const confirmedBooks = await BookArchive.waitForCollection({
             action: "read",
-            matches: (books) => books.some((book) => {
-              if (String(book.timestamp) !== targetTimestamp) return false;
-              return String(book.title || "") === String(formData.get("title") || "") &&
-                String(book.jpTitle || "") === String(formData.get("jpTitle") || "") &&
-                String(book.author || "") === String(formData.get("author") || "") &&
-                String(book.level || "") === String(formData.get("level") || "") &&
-                String(book.tags || "") === String(formData.get("tags") || "") &&
-                String(book.twStatus || "") === String(formData.get("twStatus") || "") &&
-                String(book.jpStatus || "") === String(formData.get("jpStatus") || "") &&
-                String(book.rating) === String(formData.get("rating") || "") &&
-                String(book.comment || "") === String(formData.get("comment") || "");
-            }),
+            matches: (books) =>
+              books.some((book) => {
+                if (String(book.timestamp) !== targetTimestamp) return false;
+                return (
+                  String(book.title || "") ===
+                    String(formData.get("title") || "") &&
+                  String(book.jpTitle || "") ===
+                    String(formData.get("jpTitle") || "") &&
+                  String(book.author || "") ===
+                    String(formData.get("author") || "") &&
+                  String(book.level || "") ===
+                    String(formData.get("level") || "") &&
+                  String(book.tags || "") ===
+                    String(formData.get("tags") || "") &&
+                  String(book.twStatus || "") ===
+                    String(formData.get("twStatus") || "") &&
+                  String(book.jpStatus || "") ===
+                    String(formData.get("jpStatus") || "") &&
+                  String(book.rating) ===
+                    String(formData.get("rating") || "") &&
+                  String(book.comment || "") ===
+                    String(formData.get("comment") || "")
+                );
+              }),
           });
 
           allBooks = confirmedBooks;
-          BookArchive.setCachedData("allBooksCache", "allBooksCacheTs", confirmedBooks);
+          BookArchive.setCachedData(
+            "allBooksCache",
+            "allBooksCacheTs",
+            confirmedBooks,
+          );
           buildMergedBooks();
           applyFilters();
           showSyncToast("✅ 資料已確認更新", "success");
@@ -815,11 +905,17 @@
       }
 
       // 點擊文字自動填入搜尋框
-      function quickSearch(text) {
+      function quickSearch(text, type = "normal") {
         const searchInput = document.getElementById("searchInput");
-        searchInput.value = text;
-        // 手動觸發 input 事件讓搜尋邏輯執行
-        searchInput.dispatchEvent(new Event("input"));
+
+        if (type === "tag") {
+          addSearchTag(text);
+        } else {
+          searchInput.value = text;
+          // 手動觸發 input 事件讓搜尋邏輯執行
+          searchInput.dispatchEvent(new Event("input"));
+        }
+
         // 捲動到頂部方便查看
         window.scrollTo({ top: 0, behavior: "smooth" });
       }
@@ -861,10 +957,13 @@
         }, {});
 
         mergedBooks = Object.values(merged).map((book) => {
-          const totalRating = book.reviews.reduce((sum, r) => sum + r.rating, 0);
+          const totalRating = book.reviews.reduce(
+            (sum, r) => sum + r.rating,
+            0,
+          );
           book.avgRating = totalRating / book.reviews.length;
           book.latestTimestamp = Math.max(
-            ...book.reviews.map((r) => new Date(r.timestamp).getTime())
+            ...book.reviews.map((r) => new Date(r.timestamp).getTime()),
           );
           book.reviews.sort((a, b) =>
             String(a.reviewer).localeCompare(String(b.reviewer), "zh-Hant"),
@@ -878,6 +977,7 @@
         const searchTerm = document
           .getElementById("searchInput")
           .value.toLowerCase();
+        const selectedSearchTagsForFilter = getSelectedSearchTags();
 
         const ratingThreshold = document.getElementById("ratingFilter").value;
         const levelThreshold = document.getElementById("levelFilter").value;
@@ -886,39 +986,35 @@
         let filtered = mergedBooks.filter((book) => {
           // --- 【搜尋邏輯修正開始】 ---
           const query = searchTerm.trim();
-          let matchSearch = false;
+          const selectedTags = selectedSearchTagsForFilter;
+          const textQuery = query;
+          const bookTagList = String(book.tags || "")
+            .toLowerCase()
+            .split(/[ ,、]+/)
+            .map((tag) => tag.trim())
+            .filter(Boolean);
 
-          if (query === "") {
-            matchSearch = true; // 沒輸入文字就顯示全部
-          } else if (query.startsWith("#")) {
-            // A 模式：標籤精確比對 (當點選推薦標籤產生的 # 格式時)
-            const pureTag = query.substring(1); // 移除 # 字號
-            const tagList = book.tags
+          const matchSelectedTags = selectedTags.every((tag) =>
+            bookTagList.includes(tag.toLowerCase()),
+          );
+
+          let matchText = true;
+          if (textQuery) {
+            const matchTitle = book.title.toLowerCase().includes(textQuery);
+            const matchJpTitle = (book.jpTitle || "")
               .toLowerCase()
-              .split(/[ ,、]+/)
-              .map((t) => t.trim())
-              .filter((t) => t !== "");
-
-            // 這裡使用 includes 做精確匹配，避免搜尋「青梅」也出現「青梅竹馬」
-            matchSearch = tagList.includes(pureTag);
-          } else {
-            // B 模式：一般模糊比對 (手動輸入時)
-            const matchTitle = book.title.toLowerCase().includes(query);
-            const matchJpTitle = (book.jpTitle || "").toLowerCase().includes(query);
+              .includes(textQuery);
             const matchAuthor = (book.author || "")
               .toLowerCase()
-              .includes(query);
-
-            const tagList = book.tags
-              .toLowerCase()
-              .split(/[ ,、]+/)
-              .map((t) => t.trim());
-
-            // 這裡用 some + includes，讓手動輸入時依然保有彈性
-            const matchTags = tagList.some((t) => t.includes(query));
-
-            matchSearch = matchTitle || matchJpTitle || matchAuthor || matchTags;
+              .includes(textQuery);
+            const matchTags = bookTagList.some((tag) =>
+              tag.includes(textQuery),
+            );
+            matchText = matchTitle || matchJpTitle || matchAuthor || matchTags;
           }
+
+          // 多重標籤使用 AND；一般文字搜尋仍維持原本的模糊搜尋。
+          const matchSearch = matchSelectedTags && matchText;
           // --- 【搜尋邏輯修正結束】 ---
 
           // B. 分數區間過濾
@@ -969,7 +1065,9 @@
 
       cBtn.addEventListener("click", () => {
         sInput.value = "";
+        selectedSearchTags = [];
         cBtn.style.display = "none";
+        renderActiveTagFilters();
         sInput.focus();
         applyFilters();
       });
@@ -978,7 +1076,9 @@
         const searchInput = document.getElementById("searchInput");
         const clearBtn = document.getElementById("clearSearch");
         searchInput.value = "";
+        selectedSearchTags = [];
         if (clearBtn) clearBtn.style.display = "none";
+        renderActiveTagFilters();
 
         document.getElementById("ratingFilter").value = "all";
         if (document.getElementById("levelFilter")) {
@@ -1069,7 +1169,9 @@
         const warning = document.getElementById("dupReviewWarning");
         const msg = document.getElementById("dupReviewMsg");
         const alreadyReviewed = allBooks.some(
-          (b) => String(b.title).trim() === String(title).trim() && String(b.reviewer).trim() === name
+          (b) =>
+            String(b.title).trim() === String(title).trim() &&
+            String(b.reviewer).trim() === name,
         );
         if (alreadyReviewed) {
           msg.textContent = `${name} 已評過這本書，確定要新增第二筆嗎？`;
@@ -1107,15 +1209,21 @@
           const expectedComment = String(formData.get("comment") || "");
           const confirmedBooks = await BookArchive.waitForCollection({
             action: "read",
-            matches: (books) => books.some((book) =>
-              String(book.title) === expectedTitle &&
-              String(book.reviewer) === expectedReviewer &&
-              String(book.comment || "") === expectedComment,
-            ),
+            matches: (books) =>
+              books.some(
+                (book) =>
+                  String(book.title) === expectedTitle &&
+                  String(book.reviewer) === expectedReviewer &&
+                  String(book.comment || "") === expectedComment,
+              ),
           });
 
           allBooks = confirmedBooks;
-          BookArchive.setCachedData("allBooksCache", "allBooksCacheTs", confirmedBooks);
+          BookArchive.setCachedData(
+            "allBooksCache",
+            "allBooksCacheTs",
+            confirmedBooks,
+          );
           buildMergedBooks();
           applyFilters();
           closeAddCommentModal();
@@ -1176,17 +1284,19 @@
           }
         });
 
-      document.getElementById("editTags").addEventListener("input", function (e) {
-        let val = this.value;
+      document
+        .getElementById("editTags")
+        .addEventListener("input", function (e) {
+          let val = this.value;
 
-        // 將「空白」或「全形頓號」即時替換為半形逗號
-        if (val.includes(" ") || val.includes("、")) {
-          this.value = val.replace(/[ 、]+/g, ",");
-        }
+          // 將「空白」或「全形頓號」即時替換為半形逗號
+          if (val.includes(" ") || val.includes("、")) {
+            this.value = val.replace(/[ 、]+/g, ",");
+          }
 
-        // 防止出現連續逗號
-        this.value = this.value.replace(/,+/g, ",");
-      });
+          // 防止出現連續逗號
+          this.value = this.value.replace(/,+/g, ",");
+        });
 
       let allDefinedTags = []; // 用來存儲從 Tags 分頁抓來的資料
 
@@ -1240,16 +1350,21 @@
 
       editTagInput.addEventListener("keydown", (event) => {
         const items = customList.querySelectorAll(".tag-item");
-        const isVisible = customList.style.display !== "none" && items.length > 0;
+        const isVisible =
+          customList.style.display !== "none" && items.length > 0;
         if (!isVisible) return;
 
         const activeIndex = Number(customList.dataset.activeIndex);
         if (event.key === "ArrowDown") {
           event.preventDefault();
-          updateEditTagRecommendationHighlight(Number.isInteger(activeIndex) ? activeIndex + 1 : 0);
+          updateEditTagRecommendationHighlight(
+            Number.isInteger(activeIndex) ? activeIndex + 1 : 0,
+          );
         } else if (event.key === "ArrowUp") {
           event.preventDefault();
-          updateEditTagRecommendationHighlight(Number.isInteger(activeIndex) ? activeIndex - 1 : items.length - 1);
+          updateEditTagRecommendationHighlight(
+            Number.isInteger(activeIndex) ? activeIndex - 1 : items.length - 1,
+          );
         } else if (event.key === "Enter") {
           if (Number.isInteger(activeIndex) && activeIndex >= 0) {
             event.preventDefault();
@@ -1303,8 +1418,67 @@
 
       const searchInput = document.getElementById("searchInput");
       const searchRecList = document.getElementById("searchRecommendationList");
+      const activeTagFilters = document.getElementById("activeTagFilters");
+      let selectedSearchTags = [];
+
+      function getSelectedSearchTags() {
+        return selectedSearchTags;
+      }
+
+      function renderActiveTagFilters() {
+        const tags = getSelectedSearchTags();
+        if (!tags.length) {
+          activeTagFilters.innerHTML = "";
+          activeTagFilters.style.display = "none";
+          return;
+        }
+
+        activeTagFilters.innerHTML = `
+          <span class="active-tag-filter-label">標籤條件（全部符合）</span>
+          ${tags.map((tag) => `<button type="button" class="active-tag-filter" data-tag="${tag.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;")}">#${tag}<span aria-hidden="true">×</span></button>`).join("")}
+          <button type="button" class="clear-tag-filters">清除標籤</button>
+        `;
+        activeTagFilters.style.display = "flex";
+      }
+
+      function setSearchTags(tags) {
+        selectedSearchTags = [...new Set(tags.filter(Boolean))];
+        cBtn.style.display =
+          searchInput.value || selectedSearchTags.length ? "block" : "none";
+        renderActiveTagFilters();
+        applyFilters();
+      }
+
+      function addSearchTag(tag) {
+        const normalizedTag = tag.replace(/^#/, "").trim();
+        if (!normalizedTag) return;
+
+        setSearchTags([...getSelectedSearchTags(), normalizedTag]);
+        searchInput.value = "";
+        searchRecList.style.display = "none";
+        searchRecList.removeAttribute("data-active-index");
+        searchInput.focus();
+      }
+
+      activeTagFilters.addEventListener("click", (event) => {
+        const tagButton = event.target.closest(".active-tag-filter");
+        if (tagButton) {
+          setSearchTags(
+            getSelectedSearchTags().filter(
+              (tag) => tag !== tagButton.dataset.tag,
+            ),
+          );
+          searchInput.focus();
+          return;
+        }
+        if (event.target.closest(".clear-tag-filters")) {
+          setSearchTags([]);
+          searchInput.focus();
+        }
+      });
 
       searchInput.addEventListener("input", function () {
+        renderActiveTagFilters();
         const val = this.value.trim().toLowerCase();
         const searchRecList = document.getElementById(
           "searchRecommendationList",
@@ -1411,20 +1585,29 @@
       // 推薦清單開啟時可使用上下方向鍵，Enter 確認選項，Escape 關閉清單。
       searchInput.addEventListener("keydown", (event) => {
         const items = searchRecList.querySelectorAll(".tag-item");
-        const isVisible = searchRecList.style.display !== "none" && items.length > 0;
+        const isVisible =
+          searchRecList.style.display !== "none" && items.length > 0;
         if (!isVisible) return;
 
         const activeIndex = Number(searchRecList.dataset.activeIndex);
         if (event.key === "ArrowDown") {
           event.preventDefault();
-          updateSearchRecommendationHighlight(Number.isInteger(activeIndex) ? activeIndex + 1 : 0);
+          updateSearchRecommendationHighlight(
+            Number.isInteger(activeIndex) ? activeIndex + 1 : 0,
+          );
         } else if (event.key === "ArrowUp") {
           event.preventDefault();
-          updateSearchRecommendationHighlight(Number.isInteger(activeIndex) ? activeIndex - 1 : items.length - 1);
+          updateSearchRecommendationHighlight(
+            Number.isInteger(activeIndex) ? activeIndex - 1 : items.length - 1,
+          );
         } else if (event.key === "Enter") {
+          event.preventDefault();
           if (Number.isInteger(activeIndex) && activeIndex >= 0) {
-            event.preventDefault();
             chooseSearchRecommendation(activeIndex);
+          } else {
+            addSearchTag(searchInput.value);
+            searchRecList.style.display = "none";
+            searchRecList.removeAttribute("data-active-index");
           }
         } else if (event.key === "Escape") {
           event.preventDefault();
@@ -1442,9 +1625,14 @@
 
         // 如果類型是 tag，自動在前面加個 # 符號，變成標籤專用搜尋模式
         if (type === "tag") {
-          searchInput.value = "#" + text;
+          const selectedTags = getSelectedSearchTags();
+          if (!selectedTags.includes(text)) selectedTags.push(text);
+          setSearchTags(selectedTags);
+          // 選擇推薦標籤後，移除原本輸入的關鍵字，避免殘留在搜尋框。
+          searchInput.value = "";
         } else {
           searchInput.value = text;
+          renderActiveTagFilters();
         }
 
         if (clearBtn) clearBtn.style.display = "block";

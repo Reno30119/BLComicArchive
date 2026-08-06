@@ -34,8 +34,9 @@
       <header class="form-header">
         <h2>📚 新增漫畫書籍</h2>
         <div class="db-status-bar">
-          <div id="dbCountBadge" class="status-badge">♻️ 書庫連線中...</div>
+          <div id="dbCountBadge" class="status-badge">♻️ 正在載入書庫...</div>
           <div id="dbTimeBadge" class="status-badge">🕒 --:--</div>
+          <button type="button" id="dbRefreshBtn" class="status-badge">🔄 重新讀取</button>
         </div>
       </header>
 
@@ -272,61 +273,67 @@
       const scriptURL = BookArchive.SCRIPT_URL;
       let allBooks = []; // 用來存放抓取回來的資料
 
-      // 統一的同步函式：負責抓資料、更新記憶體 (allBooks)、更新美化狀態欄
-      async function fetchAndRefreshStatus() {
+      // index 與 list 共用同一份 localStorage；一般換頁只讀快取，按按鈕才重新讀 Google Sheet。
+      async function fetchAndRefreshStatus(isManual = false) {
         const dbCountBadge = document.getElementById("dbCountBadge");
         const dbTimeBadge = document.getElementById("dbTimeBadge");
+        const dbRefreshBtn = document.getElementById("dbRefreshBtn");
 
-        function updateBadges() {
+        function updateBadges(source, cachedAt) {
           const uniqueTitles = new Set(
             allBooks
               .filter((book) => book && book.title)
               .map((book) => normalizeText(String(book.title))),
           );
-          const now = new Date();
-          const timeStr = `${now.getHours().toString().padStart(2, "0")}:${now.getMinutes().toString().padStart(2, "0")}`;
+          const updateTime = cachedAt ? new Date(cachedAt) : new Date();
+          const timeStr = `${updateTime.getHours().toString().padStart(2, "0")}:${updateTime.getMinutes().toString().padStart(2, "0")}`;
           if (dbCountBadge) {
-            dbCountBadge.innerHTML = `📖 書籍：${uniqueTitles.size} 本 (共 ${allBooks.length} 筆評論)`;
+            const sourceText = source === "network" ? "已重新讀取" : "共用資料";
+            dbCountBadge.innerHTML = `📖 ${sourceText}：${uniqueTitles.size} 本 (共 ${allBooks.length} 筆評論)`;
             dbCountBadge.className = "status-badge connected";
           }
-          if (dbTimeBadge) dbTimeBadge.innerHTML = `🕒 更新：${timeStr}`;
+          if (dbTimeBadge) dbTimeBadge.innerHTML = `🕒 資料時間：${timeStr}`;
         }
 
-        // 1. 先用 localStorage 快取立即顯示（重複偵測用）
-        try {
-          const cached = localStorage.getItem("allBooksCache");
-          if (cached) {
-            const parsed = JSON.parse(cached);
-            if (Array.isArray(parsed)) {
-              allBooks = parsed;
-              updateBadges();
-            }
-          }
-        } catch(e) {}
+        if (dbRefreshBtn) {
+          dbRefreshBtn.disabled = true;
+          dbRefreshBtn.textContent = isManual ? "同步中..." : "載入中...";
+        }
 
-        // 2. 背景抓最新（確保重複偵測資料是最新的）
         try {
-          const freshData = await BookArchive.fetchJson("read", {}, {
-            timeoutMs: 30000,
-            retries: 1,
-          });
-          allBooks = freshData;
-          BookArchive.setCachedData("allBooksCache", "allBooksCacheTs", freshData);
-          updateBadges();
-        } catch (error) {
-          if (dbCountBadge) {
-            dbCountBadge.innerHTML = allBooks.length
-              ? `⚠️ 使用快取：${allBooks.length} 筆評論`
-              : "❌ 連線失敗";
-            dbCountBadge.className = allBooks.length
-              ? "status-badge cached"
-              : "status-badge error";
+          if (isManual && dbCountBadge) {
+            dbCountBadge.innerHTML = "♻️ 正在重新讀取 Google Sheet...";
+            dbCountBadge.className = "status-badge syncing";
           }
+
+          const result = await BookArchive.loadBooks({ refresh: isManual });
+          allBooks = result.data;
+          updateBadges(result.source, result.cachedAt);
+          if (isManual) showToast("✅ 書庫資料已重新讀取", "success");
+        } catch (error) {
+          const cached = BookArchive.getBooksCache();
+          if (cached.data) {
+            allBooks = cached.data;
+            updateBadges("cache", cached.cachedAt);
+          } else if (dbCountBadge) {
+            dbCountBadge.innerHTML = "❌ 尚無共用資料，請按重新讀取";
+            dbCountBadge.className = "status-badge error";
+          }
+          if (isManual) showToast("❌ 重新讀取失敗，保留目前資料", "error");
           console.error("資料讀取失敗:", error);
+        } finally {
+          if (dbRefreshBtn) {
+            dbRefreshBtn.disabled = false;
+            dbRefreshBtn.textContent = "🔄 重新讀取";
+          }
         }
       }
 
-      fetchAndRefreshStatus();
+      document
+        .getElementById("dbRefreshBtn")
+        .addEventListener("click", () => fetchAndRefreshStatus(true));
+
+      fetchAndRefreshStatus(false);
 
       // 若從 wishlist.html 的「升級到書庫」按鈕跳轉而來，自動帶入欄位
       (function prefillFromWishlist() {
@@ -565,7 +572,7 @@
           msg.className = "success show";
 
           form.reset();
-          fetchAndRefreshStatus();
+          // 不自動重讀資料庫；需要最新資料時使用頁首的「重新讀取」。
           resetSearchFeedback();
           updateRatingColor(5.0);
           revButtons.forEach((b) => b.classList.remove("active"));
