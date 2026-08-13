@@ -61,6 +61,26 @@
             >
             <div id="searchRecommendationList" class="custom-tag-list"></div>
           </div>
+          <button
+            type="button"
+            onclick="
+              window.open(BookArchive.SCRIPT_URL + '?action=read', '_blank')
+            "
+            style="
+              background: #f39c12;
+              color: white;
+              border: none;
+              padding: 10px 15px;
+              border-radius: 8px;
+              cursor: pointer;
+              font-weight: bold;
+              margin-right: 10px;
+              font-size: 14px;
+            "
+          >
+            🛠️ 測試 API
+          </button>
+
           <button id="refreshBtn" class="refresh-btn" onclick="fetchData(true)">
             🔄 更新數據
           </button>
