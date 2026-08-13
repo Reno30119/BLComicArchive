@@ -46,7 +46,6 @@
       try {
         const response = await fetch(`${SCRIPT_URL}?${query}`, {
           signal: controller.signal,
-          cache: "no-store",
           redirect: "follow",
         });
         if (!response.ok) {

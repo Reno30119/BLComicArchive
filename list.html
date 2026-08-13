@@ -1219,26 +1219,35 @@
         btn.disabled = true;
         btn.innerText = "儲存中...";
 
-        // 1. 封裝表單數據
         const formData = new FormData(this);
-        // 必須加入 action 參數，讓 GAS 後端的 doPost 知道這是要執行 processForm
         formData.append("action", "processForm");
 
         try {
           await BookArchive.postForm(formData);
           showSyncToast("⏳ 評論已送出，正在確認同步結果...", "info");
 
-          const expectedTitle = String(formData.get("title") || "");
-          const expectedReviewer = String(formData.get("reviewer") || "");
-          const expectedComment = String(formData.get("comment") || "");
+          // 1. 建立正規化函式：統一換行符號為 \n，並去除前後多餘空白
+          const normalize = (str) => str.replace(/\r\n/g, "\n").trim();
+
+          const expectedTitle = normalize(String(formData.get("title") || ""));
+          const expectedReviewer = normalize(
+            String(formData.get("reviewer") || ""),
+          );
+          const expectedComment = normalize(
+            String(formData.get("comment") || ""),
+          );
+
           const confirmedBooks = await BookArchive.waitForCollection({
             action: "read",
+            attempts: 8, // 2. 增加嘗試次數：從 5 次改為 8 次
+            delayMs: 2000, // 3. 增加延遲時間：從 1.5 秒改為 2 秒 (共 16 秒緩衝)
             matches: (books) =>
               books.some(
                 (book) =>
-                  String(book.title) === expectedTitle &&
-                  String(book.reviewer) === expectedReviewer &&
-                  String(book.comment || "") === expectedComment,
+                  // 4. 對回傳的資料也進行相同的正規化比對
+                  normalize(String(book.title || "")) === expectedTitle &&
+                  normalize(String(book.reviewer || "")) === expectedReviewer &&
+                  normalize(String(book.comment || "")) === expectedComment,
               ),
           });
 
