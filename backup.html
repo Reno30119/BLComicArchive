@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="zh-TW">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>資料備份 - 漫畫書庫</title>
+    <link rel="stylesheet" href="css/style.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💾</text></svg>"
+    />
+    <link rel="manifest" href="assets/manifest.json" />
+    <link rel="apple-touch-icon" href="assets/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="書庫" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="theme-color" content="#5f77a8" />
+    <style>
+      .backup-card {
+        margin-top: 16px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        background: var(--surface);
+        box-shadow: var(--shadow-sm);
+        padding: 20px;
+      }
+      .backup-card-title {
+        margin: 0 0 10px;
+        font-size: 1rem;
+        font-weight: 700;
+        color: var(--text-primary);
+      }
+      .backup-card p {
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+        line-height: 1.6;
+        margin: 0 0 16px;
+      }
+      .backup-btn {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 8px;
+        width: 100%;
+        padding: 0 16px;
+        height: 50px;
+        background: var(--accent);
+        color: #fff;
+        border: none;
+        border-radius: var(--radius);
+        font-size: 1.05rem;
+        font-family: var(--font-body);
+        font-weight: 600;
+        cursor: pointer;
+        transition:
+          background 0.15s,
+          transform 0.1s;
+        letter-spacing: 0.04em;
+      }
+      .backup-btn:hover:not(:disabled) {
+        background: var(--accent-hover);
+      }
+      .backup-btn:active:not(:disabled) {
+        transform: scale(0.98);
+      }
+      .backup-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+      input[type="file"]#restoreFile {
+        display: block;
+        width: 100%;
+        box-sizing: border-box;
+        padding: 10px 12px;
+        margin-bottom: 12px;
+        border: 1.5px dashed var(--border);
+        border-radius: var(--radius);
+        background: var(--bg);
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+        font-family: var(--font-body);
+      }
+      .backup-status {
+        margin-top: 14px;
+        margin-bottom: 12px;
+        padding: 10px 13px;
+        border-radius: var(--radius);
+        font-size: 0.86rem;
+        font-weight: 500;
+        line-height: 1.5;
+        white-space: pre-line;
+        display: none;
+      }
+      .backup-status.show {
+        display: block;
+      }
+      .backup-status.success {
+        background: #f0fdf4;
+        color: #15803d;
+        border: 1px solid #bbf7d0;
+      }
+      .backup-status.error {
+        background: #fff1f2;
+        color: #be123c;
+        border: 1px solid #fecdd3;
+      }
+      .backup-status.info {
+        background: var(--accent-light);
+        color: var(--accent-hover);
+        border: 1px solid rgba(95, 119, 168, 0.25);
+      }
+      .backup-note {
+        margin-top: 24px;
+        font-size: 0.82rem;
+        color: var(--text-muted);
+        line-height: 1.7;
+      }
+      .backup-note strong {
+        color: var(--text-secondary);
+      }
+    </style>
+  </head>
+  <body>
+    <nav class="top-nav">
+      <a href="index.html" class="nav-item"><span class="nav-icon">➕</span><span class="nav-label">新增書籍</span></a>
+      <a href="list.html" class="nav-item"><span class="nav-icon">🔍</span><span class="nav-label">查詢書庫</span></a>
+      <a href="wishlist.html" class="nav-item"><span class="nav-icon">🛍️</span><span class="nav-label">待購清單</span></a>
+      <a href="tags.html" class="nav-item"><span class="nav-icon">🏷️</span><span class="nav-label">標籤管理</span></a>
+      <a href="backup.html" class="nav-item active"><span class="nav-icon">💾</span><span class="nav-label">資料備份</span></a>
+    </nav>
+
+    <div class="container">
+      <h2>💾 資料備份</h2>
+      <p class="subtitle">把書庫、標籤、待購清單的資料匯出成 JSON，或從備份還原</p>
+
+      <div class="backup-card">
+        <h3 class="backup-card-title">📦 匯出備份</h3>
+        <p>
+          按下按鈕會直接向 Firestore
+          重新讀取一次最新資料（不會用快取），把「書庫」「標籤」「待購清單」三個部分
+          全部打包成一個 JSON 檔案下載到你的電腦。建議在做大量修改或刪除前先匯出一份。
+        </p>
+        <button id="exportBtn" class="backup-btn">📦 匯出備份</button>
+        <div id="backupStatus" class="backup-status"></div>
+      </div>
+
+      <div class="backup-card">
+        <h3 class="backup-card-title">📥 匯入還原</h3>
+        <p>
+          選擇之前匯出的備份 JSON 檔案。這個還原<strong>只會補回</strong
+          >備份裡有、但目前 Firestore 沒有的資料，<strong>不會刪除或覆蓋</strong
+          >任何現有內容，適合用在「不小心刪錯東西，想把它補回來」的情境。
+        </p>
+        <input type="file" id="restoreFile" accept="application/json,.json" />
+        <div id="restorePreview" class="backup-status"></div>
+        <button id="restoreBtn" class="backup-btn" disabled>
+          📥 開始還原
+        </button>
+      </div>
+
+      <p class="backup-note">
+        <strong>注意：</strong>還原是「補回遺漏的資料」，不會刪除任何現有內容；如果你需要「完全恢復成備份當下的樣子」（包含刪除備份之後才新增的東西），這個工具目前不支援這種完全替換的還原方式，需要另外處理。匯出的檔案請自行妥善保存（例如存到雲端硬碟），不要外流，裡面包含完整的書庫與待購清單資料。
+      </p>
+    </div>
+
+    <script type="module" src="js/app.js"></script>
+    <script type="module" src="js/backup.js"></script>
+  </body>
+</html>

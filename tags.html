@@ -4,13 +4,13 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>標籤管理 - 漫畫書庫</title>
-    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="css/style.css" />
     <link
       rel="icon"
       href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏷️</text></svg>"
     />
-    <link rel="manifest" href="manifest.json" />
-    <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+    <link rel="manifest" href="assets/manifest.json" />
+    <link rel="apple-touch-icon" href="assets/apple-touch-icon.png" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="書庫" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
@@ -33,15 +33,22 @@
         padding: 12px 14px 12px 11px;
         border-bottom: 1px solid var(--border-light);
         border-left: 3px solid transparent;
-        transition: background 0.15s, border-left-color 0.15s;
+        transition:
+          background 0.15s,
+          border-left-color 0.15s;
       }
-      .tag-list-item:last-child { border-bottom: none; }
+      .tag-list-item:last-child {
+        border-bottom: none;
+      }
       .tag-list-item:hover {
         background: var(--accent-light);
         border-left-color: var(--accent);
       }
 
-      .tag-info { flex: 1; min-width: 0; }
+      .tag-info {
+        flex: 1;
+        min-width: 0;
+      }
 
       .tag-name-row {
         display: flex;
@@ -62,7 +69,10 @@
         border-radius: 20px;
         letter-spacing: 0.02em;
         cursor: pointer;
-        transition: background 0.15s, color 0.15s, border-color 0.15s;
+        transition:
+          background 0.15s,
+          color 0.15s,
+          border-color 0.15s;
       }
       .tag-name:hover {
         background: var(--accent);
@@ -84,11 +94,19 @@
         margin-top: 5px;
         line-height: 1.5;
       }
-      .tag-def-empty { color: var(--text-muted); font-style: italic; }
+      .tag-def-empty {
+        color: var(--text-muted);
+        font-style: italic;
+      }
 
       /* 操作按鈕 */
-      .tag-actions { display: flex; gap: 6px; flex-shrink: 0; }
-      .tag-edit-btn, .tag-del-btn {
+      .tag-actions {
+        display: flex;
+        gap: 6px;
+        flex-shrink: 0;
+      }
+      .tag-edit-btn,
+      .tag-del-btn {
         border: none;
         padding: 4px 11px;
         border-radius: 5px;
@@ -97,9 +115,18 @@
         font-family: var(--font-body);
         transition: opacity 0.15s;
       }
-      .tag-edit-btn { background: var(--accent); color: #fff; }
-      .tag-del-btn  { background: #e8cdd6; color: #8a2e4a; }
-      .tag-edit-btn:hover, .tag-del-btn:hover { opacity: 0.78; }
+      .tag-edit-btn {
+        background: var(--accent);
+        color: #fff;
+      }
+      .tag-del-btn {
+        background: #e8cdd6;
+        color: #8a2e4a;
+      }
+      .tag-edit-btn:hover,
+      .tag-del-btn:hover {
+        opacity: 0.78;
+      }
 
       .tag-list-empty {
         text-align: center;
@@ -160,10 +187,11 @@
   </head>
   <body>
     <nav class="top-nav">
-      <a href="index.html" class="nav-item">➕ 新增書籍</a>
-      <a href="list.html" class="nav-item">🔍 查詢書庫</a>
-      <a href="wishlist.html" class="nav-item">🛍️ 待購清單</a>
-      <a href="tags.html" class="nav-item active">🏷️ 標籤管理</a>
+      <a href="index.html" class="nav-item"><span class="nav-icon">➕</span><span class="nav-label">新增書籍</span></a>
+      <a href="list.html" class="nav-item"><span class="nav-icon">🔍</span><span class="nav-label">查詢書庫</span></a>
+      <a href="wishlist.html" class="nav-item"><span class="nav-icon">🛍️</span><span class="nav-label">待購清單</span></a>
+      <a href="tags.html" class="nav-item active"><span class="nav-icon">🏷️</span><span class="nav-label">標籤管理</span></a>
+      <a href="backup.html" class="nav-item"><span class="nav-icon">💾</span><span class="nav-label">資料備份</span></a>
     </nav>
 
     <div class="container">
@@ -199,8 +227,26 @@
         ></textarea>
         <div id="statusMsg"></div>
         <div style="display: flex; gap: 10px; margin-top: 10px">
-          <button id="saveTagBtn" class="rev-btn active" style="flex: 2; margin-top: 0">新增標籤</button>
-          <button id="cancelEditBtn" class="rev-btn" style="flex: 1; margin-top: 0; background: var(--text-muted); color: #fff; display: none">取消</button>
+          <button
+            id="saveTagBtn"
+            class="rev-btn active"
+            style="flex: 2; margin-top: 0"
+          >
+            新增標籤
+          </button>
+          <button
+            id="cancelEditBtn"
+            class="rev-btn"
+            style="
+              flex: 1;
+              margin-top: 0;
+              background: var(--text-muted);
+              color: #fff;
+              display: none;
+            "
+          >
+            取消
+          </button>
         </div>
       </div>
 
@@ -214,9 +260,8 @@
       </div>
     </div>
 
-    <script src="app.js"></script>
-    <script>
-      const scriptURL = BookArchive.SCRIPT_URL;
+    <script type="module" src="js/app.js"></script>
+    <script type="module">
       const CACHE_KEY = "allBooksCache";
 
       let allTags = [];
@@ -230,9 +275,7 @@
           .replace(/>/g, "&gt;");
       }
       function escapeAttr(str) {
-        return String(str)
-          .replace(/"/g, "&quot;")
-          .replace(/'/g, "&#39;");
+        return String(str).replace(/"/g, "&quot;").replace(/'/g, "&#39;");
       }
 
       function showStatus(msg, type = "success") {
@@ -240,7 +283,9 @@
         el.textContent = msg;
         el.className = type;
         el.style.display = "block";
-        setTimeout(() => { el.style.display = "none"; }, 3000);
+        setTimeout(() => {
+          el.style.display = "none";
+        }, 3000);
       }
 
       function getTagUsageCounts() {
@@ -259,7 +304,9 @@
             }
           });
           return counts;
-        } catch { return {}; }
+        } catch {
+          return {};
+        }
       }
 
       // ── 渲染 ──
@@ -283,7 +330,8 @@
         listDiv.innerHTML = data
           .map((t) => {
             const cnt = counts[t.name] || 0;
-            const cntText = cnt > 0 ? `<span class="tag-count">${cnt} 本</span>` : "";
+            const cntText =
+              cnt > 0 ? `<span class="tag-count">${cnt} 本</span>` : "";
             const defHtml = t.definition
               ? escapeHtml(t.definition)
               : `<span class="tag-def-empty">未定義</span>`;
@@ -314,7 +362,7 @@
         });
         listDiv.querySelectorAll(".tag-edit-btn").forEach((btn) => {
           btn.addEventListener("click", () =>
-            editTag(btn.dataset.name, btn.dataset.def)
+            editTag(btn.dataset.name, btn.dataset.def),
           );
         });
         listDiv.querySelectorAll(".tag-del-btn").forEach((btn) => {
@@ -328,18 +376,23 @@
         const listDiv = document.getElementById("tagList");
         listDiv.innerHTML = `<p class="tag-list-empty">載入中...</p>`;
         try {
-          allTags = await BookArchive.fetchJson("readTags", {}, {
-            timeoutMs: 30000,
-            retries: 1,
-          });
+          allTags = await BookArchive.fetchJson(
+            "readTags",
+            {},
+            {
+              timeoutMs: 30000,
+              retries: 1,
+            },
+          );
           allTags.sort((a, b) =>
-            a.name.localeCompare(b.name, "zh-Hant")
+            String(a.name || "").localeCompare(String(b.name || ""), "zh-Hant"),
           );
           document.getElementById("tagCountSubtitle").textContent =
             `共 ${allTags.length} 個標籤定義`;
           renderTagList(allTags);
-        } catch {
-          listDiv.innerHTML = `<p class="tag-list-empty" style="color:#be123c">❌ 載入失敗，請確認 GAS 已發佈並開啟權限。</p>`;
+        } catch (err) {
+          console.error("載入標籤失敗:", err);
+          listDiv.innerHTML = `<p class="tag-list-empty" style="color:#be123c">❌ 載入失敗：${escapeHtml(err.message || String(err))}</p>`;
         }
       }
 
@@ -366,51 +419,60 @@
 
       // ── 儲存 ──
 
-      document.getElementById("saveTagBtn").addEventListener("click", async function () {
-        const name = document.getElementById("tagName").value.trim();
-        const def  = document.getElementById("tagDefinition").value.trim();
-        if (!name) { showStatus("請輸入標籤名稱", "error"); return; }
+      document
+        .getElementById("saveTagBtn")
+        .addEventListener("click", async function () {
+          const name = document.getElementById("tagName").value.trim();
+          const def = document.getElementById("tagDefinition").value.trim();
+          if (!name) {
+            showStatus("請輸入標籤名稱", "error");
+            return;
+          }
 
-        const originalText = this.textContent;
-        this.disabled = true;
-        this.textContent = "處理中...";
+          const originalText = this.textContent;
+          this.disabled = true;
+          this.textContent = "處理中...";
 
-        const params = new URLSearchParams({
-          action: "upsertTag",
-          tagName: name,
-          definition: def,
-        });
-        try {
-          showStatus("⏳ 已送出，正在確認儲存...");
-          const formData = new FormData();
-          formData.append("action", "upsertTag");
-          formData.append("tagName", name);
-          formData.append("definition", def);
-          await BookArchive.postForm(formData);
-          const confirmedTags = await BookArchive.waitForCollection({
-            action: "readTags",
-            matches: (tags) => tags.some((tag) =>
-              tag.name === name && String(tag.definition || "") === def,
-            ),
+          const params = new URLSearchParams({
+            action: "upsertTag",
+            tagName: name,
+            definition: def,
           });
-          allTags = confirmedTags;
-          allTags.sort((a, b) => a.name.localeCompare(b.name, "zh-Hant"));
-          document.getElementById("tagCountSubtitle").textContent =
-            `共 ${allTags.length} 個標籤定義`;
-          renderTagList(allTags);
-          resetTagForm();
-          showStatus("✅ 標籤已確認儲存");
-        } catch {
-          showStatus("⚠️ 尚未確認儲存結果，請稍後重新載入確認", "error");
-          this.textContent = originalText;
-        } finally {
-          this.disabled = false;
-        }
-      });
+          try {
+            showStatus("⏳ 已送出，正在確認儲存...");
+            const formData = new FormData();
+            formData.append("action", "upsertTag");
+            formData.append("tagName", name);
+            formData.append("definition", def);
+            await BookArchive.postForm(formData);
+            const confirmedTags = await BookArchive.waitForCollection({
+              action: "readTags",
+              matches: (tags) =>
+                tags.some(
+                  (tag) =>
+                    tag.name === name && String(tag.definition || "") === def,
+                ),
+            });
+            allTags = confirmedTags;
+            allTags.sort((a, b) => a.name.localeCompare(b.name, "zh-Hant"));
+            document.getElementById("tagCountSubtitle").textContent =
+              `共 ${allTags.length} 個標籤定義`;
+            renderTagList(allTags);
+            resetTagForm();
+            showStatus("✅ 標籤已確認儲存");
+          } catch {
+            showStatus("⚠️ 尚未確認儲存結果，請稍後重新載入確認", "error");
+            this.textContent = originalText;
+          } finally {
+            this.disabled = false;
+          }
+        });
 
       // ── 取消 ──
 
-      document.getElementById("cancelEditBtn").addEventListener("click", resetTagForm);
+      document
+        .getElementById("cancelEditBtn")
+        .addEventListener("click", resetTagForm);
 
       // ── 刪除 ──
 
@@ -446,7 +508,10 @@
       document.getElementById("tagName").addEventListener("input", function () {
         const val = this.value.trim();
         const hint = document.getElementById("tagNameHint");
-        if (!val) { hint.style.display = "none"; return; }
+        if (!val) {
+          hint.style.display = "none";
+          return;
+        }
 
         const existing = allTags.find((t) => t.name === val);
         if (existing) {
@@ -457,7 +522,8 @@
           hint.className = "hint-exists";
           hint.style.display = "block";
           // 自動帶入現有定義，方便確認或修改
-          document.getElementById("tagDefinition").value = existing.definition || "";
+          document.getElementById("tagDefinition").value =
+            existing.definition || "";
         } else {
           hint.textContent = "✨ 新標籤";
           hint.className = "hint-new";
@@ -467,16 +533,21 @@
 
       // ── 搜尋 ──
 
-      document.getElementById("tagSearchInput").addEventListener("input", function () {
-        const term = this.value.toLowerCase().trim();
-        if (!term) { renderTagList(allTags); return; }
-        const filtered = allTags.filter(
-          (t) =>
-            t.name.toLowerCase().includes(term) ||
-            (t.definition && t.definition.toLowerCase().includes(term))
-        );
-        renderTagList(filtered);
-      });
+      document
+        .getElementById("tagSearchInput")
+        .addEventListener("input", function () {
+          const term = this.value.toLowerCase().trim();
+          if (!term) {
+            renderTagList(allTags);
+            return;
+          }
+          const filtered = allTags.filter(
+            (t) =>
+              t.name.toLowerCase().includes(term) ||
+              (t.definition && t.definition.toLowerCase().includes(term)),
+          );
+          renderTagList(filtered);
+        });
 
       // ── 初始化 ──
       loadTags();

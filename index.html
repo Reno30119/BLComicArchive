@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>漫畫書庫 - 建立書本</title>
-    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="css/style.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -15,8 +15,8 @@
       rel="icon"
       href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect x=%2215%22 y=%2220%22 width=%2220%22 height=%2260%22 fill=%22%23e74c3c%22 rx=%222%22/><rect x=%2240%22 y=%2210%22 width=%2220%22 height=%2270%22 fill=%22%233498db%22 rx=%222%22/><rect x=%2265%22 y=%2225%22 width=%2220%22 height=%2255%22 fill=%22%23f1c40f%22 rx=%222%22/></svg>"
     />
-    <link rel="manifest" href="manifest.json" />
-    <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+    <link rel="manifest" href="assets/manifest.json" />
+    <link rel="apple-touch-icon" href="assets/apple-touch-icon.png" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="書庫" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
@@ -24,10 +24,11 @@
   </head>
   <body>
     <nav class="top-nav">
-      <a href="index.html" class="nav-item active">➕ 新增書籍</a>
-      <a href="list.html" class="nav-item">🔍 查詢書庫</a>
-      <a href="wishlist.html" class="nav-item">🛍️ 待購清單</a>
-      <a href="tags.html" class="nav-item">🏷️ 標籤管理</a>
+      <a href="index.html" class="nav-item active"><span class="nav-icon">➕</span><span class="nav-label">新增書籍</span></a>
+      <a href="list.html" class="nav-item"><span class="nav-icon">🔍</span><span class="nav-label">查詢書庫</span></a>
+      <a href="wishlist.html" class="nav-item"><span class="nav-icon">🛍️</span><span class="nav-label">待購清單</span></a>
+      <a href="tags.html" class="nav-item"><span class="nav-icon">🏷️</span><span class="nav-label">標籤管理</span></a>
+      <a href="backup.html" class="nav-item"><span class="nav-icon">💾</span><span class="nav-label">資料備份</span></a>
     </nav>
 
     <div class="container">
@@ -36,7 +37,9 @@
         <div class="db-status-bar">
           <div id="dbCountBadge" class="status-badge">♻️ 正在載入書庫...</div>
           <div id="dbTimeBadge" class="status-badge">🕒 --:--</div>
-          <button type="button" id="dbRefreshBtn" class="status-badge">🔄 重新讀取</button>
+          <button type="button" id="dbRefreshBtn" class="status-badge">
+            🔄 重新讀取
+          </button>
         </div>
       </header>
 
@@ -62,16 +65,41 @@
             </div>
           </div>
           <div id="searchFeedback" class="search-feedback"></div>
-          <div id="duplicateBookCard" class="duplicate-book-card hidden" aria-live="polite">
+          <div
+            id="duplicateBookCard"
+            class="duplicate-book-card hidden"
+            aria-live="polite"
+          >
             <div class="duplicate-book-card-header">
               <strong>書庫已有這本書</strong>
-              <button type="button" class="duplicate-dismiss-btn" onclick="dismissDuplicateCard()" aria-label="關閉重複書籍提示">✕</button>
+              <button
+                type="button"
+                class="duplicate-dismiss-btn"
+                onclick="dismissDuplicateCard()"
+                aria-label="關閉重複書籍提示"
+              >
+                ✕
+              </button>
             </div>
             <p id="duplicateBookDetails" class="duplicate-book-details"></p>
-            <p class="duplicate-book-hint">可帶入書籍共用資訊，再填寫這次的評論；也可以保留目前內容繼續建立。</p>
+            <p class="duplicate-book-hint">
+              可帶入書籍共用資訊，再填寫這次的評論；也可以保留目前內容繼續建立。
+            </p>
             <div class="duplicate-book-actions">
-              <button type="button" id="duplicateAutofillBtn" class="duplicate-primary-btn">帶入書籍資訊</button>
-              <button type="button" class="duplicate-secondary-btn" onclick="dismissDuplicateCard()">保留目前內容</button>
+              <button
+                type="button"
+                id="duplicateAutofillBtn"
+                class="duplicate-primary-btn"
+              >
+                帶入書籍資訊
+              </button>
+              <button
+                type="button"
+                class="duplicate-secondary-btn"
+                onclick="dismissDuplicateCard()"
+              >
+                保留目前內容
+              </button>
             </div>
           </div>
         </div>
@@ -241,792 +269,25 @@
       <div id="message" class="hidden"></div>
     </div>
 
-    <script src="app.js"></script>
-    <script>
-      // 取得評分輸入框
-      const ratingInput = document.getElementById("rating");
-
-      async function fetchWithTimeout(url, timeoutMs = 15000) {
-        const controller = new AbortController();
-        const id = setTimeout(() => controller.abort(), timeoutMs);
-        try {
-          const res = await fetch(url, { signal: controller.signal });
-          clearTimeout(id);
-          return res;
-        } catch (err) {
-          clearTimeout(id);
-          throw err;
-        }
-      }
-
-      function showToast(message, type = "success") {
-        const el = document.getElementById("idx-toast");
-        if (!el) return;
-        el.style.background = type === "error" ? "#e74c3c" : type === "info" ? "#5f77a8" : "#27ae60";
-        el.textContent = message;
-        el.style.transform = "translateX(-50%) translateY(0)";
-        clearTimeout(el._timer);
-        el._timer = setTimeout(() => { el.style.transform = "translateX(-50%) translateY(100px)"; }, 3000);
-      }
-
-      // 1. 先定義所有需要的變數
-      const scriptURL = BookArchive.SCRIPT_URL;
-      let allBooks = []; // 用來存放抓取回來的資料
-
-      // index 與 list 共用同一份 localStorage；一般換頁只讀快取，按按鈕才重新讀 Google Sheet。
-      async function fetchAndRefreshStatus(isManual = false) {
-        const dbCountBadge = document.getElementById("dbCountBadge");
-        const dbTimeBadge = document.getElementById("dbTimeBadge");
-        const dbRefreshBtn = document.getElementById("dbRefreshBtn");
-
-        function updateBadges(source, cachedAt) {
-          const uniqueTitles = new Set(
-            allBooks
-              .filter((book) => book && book.title)
-              .map((book) => normalizeText(String(book.title))),
-          );
-          const updateTime = cachedAt ? new Date(cachedAt) : new Date();
-          const timeStr = `${updateTime.getHours().toString().padStart(2, "0")}:${updateTime.getMinutes().toString().padStart(2, "0")}`;
-          if (dbCountBadge) {
-            const sourceText = source === "network" ? "已重新讀取" : "共用資料";
-            dbCountBadge.innerHTML = `📖 ${sourceText}：${uniqueTitles.size} 本 (共 ${allBooks.length} 筆評論)`;
-            dbCountBadge.className = "status-badge connected";
-          }
-          if (dbTimeBadge) dbTimeBadge.innerHTML = `🕒 資料時間：${timeStr}`;
-        }
-
-        if (dbRefreshBtn) {
-          dbRefreshBtn.disabled = true;
-          dbRefreshBtn.textContent = isManual ? "同步中..." : "載入中...";
-        }
-
-        try {
-          if (isManual && dbCountBadge) {
-            dbCountBadge.innerHTML = "♻️ 正在重新讀取 Google Sheet...";
-            dbCountBadge.className = "status-badge syncing";
-          }
-
-          const result = await BookArchive.loadBooks({ refresh: isManual });
-          allBooks = result.data;
-          updateBadges(result.source, result.cachedAt);
-          if (isManual) showToast("✅ 書庫資料已重新讀取", "success");
-        } catch (error) {
-          const cached = BookArchive.getBooksCache();
-          if (cached.data) {
-            allBooks = cached.data;
-            updateBadges("cache", cached.cachedAt);
-          } else if (dbCountBadge) {
-            dbCountBadge.innerHTML = "❌ 尚無共用資料，請按重新讀取";
-            dbCountBadge.className = "status-badge error";
-          }
-          if (isManual) showToast("❌ 重新讀取失敗，保留目前資料", "error");
-          console.error("資料讀取失敗:", error);
-        } finally {
-          if (dbRefreshBtn) {
-            dbRefreshBtn.disabled = false;
-            dbRefreshBtn.textContent = "🔄 重新讀取";
-          }
-        }
-      }
-
-      document
-        .getElementById("dbRefreshBtn")
-        .addEventListener("click", () => fetchAndRefreshStatus(true));
-
-      fetchAndRefreshStatus(false);
-
-      // 若從 wishlist.html 的「升級到書庫」按鈕跳轉而來，自動帶入欄位
-      (function prefillFromWishlist() {
-        const p = new URLSearchParams(window.location.search);
-        if (!p.get("prefill")) return;
-        if (p.get("title"))    document.getElementById("title").value    = p.get("title");
-        if (p.get("jpTitle"))  document.getElementById("jpTitle").value  = p.get("jpTitle");
-        if (p.get("author"))   document.getElementById("author").value   = p.get("author");
-        if (p.get("ebookUrl")) document.getElementById("ebookUrl").value = p.get("ebookUrl");
-        if (p.get("chilUrl"))  document.getElementById("chilUrl").value  = p.get("chilUrl");
-        if (p.get("coverUrl")) document.getElementById("coverUrl").value = p.get("coverUrl");
-        if (p.get("title")) {
-          const msg = document.getElementById("message");
-          msg.innerHTML = "✅ 已從待購清單帶入書籍資料，請補填評分與評語";
-          msg.className = "success show";
-          msg.classList.remove("hidden");
-        }
-      })();
-
-      // 定義顏色切換函數
-      function updateRatingColor(value) {
-        const val = parseFloat(value);
-        ratingInput.classList.remove("rating-low", "rating-mid", "rating-high");
-
-        if (val < 5.5) {
-          ratingInput.classList.add("rating-low");
-        } else if (val <= 7) {
-          ratingInput.classList.add("rating-mid");
-        } else {
-          ratingInput.classList.add("rating-high");
-        }
-      }
-
-      // BookWalker 封面抓取（純字串推算，無需 HTTP 請求）
-      async function autoFetchCover() {
-        const bwUrl = document.getElementById("ebookUrl").value.trim();
-        if (!bwUrl) return;
-
-        const coverInput = document.getElementById("coverUrl");
-        const msg = document.getElementById("message");
-
-        try {
-          const res = await fetchWithTimeout(
-            `${scriptURL}?action=fetchCover&url=${encodeURIComponent(bwUrl)}`,
-          );
-          const data = await res.json();
-
-          if (data.coverUrl) {
-            // BookWalker 封面優先，無條件覆蓋（即使 ちるちる 已填入封面）
-            coverInput.value = data.coverUrl;
-            msg.innerHTML = "✅ BookWalker 封面已帶入！";
-            msg.className = "success show";
-            msg.classList.remove("hidden");
-            setTimeout(() => msg.classList.add("hidden"), 2000);
-          }
-        } catch (err) {
-          console.error("封面抓取失敗", err);
-        }
-      }
-
-      // ちるちる 書籍資料自動帶入（書名、日文書名、作者、封面）
-      // GAS 會用 UrlFetchApp 去抓 ちるちる 頁面 HTML，再解析回傳
-      async function fetchMetaAndFill() {
-        const chilUrl = document.getElementById("chilUrl").value.trim();
-        if (!chilUrl) return;
-
-        const msg = document.getElementById("message");
-        msg.innerHTML = "🔍 正在從 ちるちる 抓取書籍資料...";
-        msg.className = "info show";
-        msg.classList.remove("hidden");
-
-        try {
-          const res = await fetchWithTimeout(
-            `${scriptURL}?action=fetchMeta&url=${encodeURIComponent(chilUrl)}`,
-          );
-          const data = await res.json();
-
-          if (data.error) {
-            msg.classList.add("hidden");
-            return;
-          }
-
-          const filled = [];
-
-          // 只在欄位是空的時候才填入，不覆蓋已手動輸入的內容
-          const titleInput = document.getElementById("title");
-          const jpTitleInput = document.getElementById("jpTitle");
-          const authorInput = document.getElementById("author");
-          const coverInput = document.getElementById("coverUrl");
-
-          if (data.title && !titleInput.value.trim()) {
-            titleInput.value = data.title;
-            titleInput.dispatchEvent(new Event("input")); // 觸發重複書名檢查
-            filled.push("書名");
-          }
-          if (data.jpTitle && !jpTitleInput.value.trim()) {
-            jpTitleInput.value = data.jpTitle;
-            filled.push("日文書名");
-          }
-          if (data.author && !authorInput.value.trim()) {
-            authorInput.value = data.author;
-            filled.push("作者");
-          }
-          // 封面：若尚未有 BookWalker 封面才填入（BookWalker 優先）
-          if (data.coverUrl && !coverInput.value.trim()) {
-            coverInput.value = data.coverUrl;
-            filled.push("封面");
-          }
-
-          if (filled.length > 0) {
-            msg.innerHTML = `✅ 已自動帶入：${filled.join("、")}（中文書名請手動填寫）`;
-            msg.className = "success show";
-          } else {
-            msg.classList.add("hidden");
-          }
-          setTimeout(() => msg.classList.add("hidden"), 3000);
-        } catch (err) {
-          console.error("fetchMeta 失敗", err);
-          msg.classList.add("hidden");
-        }
-      }
-
-      // ebookUrl（BookWalker）→ 只抓封面，且優先覆蓋
-      // chilUrl（ちるちる）→ 抓書名、作者、日文書名、封面（封面為備用）
-      document
-        .getElementById("ebookUrl")
-        .addEventListener("change", autoFetchCover);
-      document
-        .getElementById("chilUrl")
-        .addEventListener("change", fetchMetaAndFill);
-      // 監聽輸入事件 (打字或按上下鈕都會觸發)
-      ratingInput.addEventListener("input", (e) => {
-        updateRatingColor(e.target.value);
-      });
-
-      const tagsInput = document.getElementById("tags");
-
-      tagsInput.addEventListener("input", function (e) {
-        let val = this.value;
-
-        // 將「空白」或「全形頓號」即時替換為半形逗號
-        if (val.includes(" ") || val.includes("、")) {
-          this.value = val.replace(/[ 、]+/g, ",");
-        }
-
-        // 防止出現連續逗號
-        this.value = this.value.replace(/,+/g, ",");
-      });
-
-      updateRatingColor(ratingInput.value);
-
-      const form = document.getElementById("bookForm");
-      const btn = document.getElementById("submitBtn");
-      const msg = document.getElementById("message");
-
-      const revButtons = document.querySelectorAll(".rev-btn");
-      const reviewerInput = document.getElementById("reviewer");
-
-      revButtons.forEach((button) => {
-        button.addEventListener("click", () => {
-          revButtons.forEach((b) => b.classList.remove("active"));
-          button.classList.add("active");
-          reviewerInput.value = button.getAttribute("data-name");
-        });
-      });
-
-      // 分級按鈕
-      const levelBtns = document.querySelectorAll(".level-btn");
-      const levelInput = document.getElementById("level");
-
-      levelBtns.forEach((button) => {
-        button.addEventListener("click", () => {
-          levelBtns.forEach((b) => b.classList.remove("active"));
-          button.classList.add("active");
-          levelInput.value = button.getAttribute("data-level");
-        });
-      });
-
-      form.addEventListener("submit", async (e) => {
-        e.preventDefault();
-
-        if (!reviewerInput.value) {
-          showToast("❌ 請先選擇評論者", "error");
-          return;
-        }
-
-        btn.disabled = true;
-        btn.innerHTML = "正在抓取封面並寫入...";
-        msg.className = "info show";
-        msg.classList.remove("hidden");
-
-        // 1. 先抓取並整理標籤（去除多餘空格、重複、及結尾逗號）
-        const tagsInputField = document.getElementById("tags");
-        const cleanTags = tagsInputField.value
-          .trim()
-          .replace(/[ ,、]+$/, "")
-          .split(/[ ,、]+/)
-          .map((t) => t.trim())
-          .filter((t) => t !== "")
-          .join(", ");
-
-        tagsInputField.value = cleanTags;
-        // 4. 準備傳送資料
-        const formData = new FormData(form);
-        formData.set("tags", cleanTags); // 強制覆蓋，確保標籤雲點選的也有進來
-
-        // 5. 如果你後面需要用到 data 物件
-        const data = Object.fromEntries(formData.entries());
-
-        try {
-          // 1. 自動抓取封面邏輯：優先用 ebookUrl (BookWalker)，沒有就用 chilUrl (ちるちる)
-          const targetUrl = data.ebookUrl || data.chilUrl;
-
-          // 如果目前隱藏欄位還沒有封面網址，且有任何一個網址存在，就執行抓取
-          if (!data.coverUrl && targetUrl) {
-            try {
-              const coverRes = await fetch(
-                `${scriptURL}?action=fetchCover&url=${encodeURIComponent(
-                  targetUrl,
-                )}`,
-              );
-              const coverJson = await coverRes.json();
-
-              if (coverJson.coverUrl) {
-                // 重要：將抓到的網址「寫入」要送出的 formData 中
-                formData.set("coverUrl", coverJson.coverUrl);
-              }
-            } catch (err) {
-              console.error("封面自動抓取失敗，將僅上傳現有資料", err);
-            }
-          }
-
-          // GAS 的 POST 使用 no-cors，前端無法讀取伺服器回應，因此不再輪詢判定是否寫入成功。
-          await BookArchive.postForm(formData);
-          msg.innerHTML = "✅ 資料已送出，請稍後重新整理書庫查看。";
-          msg.className = "success show";
-
-          form.reset();
-          // 不自動重讀資料庫；需要最新資料時使用頁首的「重新讀取」。
-          resetSearchFeedback();
-          updateRatingColor(5.0);
-          revButtons.forEach((b) => b.classList.remove("active"));
-          reviewerInput.value = "";
-          levelBtns.forEach((b) =>
-            b.classList.toggle("active", b.dataset.level === "正常"),
-          );
-          levelInput.value = "正常";
-          btn.disabled = false;
-          btn.innerHTML = "確認送出資料";
-
-          window.scrollTo({ top: 0, behavior: "smooth" });
-
-          setTimeout(() => {
-            msg.classList.remove("show");
-            msg.classList.add("hidden");
-            msg.style.display = "none";
-          }, 3000);
-        } catch (error) {
-          console.error("送出請求時發生錯誤:", error);
-          msg.innerHTML = "⚠️ 無法確認送出狀態，請稍後到書庫查看，避免重複送出。";
-          msg.className = "info show";
-          btn.disabled = false;
-          btn.innerHTML = "確認送出資料";
-        }
-      });
-
-      // 1. 確保異體字對照表存在
-      const variantMap = {
-        秘: "祕",
-        台: "臺",
-        里: "裡",
-        搜: "蒐",
-        呪: "咒",
-        迴: "回",
-        猫: "貓",
-        峰: "峯",
-        嶋: "島",
-      };
-
-      // 2. 標準化文字函式
-      function normalizeText(str) {
-        if (!str) return "";
-        let normalized = str.trim().toLowerCase();
-        for (let key in variantMap) {
-          normalized = normalized.split(key).join(variantMap[key]);
-        }
-        return normalized;
-      }
-
-      // 監聽書名輸入
-      const titleInput = document.getElementById("title");
-      const feedback = document.getElementById("searchFeedback");
-      const duplicateBookCard = document.getElementById("duplicateBookCard");
-      const duplicateBookDetails = document.getElementById("duplicateBookDetails");
-      const duplicateAutofillBtn = document.getElementById("duplicateAutofillBtn");
-      const titleRecList = document.getElementById("titleRecommendationList");
-      let searchTimeout;
-
-      titleInput.addEventListener("input", function () {
-        const inputVal = this.value.trim();
-        clearTimeout(searchTimeout);
-
-        if (!inputVal) {
-          feedback.innerHTML = "";
-          feedback.className = "search-feedback";
-          titleRecList.style.display = "none";
-          dismissDuplicateCard();
-          return;
-        }
-
-        // 3. 顯示搜尋中
-        feedback.innerHTML = "🔍 正在搜尋書庫...";
-        feedback.className = "search-feedback active status-searching";
-
-        const normalizedInput = normalizeText(inputVal);
-
-        // --- A. 下拉推薦邏輯 (模糊搜尋) ---
-        // 找出書名包含關鍵字的所有書籍（不重複書名）
-        const matches = [...new Set(allBooks.map((b) => b.title))]
-          .filter((t) => normalizeText(t).includes(normalizedInput))
-          .slice(0, 5); // 只顯示前 5 筆
-
-        // 在你的 titleInput 監聽器內加入
-        if (matches.length > 0) {
-          titleRecList.innerHTML = matches
-            .map((t) => {
-              const book = allBooks.find((b) => b.title === t);
-              return `
-      <div class="tag-item" data-title="${t.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;")}" onclick="selectTitleFromRec('${t.replace(/'/g, "\\'")}')">
-        <div style="display:flex; justify-content:space-between;">
-          <strong>${t}</strong>
-          <span style="color:#a5b1c2; font-size:0.85rem;">${book.author || ""}</span>
-        </div>
-      </div>`;
-            })
-            .join("");
-          titleRecList.style.display = "block"; // 顯示
-        } else {
-          titleRecList.style.display = "none"; // 沒資料就隱藏
-        }
-
-        titleRecList.removeAttribute("data-active-index");
-
-        // --- B. 重複檢查邏輯 (完全符合) ---
-        const existingBook = allBooks.find(
-          (b) => normalizeText(String(b.title)) === normalizedInput,
-        );
-
-        if (existingBook) {
-          feedback.innerHTML = "⚠️ 書庫內已有此書";
-          feedback.className = "search-feedback active status-found";
-          showDuplicateCard(existingBook);
-        } else {
-          feedback.innerHTML = "✨ 書庫內尚未有此書";
-          feedback.className = "search-feedback active status-new";
-          dismissDuplicateCard();
-        }
-      });
-
-      function showDuplicateCard(book) {
-        const reviewers = [...new Set(
-          allBooks
-            .filter((item) => normalizeText(String(item.title)) === normalizeText(book.title))
-            .map((item) => item.reviewer)
-            .filter(Boolean),
-        )];
-        const ratings = allBooks
-          .filter((item) => normalizeText(String(item.title)) === normalizeText(book.title))
-          .map((item) => Number(item.rating))
-          .filter((rating) => Number.isFinite(rating));
-        const average = ratings.length
-          ? (ratings.reduce((sum, rating) => sum + rating, 0) / ratings.length).toFixed(1)
-          : "尚無評分";
-        const reviewerText = reviewers.length ? reviewers.join("、") : "尚無評論者";
-
-        duplicateBookDetails.textContent =
-          `《${book.title}》｜${book.author || "作者未填"}｜${reviewerText} 已評論｜平均 ${average}`;
-        duplicateAutofillBtn.onclick = () => autoFillForm(book);
-        duplicateBookCard.classList.remove("hidden");
-      }
-
-      window.dismissDuplicateCard = function () {
-        duplicateBookCard.classList.add("hidden");
-      };
-
-      function updateTitleRecommendationHighlight(index) {
-        const items = titleRecList.querySelectorAll(".tag-item");
-        if (!items.length) {
-          titleRecList.removeAttribute("data-active-index");
-          return;
-        }
-
-        const safeIndex = (index + items.length) % items.length;
-        items.forEach((item, itemIndex) => {
-          const isActive = itemIndex === safeIndex;
-          item.classList.toggle("keyboard-active", isActive);
-          item.setAttribute("aria-selected", String(isActive));
-        });
-        titleRecList.setAttribute("data-active-index", String(safeIndex));
-        items[safeIndex].scrollIntoView({ block: "nearest" });
-      }
-
-      function chooseTitleRecommendation(index) {
-        const item = titleRecList.querySelectorAll(".tag-item")[index];
-        if (!item) return;
-        const title = item.dataset.title;
-        if (title) window.selectTitleFromRec(title);
-      }
-
-      // 推薦清單開啟時可使用上下方向鍵，Enter 確認選項，Escape 關閉清單。
-      titleInput.addEventListener("keydown", (event) => {
-        const items = titleRecList.querySelectorAll(".tag-item");
-        const isVisible = titleRecList.style.display !== "none" && items.length > 0;
-        if (!isVisible) return;
-
-        const activeIndex = Number(titleRecList.dataset.activeIndex);
-        if (event.key === "ArrowDown") {
-          event.preventDefault();
-          updateTitleRecommendationHighlight(Number.isInteger(activeIndex) ? activeIndex + 1 : 0);
-        } else if (event.key === "ArrowUp") {
-          event.preventDefault();
-          updateTitleRecommendationHighlight(Number.isInteger(activeIndex) ? activeIndex - 1 : items.length - 1);
-        } else if (event.key === "Enter") {
-          if (Number.isInteger(activeIndex) && activeIndex >= 0) {
-            event.preventDefault();
-            chooseTitleRecommendation(activeIndex);
-          }
-        } else if (event.key === "Escape") {
-          event.preventDefault();
-          titleRecList.style.display = "none";
-          titleRecList.removeAttribute("data-active-index");
-        }
-      });
-
-      // 新增：處理點選推薦項目的函式
-      window.selectTitleFromRec = function (title) {
-        titleInput.value = title;
-        titleRecList.style.display = "none";
-        titleRecList.removeAttribute("data-active-index");
-
-        // 找出該書的完整資料並帶入
-        const fullBook = allBooks.find((b) => b.title === title);
-        if (fullBook) {
-          autoFillForm(fullBook);
-        }
-      };
-
-      // 點擊頁面其他地方時關閉清單
-      document.addEventListener("click", (e) => {
-        if (e.target !== titleInput) titleRecList.style.display = "none";
-      });
-
-      // 封裝自動填入邏輯
-      function autoFillForm(book) {
-        const titleField = document.getElementById("title");
-        resetSearchFeedback();
-
-        // 1. 強制填入中文書名
-        titleField.value = book.title || "";
-
-        dismissDuplicateCard();
-
-        document.getElementById("jpTitle").value = book.jpTitle || "";
-        document.getElementById("author").value = book.author || "";
-        const bookLevel = book.level || "正常";
-        document.getElementById("level").value = bookLevel;
-        document.querySelectorAll(".level-btn").forEach((b) => {
-          b.classList.toggle("active", b.dataset.level === bookLevel);
-        });
-        document.getElementById("twStatus").value = book.twStatus || "";
-        document.getElementById("jpStatus").value = book.jpStatus || "";
-        document.getElementById("ebookUrl").value = book.ebookUrl || "";
-        document.getElementById("chilUrl").value = book.chilUrl || "";
-        document.getElementById("tags").value = book.tags || "";
-
-        if (book.coverUrl) {
-          document.getElementById("coverUrl").value = book.coverUrl;
-        }
-        showToast("✅ 資料已從待購清單帶入", "success");
-      }
-
-      function clearFullForm() {
-        const form = document.getElementById("bookForm");
-        form.reset();
-        document.getElementById("coverUrl").value = "";
-        document.getElementById("reviewer").value = "";
-        document.querySelectorAll(".rev-btn").forEach((b) => b.classList.remove("active"));
-        document.querySelectorAll(".level-btn").forEach((b) =>
-          b.classList.toggle("active", b.dataset.level === "正常")
-        );
-        document.getElementById("level").value = "正常";
-        updateRatingColor(5.0);
-        showToast("🗑️ 表單已清空", "info");
-      }
-
-      // 新增：專門用來隱藏搜尋回饋與重設狀態的函式
-      function resetSearchFeedback() {
-        const feedback = document.getElementById("searchFeedback");
-        if (feedback) {
-          feedback.innerHTML = "";
-          feedback.className = "search-feedback"; // 移除 active 類別使其隱藏
-        }
-        dismissDuplicateCard();
-      }
-
-      let allTags = []; // 儲存從 GAS 抓回來的標籤
-
-      // 定義分類標籤雲
-      const categorizedTags = {
-        作品性質: ["有續作", "續作", "系列作"],
-        角色身分: [
-          "DK",
-          "大學生",
-          "校園戀愛",
-          "職場",
-          "床伴",
-          "隱藏面貌",
-          "年齡差",
-          "年下攻",
-        ],
-        故事特質: ["暗戀", "雙向暗戀", "歡喜冤家", "重逢", "同居"],
-      };
-
-      async function initTagFeatures() {
-        try {
-          const res = await fetch(`${scriptURL}?action=readTags`);
-          allTags = await res.json();
-
-          // 渲染標籤雲：現在改用 manualCloudTags
-          renderTagCloud();
-        } catch (e) {
-          console.error("載入標籤失敗", e);
-          // 即使 GAS 失敗，標籤雲還是可以渲染自訂標籤
-          renderTagCloud();
-        }
-      }
-
-      // 渲染分類標籤雲
-      function renderTagCloud() {
-        const cloud = document.getElementById("tagCloud");
-        if (!cloud) return;
-
-        const categoryColors = {
-          作品性質: "#5f77a8",
-          角色身分: "#b5837e",
-          故事特質: "#5a8a5a",
-        };
-
-        let html = "";
-        for (const [category, tags] of Object.entries(categorizedTags)) {
-          const color = categoryColors[category] || "#95a5a6"; // 若沒對應到則用灰色
-
-          html += `
-      <div class="tag-group">
-        <div class="tag-group-title" style="border-left-color: ${color}">${category}</div>
-        <div class="tag-group-items">
-          ${tags
-            .map(
-              (tagName) => `
-            <span class="cloud-item" 
-                  style="border-left: 4px solid ${color} !important; background-color: ${color}15;" 
-                  onclick="addTagFromUI('${tagName}')">
-              + ${tagName}
-            </span>
-          `,
-            )
-            .join("")}
-        </div>
-      </div>
-    `;
-        }
-        cloud.innerHTML = html;
-
-        // 摺疊按鈕邏輯 (維持原本的 JS)
-        const toggleBtn = document.getElementById("toggleCloudBtn");
-        toggleBtn.onclick = function () {
-          const isExpanded = cloud.classList.toggle("expanded");
-          this.innerText = isExpanded ? "收起標籤列表 ▲" : "展開標籤列表 ▼";
-        };
-      }
-
-      const tagInput = document.getElementById("tags");
-      const customList = document.getElementById("customTagList");
-
-      tagInput.addEventListener("input", function () {
-        const fullVal = this.value;
-        const parts = fullVal.split(/[ ,、]+/); // 分割現有標籤
-        const currentQuery = parts[parts.length - 1].trim().toLowerCase();
-
-        if (currentQuery === "") {
-          customList.style.display = "none";
-          customList.removeAttribute("data-active-index");
-          return;
-        }
-
-        const matches = allTags.filter((t) =>
-          t.name.toLowerCase().includes(currentQuery),
-        );
-
-        if (matches.length > 0) {
-          customList.innerHTML = matches
-            .map(
-              (t) => `
-      <div class="tag-item" data-tag-name="${t.name.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;")}" onclick="addTagFromUI('${t.name.replace(/'/g, "\\'")}')">
-        <strong>${t.name}</strong>
-        <span class="tag-desc">${t.definition || ""}</span>
-      </div>
-    `,
-            )
-            .join("");
-          customList.style.display = "block";
-        } else {
-          customList.style.display = "none";
-        }
-        customList.removeAttribute("data-active-index");
-      });
-
-      tagInput.addEventListener("keydown", (event) => {
-        const items = customList.querySelectorAll(".tag-item");
-        const isVisible = customList.style.display !== "none" && items.length > 0;
-        if (!isVisible) return;
-
-        const activeIndex = Number(customList.dataset.activeIndex);
-        if (event.key === "ArrowDown") {
-          event.preventDefault();
-          updateTagRecommendationHighlight(Number.isInteger(activeIndex) ? activeIndex + 1 : 0);
-        } else if (event.key === "ArrowUp") {
-          event.preventDefault();
-          updateTagRecommendationHighlight(Number.isInteger(activeIndex) ? activeIndex - 1 : items.length - 1);
-        } else if (event.key === "Enter") {
-          if (Number.isInteger(activeIndex) && activeIndex >= 0) {
-            event.preventDefault();
-            const tagName = items[activeIndex].dataset.tagName;
-            if (tagName) addTagFromUI(tagName);
-          }
-        } else if (event.key === "Escape") {
-          event.preventDefault();
-          customList.style.display = "none";
-          customList.removeAttribute("data-active-index");
-        }
-      });
-
-      function updateTagRecommendationHighlight(index) {
-        const items = customList.querySelectorAll(".tag-item");
-        if (!items.length) return;
-        const safeIndex = (index + items.length) % items.length;
-        items.forEach((item, itemIndex) => {
-          const isActive = itemIndex === safeIndex;
-          item.classList.toggle("keyboard-active", isActive);
-          item.setAttribute("aria-selected", String(isActive));
-        });
-        customList.setAttribute("data-active-index", String(safeIndex));
-        items[safeIndex].scrollIntoView({ block: "nearest" });
-      }
-
-      window.addTagFromUI = function (tagName) {
-        const tagInput = document.getElementById("tags");
-        let parts = tagInput.value.split(/[ ,、]+/);
-
-        const existingTags = parts.map((p) => p.trim());
-        if (!existingTags.includes(tagName)) {
-          parts[parts.length - 1] = tagName;
-          tagInput.value = parts.filter((p) => p !== "").join(", ") + ", ";
-        }
-
-        // 關鍵：選完標籤後隱藏推薦清單，讓標籤雲重新露出來
-        document.getElementById("customTagList").style.display = "none";
-        document.getElementById("customTagList").removeAttribute("data-active-index");
-        tagInput.focus();
-      };
-
-      // 點擊外部關閉搜尋推薦
-      document.addEventListener("click", (e) => {
-        if (e.target !== tagInput) customList.style.display = "none";
-      });
-
-      // 修正後的 addTagFromUI (點擊後自動收起搜尋清單)
-      window.addTagFromUI = function (tagName) {
-        const tagInput = document.getElementById("tags");
-        let parts = tagInput.value.split(/[ ,、]+/);
-
-        const existingTags = parts.map((p) => p.trim());
-        if (!existingTags.includes(tagName)) {
-          parts[parts.length - 1] = tagName;
-          tagInput.value = parts.filter((p) => p !== "").join(", ") + ", ";
-        }
-
-        document.getElementById("customTagList").style.display = "none"; // 點選後立刻蓋掉推薦
-        tagInput.focus();
-      };
-
-      window.addEventListener("load", initTagFeatures);
-    </script>
-    <div id="idx-toast" style="position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(100px);background:#27ae60;color:white;padding:10px 20px;border-radius:50px;box-shadow:0 4px 15px rgba(0,0,0,.2);transition:transform .4s;z-index:9999;font-weight:bold;pointer-events:none;"></div>
+    <script type="module" src="js/app.js"></script>
+    <script type="module" src="js/index/index-main.js"></script>
+    <div
+      id="idx-toast"
+      style="
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%) translateY(100px);
+        background: #27ae60;
+        color: white;
+        padding: 10px 20px;
+        border-radius: 50px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        transition: transform 0.4s;
+        z-index: 9999;
+        font-weight: bold;
+        pointer-events: none;
+      "
+    ></div>
   </body>
 </html>

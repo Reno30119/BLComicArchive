@@ -1,0 +1,18 @@
+{
+  "name": "BL 漫畫書庫",
+  "short_name": "書庫",
+  "description": "BL 漫畫收藏與評分系統",
+  "start_url": "../list.html",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#5f77a8",
+  "background_color": "#f4f4f5",
+  "icons": [
+    {
+      "src": "apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

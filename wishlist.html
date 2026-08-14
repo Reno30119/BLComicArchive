@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>漫畫書庫 - 待購清單</title>
-    <link rel="stylesheet" href="list-style.css" />
+    <link rel="stylesheet" href="css/list-style.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -15,8 +15,8 @@
       rel="icon"
       href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🛍️</text></svg>"
     />
-    <link rel="manifest" href="manifest.json" />
-    <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+    <link rel="manifest" href="assets/manifest.json" />
+    <link rel="apple-touch-icon" href="assets/apple-touch-icon.png" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="書庫" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
@@ -689,10 +689,11 @@
   </head>
   <body>
     <nav class="top-nav">
-      <a href="index.html" class="nav-item">➕ 新增書籍</a>
-      <a href="list.html" class="nav-item">🔍 查詢書庫</a>
-      <a href="wishlist.html" class="nav-item active">🛍️ 待購清單</a>
-      <a href="tags.html" class="nav-item">🏷️ 標籤管理</a>
+      <a href="index.html" class="nav-item"><span class="nav-icon">➕</span><span class="nav-label">新增書籍</span></a>
+      <a href="list.html" class="nav-item"><span class="nav-icon">🔍</span><span class="nav-label">查詢書庫</span></a>
+      <a href="wishlist.html" class="nav-item active"><span class="nav-icon">🛍️</span><span class="nav-label">待購清單</span></a>
+      <a href="tags.html" class="nav-item"><span class="nav-icon">🏷️</span><span class="nav-label">標籤管理</span></a>
+      <a href="backup.html" class="nav-item"><span class="nav-icon">💾</span><span class="nav-label">資料備份</span></a>
     </nav>
 
     <div class="wishlist-container">
@@ -722,6 +723,10 @@
           <option value="tw_physical">有台版，僅實體</option>
           <option value="tw_ebook">有台版，電子版</option>
         </select>
+        <div class="wl-filter-sep"></div>
+        <span class="wl-filter-label">排序</span>
+        <button class="wl-chip active" data-sort="desc">📅 新到舊</button>
+        <button class="wl-chip" data-sort="asc">📅 舊到新</button>
         <button
           class="show-purchased-chip"
           id="showPurchasedBtn"
@@ -932,33 +937,38 @@
       </div>
     </div>
 
-    <div id="wl-toast" style="position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(100px);background:#27ae60;color:white;padding:10px 20px;border-radius:50px;box-shadow:0 4px 15px rgba(0,0,0,.2);transition:transform .4s;z-index:9999;font-weight:bold;pointer-events:none;"></div>
+    <div
+      id="wl-toast"
+      style="
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%) translateY(100px);
+        background: #27ae60;
+        color: white;
+        padding: 10px 20px;
+        border-radius: 50px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        transition: transform 0.4s;
+        z-index: 9999;
+        font-weight: bold;
+        pointer-events: none;
+      "
+    ></div>
 
-    <script src="app.js"></script>
+    <script type="module" src="js/app.js"></script>
     <script>
-      const scriptURL = BookArchive.SCRIPT_URL;
-
-      async function fetchWithTimeout(url, timeoutMs = 15000) {
-        const controller = new AbortController();
-        const id = setTimeout(() => controller.abort(), timeoutMs);
-        try {
-          const res = await fetch(url, { signal: controller.signal });
-          clearTimeout(id);
-          return res;
-        } catch (err) {
-          clearTimeout(id);
-          throw err;
-        }
-      }
-
       function showToast(message, type = "success") {
         const el = document.getElementById("wl-toast");
         if (!el) return;
-        el.style.background = type === "error" ? "#e74c3c" : type === "info" ? "#5f77a8" : "#27ae60";
+        el.classList.remove("toast-success", "toast-info", "toast-error");
+        el.classList.add(`toast-${type}`);
         el.textContent = message;
-        el.style.transform = "translateX(-50%) translateY(0)";
+        el.classList.add("show");
         clearTimeout(el._timer);
-        el._timer = setTimeout(() => { el.style.transform = "translateX(-50%) translateY(100px)"; }, 3000);
+        el._timer = setTimeout(() => {
+          el.classList.remove("show");
+        }, 3000);
       }
 
       const STATUS_CONFIG = {
@@ -972,6 +982,7 @@
       let allItems = [];
       let currentReviewer = "all";
       let currentStatus = "all";
+      let currentSort = "desc"; // desc = 新增日期新到舊，asc = 舊到新
       let showPurchased = false;
 
       // ── 初始化 ──
@@ -984,6 +995,17 @@
             .forEach((b) => b.classList.remove("active"));
           this.classList.add("active");
           currentReviewer = this.dataset.reviewer;
+          renderWishlist();
+        });
+      });
+
+      document.querySelectorAll(".wl-chip[data-sort]").forEach((btn) => {
+        btn.addEventListener("click", function () {
+          document
+            .querySelectorAll(".wl-chip[data-sort]")
+            .forEach((b) => b.classList.remove("active"));
+          this.classList.add("active");
+          currentSort = this.dataset.sort;
           renderWishlist();
         });
       });
@@ -1018,8 +1040,10 @@
       async function fetchWishlist(isManual = false) {
         // 1. 先從快取顯示，讓畫面立即有內容
         const cached = localStorage.getItem(WISHLIST_CACHE_KEY);
-        const cachedTs = parseInt(localStorage.getItem(WISHLIST_CACHE_TS_KEY) || "0");
-        const isFresh = cached && (Date.now() - cachedTs) < WISHLIST_CACHE_TTL;
+        const cachedTs = parseInt(
+          localStorage.getItem(WISHLIST_CACHE_TS_KEY) || "0",
+        );
+        const isFresh = cached && Date.now() - cachedTs < WISHLIST_CACHE_TTL;
 
         if (cached) {
           try {
@@ -1039,16 +1063,24 @@
 
         // 2. 背景抓最新資料
         try {
-          const newData = await BookArchive.fetchJson("readWishlist", {}, {
-            refresh: isManual,
-            timeoutMs: 30000,
-            retries: 1,
-          });
+          const newData = await BookArchive.fetchJson(
+            "readWishlist",
+            {},
+            {
+              refresh: isManual,
+              timeoutMs: 30000,
+              retries: 1,
+            },
+          );
           const newStr = JSON.stringify(newData);
 
           if (newStr !== cached) {
             allItems = newData;
-            BookArchive.setCachedData(WISHLIST_CACHE_KEY, WISHLIST_CACHE_TS_KEY, newData);
+            BookArchive.setCachedData(
+              WISHLIST_CACHE_KEY,
+              WISHLIST_CACHE_TS_KEY,
+              newData,
+            );
             renderWishlist();
           } else {
             localStorage.setItem(WISHLIST_CACHE_TS_KEY, String(Date.now()));
@@ -1088,8 +1120,14 @@
           // 備註共用：從所有 entries 中取第一個非空的備註
           book.notes =
             book.entries.map((e) => e.notes).find((n) => n && n.trim()) || "";
+          // 新增日期：取這本書所有評論者當中最早加入待購的那個時間點
+          book.addedAt = Math.min(...book.entries.map((e) => toMillis(e.timestamp)));
           return book;
         });
+
+        groups.sort((a, b) =>
+          currentSort === "asc" ? a.addedAt - b.addedAt : b.addedAt - a.addedAt,
+        );
 
         const countEl = document.getElementById("resultCount");
         countEl.textContent =
@@ -1136,9 +1174,9 @@
                   <span class="wl-reviewer-name">${entry.reviewer}</span>
                   ${isPurchased ? '<span style="font-size:0.72rem;color:#a1a1aa;">✅ 已購入</span>' : ""}
                   <div class="entry-actions">
-                    <button class="entry-btn" onclick="openEditModal('${entry.timestamp}', '${escQ(entry.title)}', '${escQ(entry.notes)}')">✎ 備註</button>
-                    ${!isPurchased ? `<button class="entry-btn upgrade-btn" onclick="upgradeToArchive('${entry.timestamp}', '${escQ(entry.title)}', '${escQ(entry.jpTitle)}', '${escQ(entry.author)}', '${escQ(entry.ebookUrl)}', '${escQ(entry.chilUrl)}', '${escQ(entry.coverUrl)}')">📚 升級</button>` : ""}
-                    <button class="entry-btn delete-btn" onclick="deleteEntry('${entry.timestamp}')">🗑</button>
+                    <button class="entry-btn" onclick="openEditModal('${escQ(entry.id)}', '${escQ(entry.title)}', '${escQ(entry.notes)}')">✎ 備註</button>
+                    ${!isPurchased ? `<button class="entry-btn upgrade-btn" onclick="upgradeToArchive('${escQ(entry.id)}', '${escQ(entry.title)}', '${escQ(entry.jpTitle)}', '${escQ(entry.author)}', '${escQ(entry.ebookUrl)}', '${escQ(entry.chilUrl)}', '${escQ(entry.coverUrl)}')">📚 升級</button>` : ""}
+                    <button class="entry-btn delete-btn" onclick="deleteEntry('${escQ(entry.id)}')">🗑</button>
                   </div>
                 </div>
                 ${entryNotes}
@@ -1181,6 +1219,23 @@
       }
 
       // ── 工具函式 ──
+      // timestamp 可能是 app 自己新增時寫入的 epoch 毫秒字串（"1699999999999"），
+      // 也可能是手動遷移資料時留下的 Firestore Timestamp（物件，有 seconds/nanoseconds，
+      // 或帶 toMillis() 方法），這裡統一轉成好比較大小的毫秒數。
+      function toMillis(ts) {
+        if (ts === null || ts === undefined || ts === "") return 0;
+        if (typeof ts === "object") {
+          if (typeof ts.toMillis === "function") return ts.toMillis();
+          if (typeof ts.seconds === "number") {
+            return ts.seconds * 1000 + Math.floor((ts.nanoseconds || 0) / 1e6);
+          }
+        }
+        const num = Number(ts);
+        if (!Number.isNaN(num)) return num;
+        const parsed = Date.parse(ts);
+        return Number.isNaN(parsed) ? 0 : parsed;
+      }
+
       function escH(s) {
         return String(s || "")
           .replace(/&/g, "&amp;")
@@ -1409,12 +1464,15 @@
         try {
           showToast("⏳ 已送出，正在確認儲存...", "info");
           await BookArchive.postForm(fd);
-          await confirmWishlistWrite((items) => items.some((item) =>
-            item.title === newItem.title &&
-            item.reviewer === newItem.reviewer &&
-            item.status === newItem.status &&
-            item.notes === newItem.notes,
-          ));
+          await confirmWishlistWrite((items) =>
+            items.some(
+              (item) =>
+                item.title === newItem.title &&
+                item.reviewer === newItem.reviewer &&
+                item.status === newItem.status &&
+                item.notes === newItem.notes,
+            ),
+          );
           showToast("✅ 已確認加入待購清單", "success");
         } catch (e) {
           showToast("⚠️ 尚未確認新增結果，請稍後重新同步確認", "error");
@@ -1423,8 +1481,8 @@
       }
 
       // ── 編輯備註 Modal ──
-      function openEditModal(ts, title, notes) {
-        document.getElementById("editTimestamp").value = ts;
+      function openEditModal(docId, title, notes) {
+        document.getElementById("editTimestamp").value = docId;
         document.getElementById("editTitle").value = title;
         document.getElementById("editNotes").value = notes || "";
         document.getElementById("editModalTitle").textContent =
@@ -1437,13 +1495,13 @@
       }
 
       async function submitEdit() {
-        const ts = document.getElementById("editTimestamp").value;
+        const docId = document.getElementById("editTimestamp").value;
         const title = document.getElementById("editTitle").value;
         const notes = document.getElementById("editNotes").value.trim();
 
         // 樂觀更新（只更新自己那筆）
         allItems.forEach((item) => {
-          if (item.timestamp === ts) item.notes = notes;
+          if (item.id === docId) item.notes = notes;
         });
         renderWishlist();
         closeEditModal();
@@ -1451,15 +1509,17 @@
 
         const fd = new FormData();
         fd.append("action", "updateWishlist");
-        fd.append("timestamp", ts);
+        fd.append("docId", docId);
         fd.append("notes", notes);
 
         try {
           showToast("⏳ 已送出，正在確認更新...", "info");
           await BookArchive.postForm(fd);
-          await confirmWishlistWrite((items) => items.some((item) =>
-            String(item.timestamp) === ts && item.notes === notes,
-          ));
+          await confirmWishlistWrite((items) =>
+            items.some(
+              (item) => String(item.id) === docId && item.notes === notes,
+            ),
+          );
           showToast("✅ 備註已確認更新", "success");
         } catch (e) {
           showToast("⚠️ 尚未確認更新結果，請稍後重新同步確認", "error");
@@ -1523,7 +1583,8 @@
           showToast("⏳ 已送出，正在確認更新...", "info");
           await BookArchive.postForm(fd);
           await confirmWishlistWrite((items) =>
-            items.filter((item) => item.title.trim() === title.trim())
+            items
+              .filter((item) => item.title.trim() === title.trim())
               .every((item) => item.status === status),
           );
           showToast("✅ 書籍狀態已確認更新", "success");
@@ -1535,7 +1596,7 @@
 
       // ── 升級到書庫 ──
       async function upgradeToArchive(
-        ts,
+        docId,
         title,
         jpTitle,
         author,
@@ -1549,14 +1610,18 @@
         // 確認已購入標記寫入後，才帶資料前往新增書庫頁。
         const fd = new FormData();
         fd.append("action", "updateWishlist");
-        fd.append("timestamp", ts);
+        fd.append("docId", docId);
         fd.append("purchased", "purchased");
         try {
           showToast("⏳ 正在確認已購入狀態...", "info");
           await BookArchive.postForm(fd);
-          await confirmWishlistWrite((items) => items.some((item) =>
-            String(item.timestamp) === String(ts) && item.purchased === "purchased",
-          ));
+          await confirmWishlistWrite((items) =>
+            items.some(
+              (item) =>
+                String(item.id) === String(docId) &&
+                item.purchased === "purchased",
+            ),
+          );
         } catch (error) {
           showToast("⚠️ 尚未確認已購入狀態，請先重新同步後再試", "error");
           return;
@@ -1576,22 +1641,23 @@
       }
 
       // ── 刪除 ──
-      async function deleteEntry(ts) {
+      async function deleteEntry(docId) {
         if (!confirm("確定要刪除這筆待購紀錄嗎？")) return;
 
         // 樂觀更新
-        allItems = allItems.filter((i) => i.timestamp !== ts);
+        allItems = allItems.filter((i) => i.id !== docId);
         renderWishlist();
         showToast("🗑️ 已刪除待購紀錄", "info");
 
         const fd = new FormData();
         fd.append("action", "deleteWishlist");
-        fd.append("timestamp", ts);
+        fd.append("docId", docId);
         try {
           showToast("⏳ 已送出，正在確認刪除...", "info");
           await BookArchive.postForm(fd);
-          await confirmWishlistWrite((items) =>
-            !items.some((item) => String(item.timestamp) === String(ts)),
+          await confirmWishlistWrite(
+            (items) =>
+              !items.some((item) => String(item.id) === String(docId)),
           );
           showToast("✅ 已確認刪除待購紀錄", "success");
         } catch (e) {
