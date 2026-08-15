@@ -1,5 +1,8 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import {
+  initializeFirestore, // 👈 新增這行
+  persistentLocalCache, // 👈 新增這行
+  persistentMultipleTabManager, // 👈 新增這行
   getFirestore,
   collection,
   doc,
@@ -10,7 +13,6 @@ import {
   query,
   where,
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-
 (() => {
   // 1. 替換成你的 Firebase 專案設定
   const firebaseConfig = {
@@ -25,7 +27,13 @@ import {
 
   // 2. 初始化 Firebase 與 Firestore
   const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
+
+  // 3. 🔥 啟用 Firestore 持久化快取 (取代原本的 const db = getFirestore(app);)
+  const db = initializeFirestore(app, {
+    localCache: persistentLocalCache({
+      tabManager: persistentMultipleTabManager(),
+    }),
+  });
 
   const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
   const BOOKS_CACHE_KEY = "allBooksCache";
