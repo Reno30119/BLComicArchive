@@ -174,4 +174,4 @@ document.addEventListener("click", (e) => {
   if (e.target !== tagInput) customList.style.display = "none";
 });
 
-window.addEventListener("load", initTagFeatures);
+initTagFeatures();

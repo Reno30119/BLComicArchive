@@ -70,22 +70,28 @@ export async function fetchData(isManual = false) {
       if (loadingEl) loadingEl.style.display = "none";
     }
 
-    // 一進入頁面就重新整理資料：先用快取立即顯示（若有），再一定向 Firestore 讀一次最新資料。
-    // isManual 只影響是否顯示同步提示 toast，不影響是否真的發出請求。
-    const result = await BookArchive.loadBooks({ refresh: true });
-    const previousDataString = JSON.stringify(cachedData || []);
-    const newDataString = JSON.stringify(result.data);
-    allBooks = result.data;
-    buildMergedBooks();
-    applyFilters();
+    if (isManual || !cachedData) {
+      const result = await BookArchive.loadBooks({ refresh: true });
+      const previousDataString = JSON.stringify(cachedData || []);
+      const newDataString = JSON.stringify(result.data);
 
-    if (isManual) {
-      showSyncToast(
-        newDataString === previousDataString
-          ? "✨ 目前已是最新資料"
-          : "✅ 資料已更新",
-        newDataString === previousDataString ? "info" : "success",
-      );
+      allBooks = result.data;
+      // 將新資料存入快取 (視你的 BookArchive 實作而定，通常 loadBooks 會順便存)
+
+      buildMergedBooks();
+      applyFilters();
+
+      if (isManual) {
+        showSyncToast(
+          newDataString === previousDataString
+            ? "✨ 目前已是最新資料"
+            : "✅ 資料已更新",
+          newDataString === previousDataString ? "info" : "success",
+        );
+      }
+    } else {
+      // 非手動且有快取，直接略過向 Firebase 請求
+      if (loadingEl) loadingEl.style.display = "none";
     }
   } catch (error) {
     const timedOut = error.name === "AbortError";
@@ -219,7 +225,8 @@ export function applyFilters() {
       book.reviews.some((r) => r.reviewer === currentReviewer);
 
     // D. 分級過濾邏輯
-    const matchLevel = levelThreshold === "all" || book.level === levelThreshold;
+    const matchLevel =
+      levelThreshold === "all" || book.level === levelThreshold;
 
     // E. 找出已有有效評分，但評語仍為空白的評論。
     const matchCommentStatus =
@@ -229,7 +236,11 @@ export function applyFilters() {
       );
 
     return (
-      matchSearch && matchRating && matchReviewer && matchLevel && matchCommentStatus
+      matchSearch &&
+      matchRating &&
+      matchReviewer &&
+      matchLevel &&
+      matchCommentStatus
     );
   });
 
@@ -242,7 +253,8 @@ export function applyFilters() {
       return String(a.title).localeCompare(String(b.title), "zh-Hant");
     if (currentSortType === "updated")
       return b.latestTimestamp - a.latestTimestamp;
-    if (currentSortType === "date") return toMillis(b.timestamp) - toMillis(a.timestamp);
+    if (currentSortType === "date")
+      return toMillis(b.timestamp) - toMillis(a.timestamp);
     return 0;
   });
 

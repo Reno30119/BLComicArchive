@@ -130,53 +130,54 @@ window.handleCoverError = handleCoverError;
 
 // 1. 抓取封面的補救功能 (已轉接至 Firebase 架構)
 async function reFetchCover(title, bwUrl, chilUrl, event) {
-  let urlToFetch =
-    bwUrl && bwUrl !== "" && bwUrl !== "undefined" ? bwUrl : null;
-  if (!urlToFetch) {
-    urlToFetch =
-      chilUrl && chilUrl !== "" && chilUrl !== "undefined" ? chilUrl : null;
+  let finalCoverUrl = null;
+
+  // 1. 優先嘗試解析 BookWalker 網址
+  if (bwUrl && bwUrl !== "" && bwUrl !== "undefined") {
+    const match = bwUrl.match(/product\/(\d+)/);
+    if (match && match[1]) {
+      const id = match[1];
+      finalCoverUrl = `https://taiwan-image.bookwalker.com.tw/product/${id}/${id}_1.jpg`;
+    }
   }
 
-  if (!urlToFetch) {
-    showSyncToast("❌ 缺少 BookWalker 或 ちるちる 網址，請先編輯書籍資訊", "error");
+  // 2. 如果沒有 BookWalker，則嘗試解析 ちるちる 網址
+  if (!finalCoverUrl && chilUrl && chilUrl !== "" && chilUrl !== "undefined") {
+    const match = chilUrl.match(/goods_id\/(\d+)/);
+    if (match && match[1]) {
+      const paddedId = String(match[1]).padStart(8, "0");
+      finalCoverUrl = `https://img.chil-chil.net/goods_img/XL/${paddedId}_XL.jpg`;
+    }
+  }
+
+  // 3. 判斷是否有成功解析出封面網址
+  if (!finalCoverUrl) {
+    showSyncToast("❌ 缺少有效的網址，或網址格式無法解析封面", "error");
     return;
   }
 
   const btn = event.target;
   const coverContainer = btn.closest(".book-cover-side");
   const originalContent = coverContainer.innerHTML;
-  coverContainer.innerHTML = "<span>⌛ 抓取中...</span>";
+  coverContainer.innerHTML = "<span>⌛ 儲存中...</span>";
 
   try {
-    // 改用 BookArchive 的 fetchJson
-    const data = await BookArchive.fetchJson("fetchCover", {
-      url: urlToFetch,
-    });
+    // 先把前端算出來的圖片網址直接顯示在畫面上，提升使用者體驗
+    coverContainer.innerHTML = `<img src="${finalCoverUrl}" alt="封面">`;
 
-    if (data && data.coverUrl) {
-      coverContainer.innerHTML = `<img src="${data.coverUrl}" alt="封面">`;
+    // 同步更新回 Firebase
+    const formData = new FormData();
+    formData.append("title", title);
+    formData.append("coverUrl", finalCoverUrl);
+    formData.append("action", "updateCoverOnly");
 
-      // 同步更新回 Firebase
-      const formData = new FormData();
-      formData.append("title", title);
-      formData.append("coverUrl", data.coverUrl);
-      formData.append("action", "updateCoverOnly");
-
-      // 改用 BookArchive 的 postForm
-      await BookArchive.postForm(formData);
-      showSyncToast("✅ 封面抓取成功", "success");
-    } else {
-      coverContainer.innerHTML = originalContent;
-      // 提醒使用者前端無法直接爬蟲
-      showSyncToast(
-        "❌ 抓取失敗：前端受限於 CORS 無法直接爬蟲，請檢查 Cloud Functions",
-        "error",
-      );
-    }
+    await BookArchive.postForm(formData);
+    showSyncToast("✅ 封面抓取與更新成功", "success");
   } catch (e) {
+    // 若寫入失敗，則還原畫面
     coverContainer.innerHTML = originalContent;
-    console.error("抓取錯誤:", e);
-    showSyncToast("❌ 連線錯誤或抓取逾時，請檢查網路或後端狀態", "error");
+    console.error("更新錯誤:", e);
+    showSyncToast("❌ 寫入資料庫失敗，請檢查網路連線", "error");
   }
 }
 window.reFetchCover = reFetchCover;

@@ -60,11 +60,24 @@ export async function fetchAndRefreshStatus(isManual = false) {
   }
 
   try {
+    // 🔥 新增：優先檢查快取。若非手動點擊且有快取，直接使用快取資料
+    const cached = BookArchive.getBooksCache();
+    if (!isManual && cached && cached.data) {
+      allBooks = cached.data;
+      updateBadges("cache", cached.cachedAt);
+      if (dbRefreshBtn) {
+        dbRefreshBtn.disabled = false;
+        dbRefreshBtn.textContent = "🔄 重新讀取";
+      }
+      return; // 提早結束，不向 Firebase 發送請求
+    }
+
     if (isManual && dbCountBadge) {
       dbCountBadge.innerHTML = "♻️ 正在重新讀取 Firestore...";
       dbCountBadge.className = "status-badge syncing";
     }
 
+    // 只有手動按鈕或無快取時，才會執行到這行去向後端要資料
     const result = await BookArchive.loadBooks({ refresh: true });
     allBooks = result.data;
     updateBadges(result.source, result.cachedAt);

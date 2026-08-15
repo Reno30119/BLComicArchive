@@ -258,20 +258,31 @@ import {
         // 對齊原本 GAS 邏輯：status 是書籍屬性，依書名同步更新所有同名列；
         // notes/purchased 是個人屬性，只更新 docId 對應的那一列（用 Firestore 文件 id
         // 而不是 timestamp 欄位鎖定，理由同書庫的 update）。兩者互不排斥。
+        // [待購] 更新待購
         case "updateWishlist": {
-          if (dataObj.status !== undefined && dataObj.title) {
-            const titleQ = query(
-              collection(db, "wishlist"),
-              where("title", "==", dataObj.title),
-            );
-            const titleSnap = await getDocs(titleQ);
-            await Promise.all(
-              titleSnap.docs.map((d) =>
-                updateDoc(d.ref, { status: dataObj.status }),
-              ),
-            );
+          // 1. 處理共用欄位 (狀態、封面)：依書名同步更新所有同名列
+          if (dataObj.title) {
+            const sharedFields = {};
+            if (dataObj.status !== undefined)
+              sharedFields.status = dataObj.status;
+            // 👇 加上這行，讓 Firebase 接收並寫入 coverUrl
+            if (dataObj.coverUrl !== undefined)
+              sharedFields.coverUrl = dataObj.coverUrl;
+
+            // 只要有任何一個共用欄位需要更新，就去尋找並寫入
+            if (Object.keys(sharedFields).length > 0) {
+              const titleQ = query(
+                collection(db, "wishlist"),
+                where("title", "==", dataObj.title),
+              );
+              const titleSnap = await getDocs(titleQ);
+              await Promise.all(
+                titleSnap.docs.map((d) => updateDoc(d.ref, sharedFields)),
+              );
+            }
           }
 
+          // 2. 處理個人欄位 (備註、已購入)：只更新 docId 對應的那一列
           const docId = String(dataObj.docId || "").trim();
           if (docId) {
             const personalFields = {};
@@ -280,7 +291,7 @@ import {
             if (dataObj.notes !== undefined)
               personalFields.notes = dataObj.notes;
 
-            if (Object.keys(personalFields).length) {
+            if (Object.keys(personalFields).length > 0) {
               await updateDoc(doc(db, "wishlist", docId), personalFields);
             }
           }
@@ -289,7 +300,9 @@ import {
 
         // [待購] 刪除待購
         case "deleteWishlist": {
-          await deleteDoc(doc(db, "wishlist", String(dataObj.docId || "").trim()));
+          await deleteDoc(
+            doc(db, "wishlist", String(dataObj.docId || "").trim()),
+          );
           break;
         }
 
@@ -307,7 +320,10 @@ import {
   // 用文件本身的 id 當作 Firestore 文件 ID 寫回去（merge:true，不會誤刪其他欄位）。
   async function restoreBackup(payload, onProgress) {
     const groups = [
-      { name: "books", items: Array.isArray(payload.books) ? payload.books : [] },
+      {
+        name: "books",
+        items: Array.isArray(payload.books) ? payload.books : [],
+      },
       { name: "tags", items: Array.isArray(payload.tags) ? payload.tags : [] },
       {
         name: "wishlist",

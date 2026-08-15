@@ -645,6 +645,25 @@
         margin: 12px 0;
       }
 
+      /* 重新抓取封面按鈕 */
+      .re-fetch-btn {
+        margin-top: 6px;
+        padding: 4px 10px;
+        font-size: 0.72rem;
+        background: white;
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        cursor: pointer;
+        color: var(--text-secondary);
+        transition: all 0.15s;
+        font-family: var(--font-body);
+      }
+      .re-fetch-btn:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+        background: var(--accent-light);
+      }
+
       /* ── 手機 ── */
       @media (max-width: 540px) {
         /* 評論者和狀態篩選分兩排 */
@@ -689,11 +708,26 @@
   </head>
   <body>
     <nav class="top-nav">
-      <a href="index.html" class="nav-item"><span class="nav-icon">➕</span><span class="nav-label">新增書籍</span></a>
-      <a href="list.html" class="nav-item"><span class="nav-icon">🔍</span><span class="nav-label">查詢書庫</span></a>
-      <a href="wishlist.html" class="nav-item active"><span class="nav-icon">🛍️</span><span class="nav-label">待購清單</span></a>
-      <a href="tags.html" class="nav-item"><span class="nav-icon">🏷️</span><span class="nav-label">標籤管理</span></a>
-      <a href="backup.html" class="nav-item"><span class="nav-icon">💾</span><span class="nav-label">資料備份</span></a>
+      <a href="index.html" class="nav-item"
+        ><span class="nav-icon">➕</span
+        ><span class="nav-label">新增書籍</span></a
+      >
+      <a href="list.html" class="nav-item"
+        ><span class="nav-icon">🔍</span
+        ><span class="nav-label">查詢書庫</span></a
+      >
+      <a href="wishlist.html" class="nav-item active"
+        ><span class="nav-icon">🛍️</span
+        ><span class="nav-label">待購清單</span></a
+      >
+      <a href="tags.html" class="nav-item"
+        ><span class="nav-icon">🏷️</span
+        ><span class="nav-label">標籤管理</span></a
+      >
+      <a href="backup.html" class="nav-item"
+        ><span class="nav-icon">💾</span
+        ><span class="nav-label">資料備份</span></a
+      >
     </nav>
 
     <div class="wishlist-container">
@@ -1121,7 +1155,9 @@
           book.notes =
             book.entries.map((e) => e.notes).find((n) => n && n.trim()) || "";
           // 新增日期：取這本書所有評論者當中最早加入待購的那個時間點
-          book.addedAt = Math.min(...book.entries.map((e) => toMillis(e.timestamp)));
+          book.addedAt = Math.min(
+            ...book.entries.map((e) => toMillis(e.timestamp)),
+          );
           return book;
         });
 
@@ -1150,8 +1186,15 @@
               ).length >= 2;
 
             const coverHTML = book.coverUrl
-              ? `<img src="${book.coverUrl}" alt="封面" loading="lazy">`
-              : `<div class="no-cover-text">無封面</div>`;
+              ? `<img src="${book.coverUrl}" alt="封面" loading="lazy" 
+                   data-title="${escH(book.title)}" 
+                   data-bw="${escH(book.ebookUrl)}" 
+                   data-chil="${escH(book.chilUrl)}" 
+                   onerror="handleWishlistCoverError(this)">`
+              : `<div style="text-align: center;">
+                   <div class="no-cover-text">無封面</div>
+                   <button class="re-fetch-btn" onclick="reFetchWishlistCover('${escQ(book.title)}', '${escQ(book.ebookUrl)}', '${escQ(book.chilUrl)}', event)">🔍 抓取</button>
+                 </div>`;
 
             // 狀態是書籍屬性，取第一筆 entry 的狀態代表整本書
             const bookStatus = book.status;
@@ -1362,28 +1405,41 @@
 
         const hint = document.getElementById("addFetchHint");
         if (showHint) {
-          hint.textContent = "正在取得封面...";
+          hint.textContent = "正在解析封面...";
           hint.className = "fetch-hint loading";
         }
 
-        try {
-          const data = await BookArchive.fetchJson(
-            "fetchCover",
-            { url },
-            { expected: "object", timeoutMs: 15000, retries: 1 },
-          );
-          if (!data.coverUrl) return "";
+        let finalCoverUrl = "";
 
-          document.getElementById("addCoverUrl").value = data.coverUrl;
+        // 1. 優先嘗試解析 BookWalker 網址
+        const bwMatch = url.match(/product\/(\d+)/);
+        if (bwMatch && bwMatch[1]) {
+          const id = bwMatch[1];
+          finalCoverUrl = `https://taiwan-image.bookwalker.com.tw/product/${id}/${id}_1.jpg`;
+        }
+
+        // 2. 如果沒有 BookWalker，則嘗試解析 ちるちる 網址
+        if (!finalCoverUrl) {
+          const chilMatch = url.match(/goods_id\/(\d+)/);
+          if (chilMatch && chilMatch[1]) {
+            const paddedId = String(chilMatch[1]).padStart(8, "0");
+            finalCoverUrl = `https://img.chil-chil.net/goods_img/XL/${paddedId}_XL.jpg`;
+          }
+        }
+
+        // 3. 根據解析結果更新畫面與隱藏欄位
+        if (finalCoverUrl) {
+          document.getElementById("addCoverUrl").value = finalCoverUrl;
           if (showHint) {
-            hint.textContent = "已帶入封面";
+            hint.textContent = "✅ 已成功帶入封面";
             hint.className = "fetch-hint success";
           }
-          return data.coverUrl;
-        } catch (error) {
+          return finalCoverUrl;
+        } else {
           if (showHint) {
-            hint.textContent = "暫時無法取得封面，送出時會再嘗試";
+            hint.textContent = "⚠️ 無法解析此網址的封面格式";
             hint.className = "fetch-hint";
+            hint.style.color = "#d97706";
           }
           return "";
         }
@@ -1656,8 +1712,7 @@
           showToast("⏳ 已送出，正在確認刪除...", "info");
           await BookArchive.postForm(fd);
           await confirmWishlistWrite(
-            (items) =>
-              !items.some((item) => String(item.id) === String(docId)),
+            (items) => !items.some((item) => String(item.id) === String(docId)),
           );
           showToast("✅ 已確認刪除待購紀錄", "success");
         } catch (e) {
@@ -1665,6 +1720,81 @@
           await fetchWishlist(true);
         }
       }
+
+      // ── 重新抓取封面 ──
+      async function reFetchWishlistCover(title, bwUrl, chilUrl, event) {
+        let finalCoverUrl = null;
+
+        // 1. 優先嘗試解析 BookWalker 網址
+        if (bwUrl && bwUrl !== "" && bwUrl !== "undefined") {
+          const match = bwUrl.match(/product\/(\d+)/);
+          if (match && match[1]) {
+            finalCoverUrl = `https://taiwan-image.bookwalker.com.tw/product/${match[1]}/${match[1]}_1.jpg`;
+          }
+        }
+
+        // 2. 如果沒有 BookWalker，則嘗試解析 ちるちる 網址
+        if (
+          !finalCoverUrl &&
+          chilUrl &&
+          chilUrl !== "" &&
+          chilUrl !== "undefined"
+        ) {
+          const match = chilUrl.match(/goods_id\/(\d+)/);
+          if (match && match[1]) {
+            const paddedId = String(match[1]).padStart(8, "0");
+            finalCoverUrl = `https://img.chil-chil.net/goods_img/XL/${paddedId}_XL.jpg`;
+          }
+        }
+
+        if (!finalCoverUrl) {
+          showToast("❌ 缺少有效網址，請先編輯加入購買連結", "error");
+          return;
+        }
+
+        const btn = event.target;
+        const coverContainer = btn.closest(".wl-cover");
+        const originalContent = coverContainer.innerHTML;
+        coverContainer.innerHTML = `<div class="no-cover-text" style="margin-top:20px;">⌛ 儲存中...</div>`;
+
+        try {
+          // 樂觀更新本地陣列
+          allItems.forEach((item) => {
+            if (item.title.trim() === title.trim())
+              item.coverUrl = finalCoverUrl;
+          });
+
+          // 更新畫面
+          coverContainer.innerHTML = `<img src="${finalCoverUrl}" alt="封面" loading="lazy" onerror="handleWishlistCoverError(this)">`;
+
+          // 送出到後端更新
+          const fd = new FormData();
+          fd.append("action", "updateWishlist");
+          fd.append("title", title);
+          fd.append("coverUrl", finalCoverUrl);
+
+          await BookArchive.postForm(fd);
+          showToast("✅ 封面抓取與更新成功", "success");
+        } catch (e) {
+          coverContainer.innerHTML = originalContent;
+          console.error("更新錯誤:", e);
+          showToast("❌ 寫入資料庫失敗，請檢查網路連線", "error");
+        }
+      }
+      window.reFetchWishlistCover = reFetchWishlistCover;
+
+      // 處理破圖，自動轉成無封面按鈕
+      function handleWishlistCoverError(img) {
+        const title = img.dataset.title || "";
+        const bw = img.dataset.bw || "";
+        const chil = img.dataset.chil || "";
+        const container = img.closest(".wl-cover");
+        container.innerHTML = `<div style="text-align: center;">
+           <div class="no-cover-text">無封面</div>
+           <button class="re-fetch-btn" onclick="reFetchWishlistCover('${escQ(title)}', '${escQ(bw)}', '${escQ(chil)}', event)">🔍 抓取</button>
+         </div>`;
+      }
+      window.handleWishlistCoverError = handleWishlistCoverError;
     </script>
   </body>
 </html>

@@ -2,6 +2,7 @@
 import { showToast } from "./index-toast.js";
 import { resetSearchFeedback } from "./index-title-search.js";
 import { fetchAndRefreshStatus } from "./index-status.js";
+import { getAllBooks } from "./index-status.js";
 
 // 取得評分輸入框
 const ratingInput = document.getElementById("rating");
@@ -20,100 +21,78 @@ function updateRatingColor(value) {
   }
 }
 
-// BookWalker 封面抓取（純字串推算，無需 HTTP 請求）
-async function autoFetchCover() {
+// 顯示訊息的共用函數
+function showMessage(text, type) {
+  const msg = document.getElementById("message");
+  msg.innerHTML = text;
+  msg.className = `${type} show`;
+  msg.classList.remove("hidden");
+  setTimeout(() => msg.classList.add("hidden"), 2000);
+}
+
+// 1. 從 BookWalker 網址自動產生封面
+function autoFetchBwCover() {
   const bwUrl = document.getElementById("ebookUrl").value.trim();
   if (!bwUrl) return;
 
   const coverInput = document.getElementById("coverUrl");
-  const msg = document.getElementById("message");
 
-  try {
-    const data = await BookArchive.fetchJson("fetchCover", {
-      url: bwUrl,
-    });
+  // 使用正規表達式擷取網址中的數字 ID，例如 297805
+  const match = bwUrl.match(/product\/(\d+)/);
+  if (match && match[1]) {
+    const id = match[1];
+    // 套用 BookWalker 的封面網址規則
+    const coverUrl = `https://taiwan-image.bookwalker.com.tw/product/${id}/${id}_1.jpg`;
 
-    if (data.coverUrl) {
-      // BookWalker 封面優先，無條件覆蓋（即使 ちるちる 已填入封面）
-      coverInput.value = data.coverUrl;
-      msg.innerHTML = "✅ BookWalker 封面已帶入！";
-      msg.className = "success show";
-      msg.classList.remove("hidden");
-      setTimeout(() => msg.classList.add("hidden"), 2000);
-    }
-  } catch (err) {
-    console.error("封面抓取失敗", err);
+    // BookWalker 封面優先，無條件覆蓋
+    coverInput.value = coverUrl;
+    showMessage("✅ BookWalker 封面已帶入！", "success");
+  } else {
+    console.error("無法解析 BookWalker 網址 ID");
   }
 }
 
-// ちるちる 書籍資料自動帶入（書名、日文書名、作者、封面）
-async function fetchMetaAndFill() {
+// 2. 從 ちるちる (CHIRUCHIRU) 網址自動產生封面
+function autoFetchChilCover() {
   const chilUrl = document.getElementById("chilUrl").value.trim();
   if (!chilUrl) return;
 
-  const msg = document.getElementById("message");
-  msg.innerHTML = "🔍 正在從 ちるちる 抓取書籍資料...";
-  msg.className = "info show";
-  msg.classList.remove("hidden");
+  const coverInput = document.getElementById("coverUrl");
 
-  try {
-    const data = await BookArchive.fetchJson("fetchMeta", {
-      url: chilUrl,
-    });
+  // 使用正規表達式擷取網址中的數字 ID，例如 144944
+  const match = chilUrl.match(/goods_id\/(\d+)/);
+  if (match && match[1]) {
+    const id = match[1];
 
-    if (data.error) {
-      msg.classList.add("hidden");
-      return;
-    }
+    // 觀察規則發現，ちるちる 的圖片 ID 必須補足 8 位數，前面補 0 (例如 144944 變成 00144944)
+    const paddedId = String(id).padStart(8, "0");
+    // 套用ちるちる的封面網址規則
+    const coverUrl = `https://img.chil-chil.net/goods_img/XL/${paddedId}_XL.jpg`;
 
-    const filled = [];
-
-    // 只在欄位是空的時候才填入，不覆蓋已手動輸入的內容
-    const titleInput = document.getElementById("title");
-    const jpTitleInput = document.getElementById("jpTitle");
-    const authorInput = document.getElementById("author");
-    const coverInput = document.getElementById("coverUrl");
-
-    if (data.title && !titleInput.value.trim()) {
-      titleInput.value = data.title;
-      titleInput.dispatchEvent(new Event("input")); // 觸發重複書名檢查
-      filled.push("書名");
+    // 只有在封面欄位是空的時候才填入 (保留 BookWalker 優先的邏輯)
+    if (!coverInput.value.trim()) {
+      coverInput.value = coverUrl;
+      showMessage("✅ ちるちる 封面已帶入！", "success");
     }
-    if (data.jpTitle && !jpTitleInput.value.trim()) {
-      jpTitleInput.value = data.jpTitle;
-      filled.push("日文書名");
-    }
-    if (data.author && !authorInput.value.trim()) {
-      authorInput.value = data.author;
-      filled.push("作者");
-    }
-    // 封面：若尚未有 BookWalker 封面才填入（BookWalker 優先）
-    if (data.coverUrl && !coverInput.value.trim()) {
-      coverInput.value = data.coverUrl;
-      filled.push("封面");
-    }
-
-    if (filled.length > 0) {
-      msg.innerHTML = `✅ 已自動帶入：${filled.join("、")}（中文書名請手動填寫）`;
-      msg.className = "success show";
-    } else {
-      msg.classList.add("hidden");
-    }
-    setTimeout(() => msg.classList.add("hidden"), 3000);
-  } catch (err) {
-    console.error("fetchMeta 失敗", err);
-    msg.classList.add("hidden");
+  } else {
+    console.error("無法解析 ちるちる 網址 ID");
   }
 }
 
-// ebookUrl（BookWalker）→ 只抓封面，且優先覆蓋
-// chilUrl（ちるちる）→ 抓書名、作者、日文書名、封面（封面為備用）
-document.getElementById("ebookUrl").addEventListener("change", autoFetchCover);
-document.getElementById("chilUrl").addEventListener("change", fetchMetaAndFill);
-// 監聽輸入事件 (打字或按上下鈕都會觸發)
-ratingInput.addEventListener("input", (e) => {
-  updateRatingColor(e.target.value);
-});
+// 綁定事件監聽器 (因為不再需要 await 等待 API，移除 async)
+document
+  .getElementById("ebookUrl")
+  .addEventListener("change", autoFetchBwCover);
+document
+  .getElementById("chilUrl")
+  .addEventListener("change", autoFetchChilCover);
+
+// (保留你原有的 Rating 監聽器)
+if (ratingInput) {
+  ratingInput.addEventListener("input", (e) => {
+    updateRatingColor(e.target.value);
+  });
+}
 
 const tagsInput = document.getElementById("tags");
 
@@ -217,6 +196,7 @@ form.addEventListener("submit", async (e) => {
 
     form.reset();
     resetSearchFeedback();
+
     updateRatingColor(5.0);
     revButtons.forEach((b) => b.classList.remove("active"));
     reviewerInput.value = "";
@@ -229,8 +209,21 @@ form.addEventListener("submit", async (e) => {
 
     window.scrollTo({ top: 0, behavior: "smooth" });
 
-    // 寫入成功後重新讀取，讓上方「已有幾本書」的數字立即反映剛新增的這筆
-    fetchAndRefreshStatus(true);
+    // 🔥 替換成：直接將剛剛送出的資料假裝塞進本地 allBooks 陣列，並更新數字
+    const localBooks = getAllBooks();
+    localBooks.push({
+      title: data.title,
+      reviewer: data.reviewer,
+      rating: data.rating,
+    });
+    // 觸發重新計算徽章（這裡不發送網路請求，純粹更新畫面文字）
+    const dbCountBadge = document.getElementById("dbCountBadge");
+    if (dbCountBadge) {
+      // 利用 Set 去除重複書名計算總書數
+      const uniqueCount = new Set(localBooks.map((b) => b.title)).size;
+      dbCountBadge.innerHTML = `📖 已暫存：${uniqueCount} 本 (共 ${localBooks.length} 筆評論)`;
+      dbCountBadge.className = "status-badge connected";
+    }
 
     setTimeout(() => {
       msg.classList.remove("show");
