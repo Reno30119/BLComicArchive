@@ -3,6 +3,7 @@ import { showToast } from "./index-toast.js";
 import { resetSearchFeedback } from "./index-title-search.js";
 import { fetchAndRefreshStatus } from "./index-status.js";
 import { getAllBooks } from "./index-status.js";
+import { updateCoverPreview } from "./index-cover-preview.js";
 
 // 取得評分輸入框
 const ratingInput = document.getElementById("rating");
@@ -46,6 +47,7 @@ function autoFetchBwCover() {
 
     // BookWalker 封面優先，無條件覆蓋
     coverInput.value = coverUrl;
+    updateCoverPreview();
     showMessage("✅ BookWalker 封面已帶入！", "success");
   } else {
     console.error("無法解析 BookWalker 網址 ID");
@@ -72,6 +74,7 @@ function autoFetchChilCover() {
     // 只有在封面欄位是空的時候才填入 (保留 BookWalker 優先的邏輯)
     if (!coverInput.value.trim()) {
       coverInput.value = coverUrl;
+      updateCoverPreview();
       showMessage("✅ ちるちる 封面已帶入！", "success");
     }
   } else {
@@ -196,6 +199,7 @@ form.addEventListener("submit", async (e) => {
 
     form.reset();
     resetSearchFeedback();
+    updateCoverPreview();
 
     updateRatingColor(5.0);
     revButtons.forEach((b) => b.classList.remove("active"));
@@ -243,6 +247,7 @@ function clearFullForm() {
   const form = document.getElementById("bookForm");
   form.reset();
   document.getElementById("coverUrl").value = "";
+  updateCoverPreview();
   document.getElementById("reviewer").value = "";
   document
     .querySelectorAll(".rev-btn")

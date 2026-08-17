@@ -3,12 +3,22 @@
 // 都只透過這裡匯出的函式讀寫書庫資料，不直接互相依賴。
 import { renderBooks } from "./list-render.js";
 import { showSyncToast } from "./list-toast.js";
+import { refreshCustomSelects } from "./list-custom-select.js";
 
 let allBooks = [];
 let mergedBooks = [];
 let isSyncing = false;
 let currentReviewer = "all";
 let currentSortType = "updated"; // 預設依最近更新
+// 各排序方式的預設方向：date/updated/rating 是新到舊／高到低，author/title 是筆畫少到多。
+const SORT_DEFAULT_DIR = {
+  date: "desc",
+  updated: "desc",
+  rating: "desc",
+  author: "asc",
+  title: "asc",
+};
+let currentSortDir = SORT_DEFAULT_DIR[currentSortType];
 let selectedSearchTags = [];
 
 // timestamp 可能是新資料的 epoch 毫秒字串（"1745902273000"）、
@@ -38,12 +48,66 @@ export function setAllBooks(data) {
   allBooks = data;
 }
 
+// 資料刷新時間：跟 index.html 的「🕒 資料時間」badge 是同一套邏輯，
+// 顯示在 #resultCount 那一行的 #dataTimeLabel，只在真的抓到資料（快取或網路）
+// 時更新，跟每次篩選都會重畫的書籍數量分開處理。
+function updateDataTimeLabel(cachedAt) {
+  const el = document.getElementById("dataTimeLabel");
+  if (!el) return;
+  if (!cachedAt) {
+    el.textContent = "";
+    return;
+  }
+  const d = new Date(cachedAt);
+  const timeStr = `${d.getHours().toString().padStart(2, "0")}:${d.getMinutes().toString().padStart(2, "0")}`;
+  el.textContent = `· 🕒 資料時間 ${timeStr}`;
+}
+
+// 模擬進度條：Firestore 的 getDocs() 是一次性拿到全部資料，SDK 沒有暴露
+// 「目前抓到幾 %」這種中間進度事件，沒辦法做出真正反映實際進度的進度條。
+// 這裡用業界常見的「假進度」手法：每隔 150ms 往「離 90% 還差多少」走一小步，
+// 越接近 90% 增量越小、跑越慢，永遠不會自己到 100%；實際資料回來時才主動
+// 呼叫 hideLoadingOverlay() 把它拉到 100%，停留一下再蓋住，讓使用者看得到
+// 跑滿的瞬間。
+let loadingProgressTimer = null;
+
+function showLoadingOverlay() {
+  const loadingEl = document.getElementById("loading");
+  const bar = document.getElementById("loadingProgressBar");
+  const text = document.getElementById("loadingProgressText");
+  if (!loadingEl) return;
+  loadingEl.style.display = "flex";
+  if (!bar) return;
+
+  let progress = 0;
+  bar.style.width = "0%";
+  if (text) text.textContent = "0%";
+  clearInterval(loadingProgressTimer);
+  loadingProgressTimer = setInterval(() => {
+    progress += (90 - progress) * 0.1;
+    bar.style.width = `${progress}%`;
+    if (text) text.textContent = `${Math.round(progress)}%`;
+  }, 150);
+}
+
+function hideLoadingOverlay() {
+  const loadingEl = document.getElementById("loading");
+  const bar = document.getElementById("loadingProgressBar");
+  const text = document.getElementById("loadingProgressText");
+  clearInterval(loadingProgressTimer);
+  if (bar) bar.style.width = "100%";
+  if (text) text.textContent = "100%";
+  if (!loadingEl) return;
+  setTimeout(() => {
+    loadingEl.style.display = "none";
+  }, 200);
+}
+
 /**
  * 抓取資料函數
  * @param {boolean} isManual - 是否為手動按鈕觸發 (預設為 false)
  */
 export async function fetchData(isManual = false) {
-  const loadingEl = document.getElementById("loading");
   const refreshBtn = document.getElementById("refreshBtn");
   const cached = BookArchive.getBooksCache();
   const cachedData = cached.data;
@@ -54,7 +118,7 @@ export async function fetchData(isManual = false) {
   }
   isSyncing = true;
 
-  if (!isManual && !cachedData && loadingEl) loadingEl.style.display = "flex";
+  if (!isManual && !cachedData) showLoadingOverlay();
 
   if (refreshBtn) {
     refreshBtn.disabled = true;
@@ -67,7 +131,8 @@ export async function fetchData(isManual = false) {
       allBooks = cachedData;
       buildMergedBooks();
       applyFilters();
-      if (loadingEl) loadingEl.style.display = "none";
+      updateDataTimeLabel(cached.cachedAt);
+      hideLoadingOverlay();
     }
 
     if (isManual || !cachedData) {
@@ -80,6 +145,7 @@ export async function fetchData(isManual = false) {
 
       buildMergedBooks();
       applyFilters();
+      updateDataTimeLabel(result.cachedAt);
 
       if (isManual) {
         showSyncToast(
@@ -91,7 +157,7 @@ export async function fetchData(isManual = false) {
       }
     } else {
       // 非手動且有快取，直接略過向 Firebase 請求
-      if (loadingEl) loadingEl.style.display = "none";
+      hideLoadingOverlay();
     }
   } catch (error) {
     const timedOut = error.name === "AbortError";
@@ -110,10 +176,10 @@ export async function fetchData(isManual = false) {
     isSyncing = false;
     if (refreshBtn) {
       refreshBtn.disabled = false;
-      refreshBtn.innerHTML = "🔄 更新數據";
+      refreshBtn.innerHTML = "🔄 更新書庫";
       refreshBtn.style.opacity = "1";
     }
-    if (loadingEl) loadingEl.style.display = "none";
+    hideLoadingOverlay();
   }
 }
 window.fetchData = fetchData;
@@ -174,6 +240,8 @@ export function buildMergedBooks() {
 
 // 核心過濾邏輯：直接對已合併的 mergedBooks 做篩選與排序
 export function applyFilters() {
+  refreshCustomSelects();
+
   const searchTerm = document.getElementById("searchInput").value.toLowerCase();
   const selectedSearchTagsForFilter = getSelectedSearchTags();
 
@@ -244,30 +312,51 @@ export function applyFilters() {
     );
   });
 
-  // 4. 排序邏輯
+  // 4. 排序邏輯：先算「由小到大／筆畫少到多」的差值，currentSortDir 是 desc 時再反轉，
+  // 這樣每種排序方式的預設方向（見 SORT_DEFAULT_DIR）跟切換方向後的邏輯可以共用同一套算法。
   filtered.sort((a, b) => {
-    if (currentSortType === "rating") return b.avgRating - a.avgRating;
-    if (currentSortType === "author")
-      return String(a.author).localeCompare(String(b.author), "zh-Hant");
-    if (currentSortType === "title")
-      return String(a.title).localeCompare(String(b.title), "zh-Hant");
-    if (currentSortType === "updated")
-      return b.latestTimestamp - a.latestTimestamp;
-    if (currentSortType === "date")
-      return toMillis(b.timestamp) - toMillis(a.timestamp);
-    return 0;
+    let diff = 0;
+    if (currentSortType === "rating") diff = a.avgRating - b.avgRating;
+    else if (currentSortType === "author")
+      diff = String(a.author).localeCompare(String(b.author), "zh-Hant");
+    else if (currentSortType === "title")
+      diff = String(a.title).localeCompare(String(b.title), "zh-Hant");
+    else if (currentSortType === "updated")
+      diff = a.latestTimestamp - b.latestTimestamp;
+    else if (currentSortType === "date")
+      diff = toMillis(a.timestamp) - toMillis(b.timestamp);
+    return currentSortDir === "asc" ? diff : -diff;
   });
 
   renderBooks(filtered);
 }
 window.applyFilters = applyFilters;
 
-// 統一排序入口
-export function sortData(type) {
-  currentSortType = type;
+// 更新排序 chip 的 active 狀態與方向箭頭（▲ 由小到大／▼ 由大到小）。
+function updateSortChipUI() {
   document.querySelectorAll(".sort-chip").forEach((chip) => {
-    chip.classList.toggle("active-chip", chip.dataset.sort === type);
+    const isActive = chip.dataset.sort === currentSortType;
+    chip.classList.toggle("active-chip", isActive);
+    const arrow = chip.querySelector(".sort-dir-arrow");
+    if (arrow) {
+      arrow.textContent = isActive
+        ? currentSortDir === "asc"
+          ? "▲"
+          : "▼"
+        : "";
+    }
   });
+}
+
+// 統一排序入口：點同一種排序方式會反轉方向，切到別的排序方式則改用該排序的預設方向。
+export function sortData(type) {
+  if (type === currentSortType) {
+    currentSortDir = currentSortDir === "asc" ? "desc" : "asc";
+  } else {
+    currentSortType = type;
+    currentSortDir = SORT_DEFAULT_DIR[type] || "desc";
+  }
+  updateSortChipUI();
   applyFilters();
 }
 window.sortData = sortData;
@@ -295,9 +384,8 @@ export function resetAllFilters() {
   });
 
   currentSortType = "updated";
-  document.querySelectorAll(".sort-chip").forEach((chip) => {
-    chip.classList.toggle("active-chip", chip.dataset.sort === "updated");
-  });
+  currentSortDir = SORT_DEFAULT_DIR[currentSortType];
+  updateSortChipUI();
 
   applyFilters();
   window.scrollTo({ top: 0, behavior: "smooth" });
@@ -377,3 +465,6 @@ activeTagFilters.addEventListener("click", (event) => {
     sInput.focus();
   }
 });
+
+// 頁面載入時先畫一次排序 chip 的方向箭頭，對齊 HTML 預設啟用的「近期更新」。
+updateSortChipUI();

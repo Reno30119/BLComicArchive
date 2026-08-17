@@ -1,0 +1,825 @@
+/* wishlist.html 專用樣式，疊加在 list-style.css 共用的 :root 設計變數與版面之上。 */
+
+/* ── 頁面容器 ── */
+.wishlist-container {
+  max-width: 800px;
+  margin: 20px auto;
+  padding: 0 15px 40px;
+}
+
+/* ── 頁首 ── */
+.wl-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+.wl-header h2 {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  letter-spacing: 0.01em;
+}
+.add-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 160px;
+  background: linear-gradient(135deg, #5becff, #6235dd);
+  color: white;
+  border: none;
+  border-radius: var(--radius);
+  padding: 12px 30px;
+  font-size: 1rem;
+  font-family: var(--font-body);
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    box-shadow 0.15s,
+    transform 0.1s;
+  box-shadow: 0 4px 16px rgba(98, 53, 221, 0.4);
+  letter-spacing: 0.02em;
+}
+.add-btn:hover {
+  background: linear-gradient(135deg, #2dd4f0, #5024c4);
+  box-shadow: 0 6px 22px rgba(98, 53, 221, 0.5);
+  transform: translateY(-2px);
+}
+.add-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 3px 10px rgba(98, 53, 221, 0.4);
+}
+
+/* ── 篩選工具列 ── */
+.wl-filters {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px 14px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.wl-filter-label {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+.wl-chip {
+  padding: 5px 13px;
+  border-radius: 20px;
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+  font-size: 0.82rem;
+  cursor: pointer;
+  font-family: var(--font-body);
+  color: var(--text-secondary);
+  transition: all 0.15s;
+  line-height: 1.4;
+}
+.wl-chip.active {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+  font-weight: 500;
+  box-shadow: 0 2px 8px rgba(95, 119, 168, 0.25);
+}
+.wl-chip.active:hover {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+.wl-chip:hover:not(.active) {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-light);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+
+/* 狀態篩選的客製化下拉選單（.custom-select-* 是 list.html 那邊定義在
+   list-style.css 的共用樣式，這裡搭配 .wl-chip 當基礎外觀維持風格一致，
+   跟原生 <select> 相比才能套用圓角浮動選單、hover 色這些自訂樣式）。 */
+.custom-select-toggle.has-active-filter {
+  box-shadow: 0 2px 8px rgba(95, 119, 168, 0.15);
+}
+
+.wl-filter-sep {
+  width: 1px;
+  height: 18px;
+  background: var(--border);
+  flex-shrink: 0;
+}
+
+.show-purchased-chip {
+  padding: 5px 13px;
+  border-radius: 20px;
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+  font-size: 0.82rem;
+  cursor: pointer;
+  font-family: var(--font-body);
+  color: var(--text-secondary);
+  transition: all 0.15s;
+  user-select: none;
+  margin-left: auto;
+}
+.show-purchased-chip.active {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+  font-weight: 500;
+  box-shadow: 0 2px 8px rgba(95, 119, 168, 0.25);
+}
+.show-purchased-chip.active:hover {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+.show-purchased-chip:hover:not(.active) {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-light);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+
+.wl-result-count {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+}
+
+/* ── 書卡 ── */
+.wl-item {
+  display: flex;
+  align-items: stretch;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  margin-bottom: 8px;
+  transition:
+    box-shadow 0.2s,
+    border-color 0.2s;
+}
+.wl-item:hover {
+  box-shadow: var(--shadow);
+  border-color: #d4d4d8;
+}
+.wl-item.purchased {
+  opacity: 0.5;
+}
+
+/* 封面 */
+.wl-cover {
+  width: 100px;
+  min-height: 144px;
+  flex-shrink: 0;
+  background: var(--bg);
+  position: relative;
+  overflow: hidden;
+  border-right: 1px solid var(--border);
+  padding: 5px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.wl-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+  border-radius: 3px;
+}
+.wl-cover .no-cover-text {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  text-align: center;
+  padding: 6px;
+  line-height: 1.4;
+}
+
+/* 內容區 */
+.wl-body {
+  flex: 1;
+  padding: 9px 12px 8px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.wl-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+.wl-title {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+  line-height: 1.35;
+  flex-grow: 1;
+}
+.shared-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 0.68rem;
+  background: #fff0f0;
+  color: #c0392b;
+  border: 1px solid #f5c6c6;
+  border-radius: 10px;
+  padding: 1px 6px;
+  white-space: nowrap;
+  font-weight: 500;
+  flex-shrink: 0;
+}
+/* 作者行：作者名 + 日文書名 inline，同 list.html */
+.wl-author {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin: 0 0 4px;
+  line-height: 1.4;
+}
+.wl-jp-title {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  font-weight: normal;
+  margin-left: 6px;
+}
+
+/* 評論者條目 */
+.wl-entries {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin: 3px 0;
+}
+.wl-entry {
+  display: flex;
+  flex-direction: column;
+  padding: 5px 7px;
+  background: var(--bg);
+  border-radius: 5px;
+  gap: 3px;
+}
+.entry-top-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 26px;
+}
+.entry-notes {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  padding: 2px 4px 2px 8px;
+  border-left: 2px solid var(--border);
+  margin-left: 2px;
+}
+.wl-reviewer-name {
+  font-size: 0.77rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  min-width: 32px;
+  flex-shrink: 0;
+}
+.status-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 8px;
+  border-radius: 9px;
+  font-size: 0.72rem;
+  font-weight: 500;
+  white-space: nowrap;
+  letter-spacing: 0.01em;
+}
+.status-jp_physical {
+  background: #f1f2f3;
+  color: #6b7280;
+}
+.status-jp_ebook {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+.status-tw_physical {
+  background: #fef3c7;
+  color: #b45309;
+}
+.status-tw_ebook {
+  background: #dcfce7;
+  color: #166534;
+}
+.status-purchased {
+  background: #f4f4f5;
+  color: #a1a1aa;
+}
+
+/* 書卡層級的狀態列 */
+.wl-status-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 4px 0 6px;
+}
+.edit-status-btn {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 2px 7px;
+  font-size: 0.72rem;
+  cursor: pointer;
+  color: var(--text-muted);
+  font-family: var(--font-body);
+  transition: all 0.15s;
+}
+.edit-status-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.entry-actions {
+  display: flex;
+  gap: 4px;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+.entry-btn {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 3px 8px;
+  font-size: 0.72rem;
+  cursor: pointer;
+  color: var(--text-secondary);
+  font-family: var(--font-body);
+  transition: all 0.15s;
+  white-space: nowrap;
+  line-height: 1.5;
+}
+.entry-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-light);
+}
+.upgrade-btn {
+  color: #166534;
+  border-color: #86efac;
+}
+.upgrade-btn:hover {
+  background: #dcfce7;
+  border-color: #4ade80;
+  color: #14532d;
+}
+.delete-btn:hover {
+  border-color: #fca5a5;
+  color: #dc2626;
+  background: #fef2f2;
+}
+
+/* 備註 */
+.wl-notes {
+  font-size: 0.76rem;
+  color: var(--text-secondary);
+  padding: 4px 8px;
+  background: #fffbeb;
+  border-left: 3px solid #fbbf24;
+  border-radius: 0 5px 5px 0;
+  margin-top: 2px;
+  line-height: 1.5;
+}
+.wl-notes-label {
+  font-weight: 600;
+  color: #d97706;
+  margin-right: 3px;
+}
+
+/* 外部連結 */
+.wl-links {
+  display: flex;
+  gap: 5px;
+  margin-top: 3px;
+  flex-wrap: wrap;
+}
+.wl-link {
+  text-decoration: none;
+  font-size: 0.78rem;
+  padding: 5px 11px;
+  border-radius: var(--radius);
+  color: white;
+  font-weight: 600;
+  transition: filter 0.15s;
+}
+.wl-link:hover {
+  filter: brightness(0.88);
+}
+.wl-link.ebook {
+  background: #27ae60;
+}
+.wl-link.chil {
+  background: #e91e63;
+}
+
+/* 空狀態 */
+.empty-state {
+  text-align: center;
+  padding: 56px 20px;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  line-height: 1.8;
+}
+
+/* ── Modal ── */
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+  backdrop-filter: blur(2px);
+}
+.modal.hidden {
+  display: none;
+}
+.modal-box {
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  width: 100%;
+  max-width: 460px;
+  max-height: 92vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+}
+.modal-box h3 {
+  margin: 0 0 18px;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.mf-group {
+  margin-bottom: 14px;
+}
+.mf-group label {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin-bottom: 5px;
+  letter-spacing: 0.01em;
+}
+.mf-group input,
+.mf-group textarea,
+.mf-group select {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px 11px;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-family: var(--font-body);
+  color: var(--text-primary);
+  background: var(--surface);
+  transition: border-color 0.15s;
+}
+.mf-group input:focus,
+.mf-group textarea:focus,
+.mf-group select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(95, 119, 168, 0.1);
+}
+.mf-group textarea {
+  resize: vertical;
+}
+
+.rev-btn-group {
+  display: flex;
+  gap: 8px;
+}
+.rev-select-btn {
+  flex: 1;
+  padding: 9px;
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  font-size: 0.9rem;
+  font-family: var(--font-body);
+  cursor: pointer;
+  transition: all 0.15s;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+.rev-select-btn:hover {
+  border-color: var(--accent);
+}
+.rev-select-btn.active {
+  border-color: var(--accent);
+  background: var(--accent-light);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.status-btn-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.status-select-btn {
+  padding: 9px 12px;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  font-size: 0.84rem;
+  font-family: var(--font-body);
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.15s;
+  color: var(--text-primary);
+  line-height: 1.4;
+}
+.status-select-btn:hover {
+  border-color: var(--accent);
+  background: var(--accent-light);
+}
+.status-select-btn.active-jp_physical {
+  border-color: #9ca3af;
+  background: #f1f2f3;
+  font-weight: 500;
+}
+.status-select-btn.active-jp_ebook {
+  border-color: #60a5fa;
+  background: #dbeafe;
+  font-weight: 500;
+}
+.status-select-btn.active-tw_physical {
+  border-color: #fbbf24;
+  background: #fef3c7;
+  font-weight: 500;
+}
+.status-select-btn.active-tw_ebook {
+  border-color: #4ade80;
+  background: #dcfce7;
+  font-weight: 500;
+}
+
+.modal-footer {
+  display: flex;
+  gap: 8px;
+  margin-top: 20px;
+}
+.modal-save-btn {
+  flex: 1;
+  padding: 10px;
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-family: var(--font-body);
+  cursor: pointer;
+  font-weight: 500;
+  transition: background 0.15s;
+}
+.modal-save-btn:hover {
+  background: var(--accent-hover);
+}
+.modal-cancel-btn {
+  padding: 10px 18px;
+  background: none;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-family: var(--font-body);
+  cursor: pointer;
+  color: var(--text-secondary);
+  transition: border-color 0.15s;
+}
+.modal-cancel-btn:hover {
+  border-color: var(--text-secondary);
+}
+
+.fetch-hint {
+  font-size: 0.77rem;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+.fetch-hint.success {
+  color: #16a34a;
+}
+.fetch-hint.loading {
+  color: var(--accent);
+}
+
+/* ── 新增待購書籍 Modal 的封面預覽 ── */
+/* 跟 index.html 的 index-cover-preview.js 是同一套邏輯與樣式（只是換了一組
+   元素 id：add 開頭），分「載入中／推算成功／載入失敗」三種狀態並附文字說明。 */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.cover-preview-wrap {
+  display: none;
+  align-items: flex-start;
+  gap: 14px;
+  margin-top: -4px;
+  margin-bottom: 14px;
+  padding: 12px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  animation: fadeIn 0.2s ease;
+}
+
+.cover-preview-frame {
+  position: relative;
+  width: 84px;
+  height: 118px;
+  flex-shrink: 0;
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+}
+
+.cover-preview-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.cover-preview-placeholder {
+  position: absolute;
+  inset: 0;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  text-align: center;
+  padding: 6px;
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+  background: var(--surface);
+}
+
+.cover-preview-placeholder .icon {
+  font-size: 1.3rem;
+  line-height: 1;
+}
+
+.cover-preview-info {
+  flex: 1;
+  min-width: 0;
+  padding-top: 3px;
+}
+
+.cover-preview-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  letter-spacing: 0.02em;
+  margin-bottom: 5px;
+}
+
+.cover-preview-hint {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+.cover-preview-hint.error {
+  color: #be123c;
+  font-weight: 500;
+}
+
+.divider {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 12px 0;
+}
+
+/* 重新抓取封面按鈕 */
+.re-fetch-btn {
+  margin-top: 6px;
+  padding: 4px 10px;
+  font-size: 0.72rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  cursor: pointer;
+  color: var(--text-secondary);
+  transition: all 0.15s;
+  font-family: var(--font-body);
+}
+.re-fetch-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-light);
+}
+
+/* ── 深色模式微調 ──（跟 style.css/list-style.css 同一套理由：語義色的淺色底
+   在深色背景上會太刺眼，換成低飽和度深色版本並調亮文字確保對比度）*/
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .shared-badge { background: #3a1e1e; color: #ec9b9b; border-color: #6b3232; }
+  :root:not([data-theme="light"]) .status-jp_physical { background: #303136; color: #b0b3ba; }
+  :root:not([data-theme="light"]) .status-jp_ebook { background: #1e2438; color: #9badf0; }
+  :root:not([data-theme="light"]) .status-tw_physical { background: #332711; color: #f0b955; }
+  :root:not([data-theme="light"]) .status-tw_ebook { background: #16321f; color: #7ee2a8; }
+  :root:not([data-theme="light"]) .status-purchased { background: #2c2c30; color: #77777f; }
+  :root:not([data-theme="light"]) .upgrade-btn { color: #7ee2a8; border-color: #2c5c3c; }
+  :root:not([data-theme="light"]) .upgrade-btn:hover { background: #16321f; border-color: #3a7a52; color: #9ceab8; }
+  :root:not([data-theme="light"]) .delete-btn:hover { border-color: #8a3a3a; color: #f28b8b; background: #3a2020; }
+  :root:not([data-theme="light"]) .wl-notes { background: #332711; border-left-color: #d4a94f; }
+  :root:not([data-theme="light"]) .wl-notes-label { color: #d4a94f; }
+  :root:not([data-theme="light"]) .status-select-btn.active-jp_physical { border-color: #6b6e76; background: #303136; }
+  :root:not([data-theme="light"]) .status-select-btn.active-jp_ebook { border-color: #4a68c4; background: #1e2438; }
+  :root:not([data-theme="light"]) .status-select-btn.active-tw_physical { border-color: #b4832e; background: #332711; }
+  :root:not([data-theme="light"]) .status-select-btn.active-tw_ebook { border-color: #3a9a5e; background: #16321f; }
+  :root:not([data-theme="light"]) .fetch-hint.success { color: #7ee2a8; }
+  :root:not([data-theme="light"]) .cover-preview-hint.error { color: #ff8fa3; }
+}
+:root[data-theme="dark"] .shared-badge { background: #3a1e1e; color: #ec9b9b; border-color: #6b3232; }
+:root[data-theme="dark"] .status-jp_physical { background: #303136; color: #b0b3ba; }
+:root[data-theme="dark"] .status-jp_ebook { background: #1e2438; color: #9badf0; }
+:root[data-theme="dark"] .status-tw_physical { background: #332711; color: #f0b955; }
+:root[data-theme="dark"] .status-tw_ebook { background: #16321f; color: #7ee2a8; }
+:root[data-theme="dark"] .status-purchased { background: #2c2c30; color: #77777f; }
+:root[data-theme="dark"] .upgrade-btn { color: #7ee2a8; border-color: #2c5c3c; }
+:root[data-theme="dark"] .upgrade-btn:hover { background: #16321f; border-color: #3a7a52; color: #9ceab8; }
+:root[data-theme="dark"] .delete-btn:hover { border-color: #8a3a3a; color: #f28b8b; background: #3a2020; }
+:root[data-theme="dark"] .wl-notes { background: #332711; border-left-color: #d4a94f; }
+:root[data-theme="dark"] .wl-notes-label { color: #d4a94f; }
+:root[data-theme="dark"] .status-select-btn.active-jp_physical { border-color: #6b6e76; background: #303136; }
+:root[data-theme="dark"] .status-select-btn.active-jp_ebook { border-color: #4a68c4; background: #1e2438; }
+:root[data-theme="dark"] .status-select-btn.active-tw_physical { border-color: #b4832e; background: #332711; }
+:root[data-theme="dark"] .status-select-btn.active-tw_ebook { border-color: #3a9a5e; background: #16321f; }
+:root[data-theme="dark"] .fetch-hint.success { color: #7ee2a8; }
+:root[data-theme="dark"] .cover-preview-hint.error { color: #ff8fa3; }
+
+/* ── 手機 ── */
+@media (max-width: 540px) {
+  /* 評論者和狀態篩選分兩排 */
+  .wl-filter-sep {
+    flex-basis: 100%;
+    height: 0;
+    width: 0;
+    background: none;
+  }
+  /* 書卡改為上下排列：封面在上，內容在下 */
+  .wl-item {
+    flex-direction: column;
+  }
+  .wl-cover {
+    width: 100%;
+    height: 160px;
+    min-height: unset;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    padding: 0;
+  }
+  /* 固定高度、不裁切：圖片按比例縮放置中 */
+  .wl-cover img {
+    object-fit: contain;
+    border-radius: 0;
+  }
+  .wl-body {
+    padding: 10px 10px 8px;
+  }
+  .entry-btn {
+    padding: 3px 6px;
+    font-size: 0.7rem;
+  }
+  .wl-filters {
+    gap: 5px;
+  }
+  .show-purchased-chip {
+    margin-left: auto;
+  }
+}

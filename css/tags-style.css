@@ -1,0 +1,184 @@
+/* tags.html 專用樣式，疊加在 style.css 共用的 :root 設計變數與版面之上。 */
+
+/* ── 標籤清單容器 ── */
+#tagList {
+  margin-top: 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--surface);
+}
+
+/* ── 標籤列表項目 ── */
+.tag-list-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px 12px 11px;
+  border-bottom: 1px solid var(--border-light);
+  border-left: 3px solid transparent;
+  transition:
+    background 0.15s,
+    border-left-color 0.15s;
+}
+.tag-list-item:last-child {
+  border-bottom: none;
+}
+.tag-list-item:hover {
+  background: var(--accent-light);
+  border-left-color: var(--accent);
+}
+
+.tag-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.tag-name-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+/* 標籤名稱：pill chip 樣式（可點擊跳轉） */
+.tag-name {
+  display: inline-flex;
+  align-items: center;
+  font-weight: 600;
+  color: var(--accent-hover);
+  font-size: 0.88rem;
+  background: var(--accent-light);
+  border: 1px solid rgba(95, 119, 168, 0.22);
+  padding: 2px 10px;
+  border-radius: 20px;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    color 0.15s,
+    border-color 0.15s;
+}
+.tag-name:hover {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+
+/* 使用次數：緊貼名稱旁，低調小字 */
+.tag-count {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.tag-def {
+  font-size: 0.83rem;
+  color: var(--text-secondary);
+  margin-top: 5px;
+  line-height: 1.5;
+}
+.tag-def-empty {
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+/* 操作按鈕 */
+.tag-actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.tag-edit-btn,
+.tag-del-btn {
+  border: none;
+  padding: 4px 11px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-family: var(--font-body);
+  transition: opacity 0.15s;
+}
+.tag-edit-btn {
+  background: var(--accent);
+  color: #fff;
+}
+.tag-del-btn {
+  background: #e8cdd6;
+  color: #8a2e4a;
+}
+.tag-edit-btn:hover,
+.tag-del-btn:hover {
+  opacity: 0.78;
+}
+
+.tag-list-empty {
+  text-align: center;
+  padding: 32px;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+/* ── 狀態訊息（對齊 style.css 色系）── */
+#statusMsg {
+  display: none;
+  padding: 9px 13px;
+  border-radius: var(--radius);
+  font-size: 0.86rem;
+  margin-top: 10px;
+  font-weight: 500;
+}
+#statusMsg.success {
+  background: #f0fdf4;
+  color: #15803d;
+  border: 1px solid #bbf7d0;
+}
+#statusMsg.error {
+  background: #fff1f2;
+  color: #be123c;
+  border: 1px solid #fecdd3;
+}
+
+/* ── 標籤名稱提示 ── */
+#tagNameHint {
+  display: none;
+  font-size: 0.8rem;
+  margin-top: 5px;
+  padding: 5px 10px;
+  border-radius: 6px;
+}
+#tagNameHint.hint-exists {
+  background: #fef9c3;
+  color: #854d0e;
+  border: 1px solid #fde68a;
+}
+#tagNameHint.hint-new {
+  background: #f0fdf4;
+  color: #15803d;
+  border: 1px solid #bbf7d0;
+}
+
+/* ── 表單框 ── */
+.form-box {
+  margin-top: 8px;
+  border: 1px solid var(--border);
+  padding: 15px;
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+}
+
+/* ── 深色模式微調 ──（跟 style.css/list-style.css 同一套理由：語義色的淺色底
+   在深色背景上會太刺眼，換成低飽和度深色版本並調亮文字確保對比度）*/
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .tag-del-btn { background: #3a1e2c; color: #ec9bb8; }
+  :root:not([data-theme="light"]) #statusMsg.success { background: #16321f; color: #7ee2a8; border-color: #2c5c3c; }
+  :root:not([data-theme="light"]) #statusMsg.error { background: #3a1620; color: #ff8fa3; border-color: #6b2838; }
+  :root:not([data-theme="light"]) #tagNameHint.hint-exists { background: #332711; color: #f0cf7a; border-color: #6b5828; }
+  :root:not([data-theme="light"]) #tagNameHint.hint-new { background: #16321f; color: #7ee2a8; border-color: #2c5c3c; }
+}
+:root[data-theme="dark"] .tag-del-btn { background: #3a1e2c; color: #ec9bb8; }
+:root[data-theme="dark"] #statusMsg.success { background: #16321f; color: #7ee2a8; border-color: #2c5c3c; }
+:root[data-theme="dark"] #statusMsg.error { background: #3a1620; color: #ff8fa3; border-color: #6b2838; }
+:root[data-theme="dark"] #tagNameHint.hint-exists { background: #332711; color: #f0cf7a; border-color: #6b5828; }
+:root[data-theme="dark"] #tagNameHint.hint-new { background: #16321f; color: #7ee2a8; border-color: #2c5c3c; }

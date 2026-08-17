@@ -30,7 +30,9 @@ export function renderBooks(data) {
     (item) => item.title && String(item.title).trim() !== "",
   );
 
-  const countEl = document.getElementById("resultCount");
+  // 注意：只能寫 #resultCountText，不能直接寫 #resultCount 的 textContent——
+  // #resultCount 底下還有 #dataTimeLabel（顯示資料刷新時間），整個覆蓋會把它一起清掉。
+  const countEl = document.getElementById("resultCountText");
   if (countEl) {
     countEl.textContent =
       filteredData.length > 0

@@ -2,9 +2,20 @@
 <html lang="zh-TW">
   <head>
     <meta charset="UTF-8" />
+    <script>
+      // 深色模式：在 CSS 套用前就把明確設定寫到 <html> 上，避免載入時先閃一下
+      // 錯的主題色再變回來。詳細切換邏輯在 js/theme-toggle.js。
+      (function () {
+        var t = localStorage.getItem("theme");
+        if (t === "light" || t === "dark") {
+          document.documentElement.setAttribute("data-theme", t);
+        }
+      })();
+    </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>標籤管理 - 漫畫書庫</title>
     <link rel="stylesheet" href="css/style.css" />
+    <link rel="stylesheet" href="css/tags-style.css" />
     <link
       rel="icon"
       href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏷️</text></svg>"
@@ -15,175 +26,6 @@
     <meta name="apple-mobile-web-app-title" content="書庫" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="theme-color" content="#5f77a8" />
-    <style>
-      /* ── 標籤清單容器 ── */
-      #tagList {
-        margin-top: 8px;
-        border: 1px solid var(--border);
-        border-radius: var(--radius);
-        overflow: hidden;
-        background: var(--surface);
-      }
-
-      /* ── 標籤列表項目 ── */
-      .tag-list-item {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        padding: 12px 14px 12px 11px;
-        border-bottom: 1px solid var(--border-light);
-        border-left: 3px solid transparent;
-        transition:
-          background 0.15s,
-          border-left-color 0.15s;
-      }
-      .tag-list-item:last-child {
-        border-bottom: none;
-      }
-      .tag-list-item:hover {
-        background: var(--accent-light);
-        border-left-color: var(--accent);
-      }
-
-      .tag-info {
-        flex: 1;
-        min-width: 0;
-      }
-
-      .tag-name-row {
-        display: flex;
-        align-items: center;
-        gap: 7px;
-      }
-
-      /* 標籤名稱：pill chip 樣式（可點擊跳轉） */
-      .tag-name {
-        display: inline-flex;
-        align-items: center;
-        font-weight: 600;
-        color: var(--accent-hover);
-        font-size: 0.88rem;
-        background: var(--accent-light);
-        border: 1px solid rgba(95, 119, 168, 0.22);
-        padding: 2px 10px;
-        border-radius: 20px;
-        letter-spacing: 0.02em;
-        cursor: pointer;
-        transition:
-          background 0.15s,
-          color 0.15s,
-          border-color 0.15s;
-      }
-      .tag-name:hover {
-        background: var(--accent);
-        color: #fff;
-        border-color: var(--accent);
-      }
-
-      /* 使用次數：緊貼名稱旁，低調小字 */
-      .tag-count {
-        font-size: 0.72rem;
-        color: var(--text-muted);
-        white-space: nowrap;
-        flex-shrink: 0;
-      }
-
-      .tag-def {
-        font-size: 0.83rem;
-        color: var(--text-secondary);
-        margin-top: 5px;
-        line-height: 1.5;
-      }
-      .tag-def-empty {
-        color: var(--text-muted);
-        font-style: italic;
-      }
-
-      /* 操作按鈕 */
-      .tag-actions {
-        display: flex;
-        gap: 6px;
-        flex-shrink: 0;
-      }
-      .tag-edit-btn,
-      .tag-del-btn {
-        border: none;
-        padding: 4px 11px;
-        border-radius: 5px;
-        cursor: pointer;
-        font-size: 0.8rem;
-        font-family: var(--font-body);
-        transition: opacity 0.15s;
-      }
-      .tag-edit-btn {
-        background: var(--accent);
-        color: #fff;
-      }
-      .tag-del-btn {
-        background: #e8cdd6;
-        color: #8a2e4a;
-      }
-      .tag-edit-btn:hover,
-      .tag-del-btn:hover {
-        opacity: 0.78;
-      }
-
-      .tag-list-empty {
-        text-align: center;
-        padding: 32px;
-        color: var(--text-muted);
-        font-size: 0.9rem;
-      }
-
-      /* ── 狀態訊息（對齊 style.css 色系）── */
-      #statusMsg {
-        display: none;
-        padding: 9px 13px;
-        border-radius: var(--radius);
-        font-size: 0.86rem;
-        margin-top: 10px;
-        font-weight: 500;
-      }
-      #statusMsg.success {
-        background: #f0fdf4;
-        color: #15803d;
-        border: 1px solid #bbf7d0;
-      }
-      #statusMsg.error {
-        background: #fff1f2;
-        color: #be123c;
-        border: 1px solid #fecdd3;
-      }
-
-      /* ── 標籤名稱提示 ── */
-      #tagNameHint {
-        display: none;
-        font-size: 0.8rem;
-        margin-top: 5px;
-        padding: 5px 10px;
-        border-radius: 6px;
-      }
-      #tagNameHint.hint-exists {
-        background: #fef9c3;
-        color: #854d0e;
-        border: 1px solid #fde68a;
-      }
-      #tagNameHint.hint-new {
-        background: #f0fdf4;
-        color: #15803d;
-        border: 1px solid #bbf7d0;
-      }
-
-      /* ── 表單框 ── */
-      .form-box {
-        margin-top: 8px;
-        border: 1px solid var(--border);
-        padding: 15px;
-        border-radius: var(--radius);
-        background: var(--surface);
-        box-shadow: var(--shadow-sm);
-      }
-    </style>
   </head>
   <body>
     <nav class="top-nav">
@@ -191,7 +33,12 @@
       <a href="list.html" class="nav-item"><span class="nav-icon">🔍</span><span class="nav-label">查詢書庫</span></a>
       <a href="wishlist.html" class="nav-item"><span class="nav-icon">🛍️</span><span class="nav-label">待購清單</span></a>
       <a href="tags.html" class="nav-item active"><span class="nav-icon">🏷️</span><span class="nav-label">標籤管理</span></a>
-      <a href="backup.html" class="nav-item"><span class="nav-icon">💾</span><span class="nav-label">資料備份</span></a>
+      <a href="backup.html" class="nav-item nav-item-icon-only" title="資料備份"><span class="nav-icon">💾</span></a>
+      <span class="theme-toggle-wrap">
+        <span class="theme-toggle-icon" aria-hidden="true">☀️</span>
+        <button type="button" class="theme-toggle-switch" aria-label="切換深色模式"><span class="theme-toggle-knob"></span></button>
+        <span class="theme-toggle-icon" aria-hidden="true">🌙</span>
+      </span>
     </nav>
 
     <div class="container">
@@ -217,6 +64,7 @@
         <h3 class="section-title" id="formTitle">新增標籤定義</h3>
       </div>
       <div class="form-box">
+        <input type="hidden" id="tagOldName" />
         <input type="text" id="tagName" placeholder="標籤名稱" />
         <div id="tagNameHint"></div>
         <textarea
@@ -261,296 +109,7 @@
     </div>
 
     <script type="module" src="js/app.js"></script>
-    <script type="module">
-      const CACHE_KEY = "allBooksCache";
-
-      let allTags = [];
-
-      // ── 工具 ──
-
-      function escapeHtml(str) {
-        return String(str)
-          .replace(/&/g, "&amp;")
-          .replace(/</g, "&lt;")
-          .replace(/>/g, "&gt;");
-      }
-      function escapeAttr(str) {
-        return String(str).replace(/"/g, "&quot;").replace(/'/g, "&#39;");
-      }
-
-      function showStatus(msg, type = "success") {
-        const el = document.getElementById("statusMsg");
-        el.textContent = msg;
-        el.className = type;
-        el.style.display = "block";
-        setTimeout(() => {
-          el.style.display = "none";
-        }, 3000);
-      }
-
-      function getTagUsageCounts() {
-        try {
-          const cached = localStorage.getItem(CACHE_KEY);
-          if (!cached) return {};
-          const books = JSON.parse(cached);
-          if (!Array.isArray(books)) return {};
-          const counts = {};
-          books.forEach((book) => {
-            if (book.tags) {
-              book.tags.split(",").forEach((tag) => {
-                const t = tag.trim();
-                if (t) counts[t] = (counts[t] || 0) + 1;
-              });
-            }
-          });
-          return counts;
-        } catch {
-          return {};
-        }
-      }
-
-      // ── 渲染 ──
-
-      function renderTagList(data) {
-        const listDiv = document.getElementById("tagList");
-        const listTitle = document.getElementById("listTitle");
-
-        if (data.length === 0) {
-          listDiv.innerHTML = `<p class="tag-list-empty">找不到符合的標籤</p>`;
-          listTitle.textContent = "標籤清單";
-          return;
-        }
-
-        const isFiltered = data.length < allTags.length;
-        listTitle.textContent = isFiltered
-          ? `標籤清單（符合 ${data.length} / ${allTags.length}）`
-          : `標籤清單（共 ${data.length} 個）`;
-
-        const counts = getTagUsageCounts();
-        listDiv.innerHTML = data
-          .map((t) => {
-            const cnt = counts[t.name] || 0;
-            const cntText =
-              cnt > 0 ? `<span class="tag-count">${cnt} 本</span>` : "";
-            const defHtml = t.definition
-              ? escapeHtml(t.definition)
-              : `<span class="tag-def-empty">未定義</span>`;
-            return `
-              <div class="tag-list-item">
-                <div class="tag-info">
-                  <div class="tag-name-row">
-                    <span class="tag-name" data-tag="${escapeAttr(t.name)}" title="點擊查看此標籤的所有書籍">${escapeHtml(t.name)}</span>
-                    ${cntText}
-                  </div>
-                  <div class="tag-def">${defHtml}</div>
-                </div>
-                <div class="tag-actions">
-                  <button class="tag-edit-btn"
-                    data-name="${escapeAttr(t.name)}"
-                    data-def="${escapeAttr(t.definition || "")}">編輯</button>
-                  <button class="tag-del-btn"
-                    data-name="${escapeAttr(t.name)}">刪除</button>
-                </div>
-              </div>`;
-          })
-          .join("");
-
-        listDiv.querySelectorAll(".tag-name").forEach((el) => {
-          el.addEventListener("click", () => {
-            window.location.href = `list.html?tag=${encodeURIComponent(el.dataset.tag)}`;
-          });
-        });
-        listDiv.querySelectorAll(".tag-edit-btn").forEach((btn) => {
-          btn.addEventListener("click", () =>
-            editTag(btn.dataset.name, btn.dataset.def),
-          );
-        });
-        listDiv.querySelectorAll(".tag-del-btn").forEach((btn) => {
-          btn.addEventListener("click", () => deleteTag(btn.dataset.name));
-        });
-      }
-
-      // ── 載入 ──
-
-      async function loadTags() {
-        const listDiv = document.getElementById("tagList");
-        listDiv.innerHTML = `<p class="tag-list-empty">載入中...</p>`;
-        try {
-          allTags = await BookArchive.fetchJson(
-            "readTags",
-            {},
-            {
-              timeoutMs: 30000,
-              retries: 1,
-            },
-          );
-          allTags.sort((a, b) =>
-            String(a.name || "").localeCompare(String(b.name || ""), "zh-Hant"),
-          );
-          document.getElementById("tagCountSubtitle").textContent =
-            `共 ${allTags.length} 個標籤定義`;
-          renderTagList(allTags);
-        } catch (err) {
-          console.error("載入標籤失敗:", err);
-          listDiv.innerHTML = `<p class="tag-list-empty" style="color:#be123c">❌ 載入失敗：${escapeHtml(err.message || String(err))}</p>`;
-        }
-      }
-
-      // ── 表單狀態 ──
-
-      function editTag(name, def) {
-        document.getElementById("tagName").value = name;
-        document.getElementById("tagDefinition").value = def;
-        document.getElementById("saveTagBtn").textContent = "更新標籤";
-        document.getElementById("formTitle").textContent = "編輯標籤定義";
-        document.getElementById("cancelEditBtn").style.display = "block";
-        window.scrollTo({ top: 0, behavior: "smooth" });
-      }
-
-      function resetTagForm() {
-        document.getElementById("tagName").value = "";
-        document.getElementById("tagDefinition").value = "";
-        document.getElementById("saveTagBtn").textContent = "新增標籤";
-        document.getElementById("formTitle").textContent = "新增標籤定義";
-        document.getElementById("cancelEditBtn").style.display = "none";
-        document.getElementById("statusMsg").style.display = "none";
-        document.getElementById("tagNameHint").style.display = "none";
-      }
-
-      // ── 儲存 ──
-
-      document
-        .getElementById("saveTagBtn")
-        .addEventListener("click", async function () {
-          const name = document.getElementById("tagName").value.trim();
-          const def = document.getElementById("tagDefinition").value.trim();
-          if (!name) {
-            showStatus("請輸入標籤名稱", "error");
-            return;
-          }
-
-          const originalText = this.textContent;
-          this.disabled = true;
-          this.textContent = "處理中...";
-
-          const params = new URLSearchParams({
-            action: "upsertTag",
-            tagName: name,
-            definition: def,
-          });
-          try {
-            showStatus("⏳ 已送出，正在確認儲存...");
-            const formData = new FormData();
-            formData.append("action", "upsertTag");
-            formData.append("tagName", name);
-            formData.append("definition", def);
-            await BookArchive.postForm(formData);
-            const confirmedTags = await BookArchive.waitForCollection({
-              action: "readTags",
-              matches: (tags) =>
-                tags.some(
-                  (tag) =>
-                    tag.name === name && String(tag.definition || "") === def,
-                ),
-            });
-            allTags = confirmedTags;
-            allTags.sort((a, b) => a.name.localeCompare(b.name, "zh-Hant"));
-            document.getElementById("tagCountSubtitle").textContent =
-              `共 ${allTags.length} 個標籤定義`;
-            renderTagList(allTags);
-            resetTagForm();
-            showStatus("✅ 標籤已確認儲存");
-          } catch {
-            showStatus("⚠️ 尚未確認儲存結果，請稍後重新載入確認", "error");
-            this.textContent = originalText;
-          } finally {
-            this.disabled = false;
-          }
-        });
-
-      // ── 取消 ──
-
-      document
-        .getElementById("cancelEditBtn")
-        .addEventListener("click", resetTagForm);
-
-      // ── 刪除 ──
-
-      async function deleteTag(name) {
-        if (!confirm(`確定要刪除標籤「${name}」嗎？`)) return;
-
-        const params = new URLSearchParams({
-          action: "deleteTag",
-          tagName: name,
-        });
-        try {
-          showStatus("⏳ 已送出，正在確認刪除...");
-          const formData = new FormData();
-          formData.append("action", "deleteTag");
-          formData.append("tagName", name);
-          await BookArchive.postForm(formData);
-          const confirmedTags = await BookArchive.waitForCollection({
-            action: "readTags",
-            matches: (tags) => !tags.some((tag) => tag.name === name),
-          });
-          allTags = confirmedTags;
-          renderTagList(allTags);
-          document.getElementById("tagCountSubtitle").textContent =
-            `共 ${allTags.length} 個標籤定義`;
-          showStatus(`✅「${name}」已確認刪除`);
-        } catch {
-          showStatus("⚠️ 尚未確認刪除結果，請稍後重新載入確認", "error");
-        }
-      }
-
-      // ── 標籤名稱即時比對 ──
-
-      document.getElementById("tagName").addEventListener("input", function () {
-        const val = this.value.trim();
-        const hint = document.getElementById("tagNameHint");
-        if (!val) {
-          hint.style.display = "none";
-          return;
-        }
-
-        const existing = allTags.find((t) => t.name === val);
-        if (existing) {
-          const counts = getTagUsageCounts();
-          const cnt = counts[val] || 0;
-          const cntText = cnt > 0 ? `，已被 ${cnt} 本書使用` : "";
-          hint.textContent = `⚠️ 此標籤已存在${cntText}，儲存將會更新定義`;
-          hint.className = "hint-exists";
-          hint.style.display = "block";
-          // 自動帶入現有定義，方便確認或修改
-          document.getElementById("tagDefinition").value =
-            existing.definition || "";
-        } else {
-          hint.textContent = "✨ 新標籤";
-          hint.className = "hint-new";
-          hint.style.display = "block";
-        }
-      });
-
-      // ── 搜尋 ──
-
-      document
-        .getElementById("tagSearchInput")
-        .addEventListener("input", function () {
-          const term = this.value.toLowerCase().trim();
-          if (!term) {
-            renderTagList(allTags);
-            return;
-          }
-          const filtered = allTags.filter(
-            (t) =>
-              t.name.toLowerCase().includes(term) ||
-              (t.definition && t.definition.toLowerCase().includes(term)),
-          );
-          renderTagList(filtered);
-        });
-
-      // ── 初始化 ──
-      loadTags();
-    </script>
+    <script type="module" src="js/theme-toggle.js"></script>
+    <script type="module" src="js/tags/tags-main.js"></script>
   </body>
 </html>

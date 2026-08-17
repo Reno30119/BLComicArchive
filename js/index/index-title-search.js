@@ -1,6 +1,7 @@
 // 書名輸入框：重複書名偵測、自動完成推薦、帶入既有書籍的共用資訊。
 import { getAllBooks } from "./index-status.js";
 import { showToast } from "./index-toast.js";
+import { updateCoverPreview } from "./index-cover-preview.js";
 
 // 異體字對照表，讓書名比對更寬鬆
 const variantMap = {
@@ -223,9 +224,9 @@ function autoFillForm(book) {
   document.getElementById("chilUrl").value = book.chilUrl || "";
   document.getElementById("tags").value = book.tags || "";
 
-  if (book.coverUrl) {
-    document.getElementById("coverUrl").value = book.coverUrl;
-  }
+  // 換書時一律覆寫封面欄位（即使新書沒有封面），避免預覽誤留上一本書的圖。
+  document.getElementById("coverUrl").value = book.coverUrl || "";
+  updateCoverPreview();
   showToast("✅ 資料已從待購清單帶入", "success");
 }
 

@@ -5,6 +5,8 @@ import "./list-render.js";
 import "./list-search.js";
 import "./list-modal-edit.js";
 import "./list-modal-comment.js";
+import "./list-tag-filter.js";
+import "./list-custom-select.js";
 
 const tagParam = new URLSearchParams(window.location.search).get("tag");
 if (tagParam) {

@@ -2,6 +2,16 @@
 <html lang="zh-TW">
   <head>
     <meta charset="UTF-8" />
+    <script>
+      // 深色模式：在 CSS 套用前就把明確設定寫到 <html> 上，避免載入時先閃一下
+      // 錯的主題色再變回來。詳細切換邏輯在 js/theme-toggle.js。
+      (function () {
+        var t = localStorage.getItem("theme");
+        if (t === "light" || t === "dark") {
+          document.documentElement.setAttribute("data-theme", t);
+        }
+      })();
+    </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>漫畫書庫 - 建立書本</title>
     <link rel="stylesheet" href="css/style.css" />
@@ -28,7 +38,12 @@
       <a href="list.html" class="nav-item"><span class="nav-icon">🔍</span><span class="nav-label">查詢書庫</span></a>
       <a href="wishlist.html" class="nav-item"><span class="nav-icon">🛍️</span><span class="nav-label">待購清單</span></a>
       <a href="tags.html" class="nav-item"><span class="nav-icon">🏷️</span><span class="nav-label">標籤管理</span></a>
-      <a href="backup.html" class="nav-item"><span class="nav-icon">💾</span><span class="nav-label">資料備份</span></a>
+      <a href="backup.html" class="nav-item nav-item-icon-only" title="資料備份"><span class="nav-icon">💾</span></a>
+      <span class="theme-toggle-wrap">
+        <span class="theme-toggle-icon" aria-hidden="true">☀️</span>
+        <button type="button" class="theme-toggle-switch" aria-label="切換深色模式"><span class="theme-toggle-knob"></span></button>
+        <span class="theme-toggle-icon" aria-hidden="true">🌙</span>
+      </span>
     </nav>
 
     <div class="container">
@@ -234,6 +249,17 @@
           </div>
         </div>
 
+        <div id="coverPreviewWrap" class="cover-preview-wrap">
+          <div class="cover-preview-frame">
+            <img id="coverPreviewImg" class="cover-preview-img" alt="封面預覽" />
+            <div id="coverPreviewPlaceholder" class="cover-preview-placeholder"></div>
+          </div>
+          <div class="cover-preview-info">
+            <div class="cover-preview-label">🖼️ 封面預覽</div>
+            <div id="coverPreviewHint" class="cover-preview-hint"></div>
+          </div>
+        </div>
+
         <div class="form-group">
           <label for="comment">評語內容</label>
           <textarea id="comment" name="comment" rows="3"></textarea>
@@ -270,6 +296,7 @@
     </div>
 
     <script type="module" src="js/app.js"></script>
+    <script type="module" src="js/theme-toggle.js"></script>
     <script type="module" src="js/index/index-main.js"></script>
     <div
       id="idx-toast"

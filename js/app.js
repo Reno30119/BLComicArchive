@@ -238,12 +238,44 @@ import {
 
         // [標籤] 新增或更新標籤（文件 ID 直接用標籤名稱，與既有資料結構一致，
         // 也避免用 query 判斷是否存在時，因為漏比對造成同名標籤被建立成兩筆文件）
+        //
+        // 改名／合併：oldName 存在且跟 tagName（新名稱）不同時，表示使用者在編輯表單
+        // 把標籤名稱本身改掉了。因為標籤文件 ID 就是名稱，單純 setDoc 只會多產生一筆
+        // 新標籤，不會把舊名稱從任何書的 tags 欄位換掉，也不會刪掉舊的標籤定義——
+        // 這裡額外處理：把 books collection 裡所有引用到 oldName 的列，tags 欄位換成
+        // 新名稱（如果新名稱剛好是既有標籤，等於把兩個標籤合併成一個），再刪掉舊標籤。
+        // tags 欄位是逗號分隔字串不是陣列，Firestore 沒辦法直接查詢「包含某個值」，
+        // 所以整個 books collection 讀出來在前端比對，量體對兩人共用的個人書庫來說沒問題。
         case "upsertTag": {
+          const newName = String(dataObj.tagName || "").trim();
+          const oldName = String(dataObj.oldName || "").trim();
+          const definition = dataObj.definition ?? "";
+
           await setDoc(
-            doc(db, "tags", dataObj.tagName),
-            { name: dataObj.tagName, definition: dataObj.definition },
+            doc(db, "tags", newName),
+            { name: newName, definition },
             { merge: true },
           );
+
+          if (oldName && oldName !== newName) {
+            const booksSnap = await getDocs(collection(db, "books"));
+            const bookUpdates = [];
+            booksSnap.docs.forEach((d) => {
+              const parts = String(d.data().tags || "")
+                .split(/[ ,、]+/)
+                .map((t) => t.trim())
+                .filter(Boolean);
+              if (!parts.includes(oldName)) return;
+              const replaced = parts.map((t) =>
+                t === oldName ? newName : t,
+              );
+              const deduped = [...new Set(replaced)];
+              bookUpdates.push(updateDoc(d.ref, { tags: deduped.join(", ") }));
+            });
+            await Promise.all(bookUpdates);
+
+            await deleteDoc(doc(db, "tags", oldName));
+          }
           break;
         }
 
@@ -263,25 +295,36 @@ import {
         }
 
         // [待購] 更新待購
-        // 對齊原本 GAS 邏輯：status 是書籍屬性，依書名同步更新所有同名列；
-        // notes/purchased 是個人屬性，只更新 docId 對應的那一列（用 Firestore 文件 id
-        // 而不是 timestamp 欄位鎖定，理由同書庫的 update）。兩者互不排斥。
-        // [待購] 更新待購
+        // 對齊原本 GAS 邏輯：書籍基本資訊（title/jpTitle/author/ebookUrl/chilUrl）、
+        // status、coverUrl 都是書籍屬性，依書名同步更新所有同名列；notes/purchased
+        // 是個人屬性，只更新 docId 對應的那一列（用 Firestore 文件 id 而不是
+        // timestamp 欄位鎖定，理由同書庫的 update）。兩者互不排斥。
+        // title 本身也可能被改掉（編輯書籍資訊時），所以查詢共用欄位要用 oldTitle
+        // （沒有 oldTitle 時退回用 title 本身查，相容原本只更新 status/coverUrl 的呼叫）。
         case "updateWishlist": {
-          // 1. 處理共用欄位 (狀態、封面)：依書名同步更新所有同名列
-          if (dataObj.title) {
+          // 1. 處理共用欄位（書籍基本資訊、狀態、封面）：依 oldTitle 找出所有同名列一起更新
+          const lookupTitle = String(
+            dataObj.oldTitle || dataObj.title || "",
+          ).trim();
+          if (lookupTitle) {
             const sharedFields = {};
-            if (dataObj.status !== undefined)
-              sharedFields.status = dataObj.status;
-            // 👇 加上這行，讓 Firebase 接收並寫入 coverUrl
-            if (dataObj.coverUrl !== undefined)
-              sharedFields.coverUrl = dataObj.coverUrl;
+            [
+              "title",
+              "jpTitle",
+              "author",
+              "ebookUrl",
+              "chilUrl",
+              "status",
+              "coverUrl",
+            ].forEach((key) => {
+              if (dataObj[key] !== undefined) sharedFields[key] = dataObj[key];
+            });
 
             // 只要有任何一個共用欄位需要更新，就去尋找並寫入
             if (Object.keys(sharedFields).length > 0) {
               const titleQ = query(
                 collection(db, "wishlist"),
-                where("title", "==", dataObj.title),
+                where("title", "==", lookupTitle),
               );
               const titleSnap = await getDocs(titleQ);
               await Promise.all(

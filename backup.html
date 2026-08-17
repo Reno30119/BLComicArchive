@@ -2,6 +2,16 @@
 <html lang="zh-TW">
   <head>
     <meta charset="UTF-8" />
+    <script>
+      // 深色模式：在 CSS 套用前就把明確設定寫到 <html> 上，避免載入時先閃一下
+      // 錯的主題色再變回來。詳細切換邏輯在 js/theme-toggle.js。
+      (function () {
+        var t = localStorage.getItem("theme");
+        if (t === "light" || t === "dark") {
+          document.documentElement.setAttribute("data-theme", t);
+        }
+      })();
+    </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>資料備份 - 漫畫書庫</title>
     <link rel="stylesheet" href="css/style.css" />
@@ -118,6 +128,31 @@
       .backup-note strong {
         color: var(--text-secondary);
       }
+
+      /* 深色模式微調：淺色底的成功/失敗提示在深色背景上會太刺眼，換成低飽和度
+         深色版本並調亮文字確保對比度（跟 style.css 等其他頁面同一套理由）。 */
+      @media (prefers-color-scheme: dark) {
+        :root:not([data-theme="light"]) .backup-status.success {
+          background: #16321f;
+          color: #7ee2a8;
+          border-color: #2c5c3c;
+        }
+        :root:not([data-theme="light"]) .backup-status.error {
+          background: #3a1620;
+          color: #ff8fa3;
+          border-color: #6b2838;
+        }
+      }
+      :root[data-theme="dark"] .backup-status.success {
+        background: #16321f;
+        color: #7ee2a8;
+        border-color: #2c5c3c;
+      }
+      :root[data-theme="dark"] .backup-status.error {
+        background: #3a1620;
+        color: #ff8fa3;
+        border-color: #6b2838;
+      }
     </style>
   </head>
   <body>
@@ -126,7 +161,12 @@
       <a href="list.html" class="nav-item"><span class="nav-icon">🔍</span><span class="nav-label">查詢書庫</span></a>
       <a href="wishlist.html" class="nav-item"><span class="nav-icon">🛍️</span><span class="nav-label">待購清單</span></a>
       <a href="tags.html" class="nav-item"><span class="nav-icon">🏷️</span><span class="nav-label">標籤管理</span></a>
-      <a href="backup.html" class="nav-item active"><span class="nav-icon">💾</span><span class="nav-label">資料備份</span></a>
+      <a href="backup.html" class="nav-item nav-item-icon-only active" title="資料備份"><span class="nav-icon">💾</span></a>
+      <span class="theme-toggle-wrap">
+        <span class="theme-toggle-icon" aria-hidden="true">☀️</span>
+        <button type="button" class="theme-toggle-switch" aria-label="切換深色模式"><span class="theme-toggle-knob"></span></button>
+        <span class="theme-toggle-icon" aria-hidden="true">🌙</span>
+      </span>
     </nav>
 
     <div class="container">
@@ -164,6 +204,7 @@
     </div>
 
     <script type="module" src="js/app.js"></script>
+    <script type="module" src="js/theme-toggle.js"></script>
     <script type="module" src="js/backup.js"></script>
   </body>
 </html>

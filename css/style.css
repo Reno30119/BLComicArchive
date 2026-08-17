@@ -21,6 +21,53 @@
   --shadow: 0 4px 16px rgba(0, 0, 0, 0.07), 0 1px 4px rgba(0, 0, 0, 0.04);
 }
 
+/* ── 深色模式 ──
+   預設跟隨系統（prefers-color-scheme），html 元素上如果有 data-theme="light"／
+   "dark"（由 js/theme-toggle.js 依使用者手動選擇寫入），則以明確設定為準，
+   蓋過系統偏好。三段規則缺一不可：
+   1. 系統偏好深色＋沒有手動蓋成 light → 套用深色變數
+   2. 手動明確設定 dark（不管系統是什麼）→ 套用深色變數，優先權最高
+   3. 其餘情況（系統淺色，或手動設成 light）→ 沿用上面 :root 的淺色變數 */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #17171a;
+    --surface: #28282e;
+    --border: #48484f;
+    --border-light: #35353c;
+
+    --text-primary: #f5f5f7;
+    --text-secondary: #bcbcc4;
+    --text-muted: #8e8e97;
+
+    --accent: #8ea3d6;
+    --accent-light: #2a3552;
+    --accent-hover: #a8bce8;
+
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.5), 0 1px 2px rgba(0, 0, 0, 0.4);
+    --shadow: 0 4px 16px rgba(0, 0, 0, 0.6), 0 1px 4px rgba(0, 0, 0, 0.4);
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme="dark"] {
+  --bg: #17171a;
+  --surface: #28282e;
+  --border: #48484f;
+  --border-light: #35353c;
+
+  --text-primary: #f5f5f7;
+  --text-secondary: #bcbcc4;
+  --text-muted: #8e8e97;
+
+  --accent: #8ea3d6;
+  --accent-light: #2a3552;
+  --accent-hover: #a8bce8;
+
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.5), 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow: 0 4px 16px rgba(0, 0, 0, 0.6), 0 1px 4px rgba(0, 0, 0, 0.4);
+  color-scheme: dark;
+}
+
 /* ── 全域 ── */
 * {
   box-sizing: border-box;
@@ -39,7 +86,7 @@ body {
 /* ── 導覽列 ── */
 .top-nav {
   display: flex;
-  justify-content: center;
+  justify-content: flex-start;
   background: var(--surface);
   padding: 10px 16px;
   border-bottom: 1px solid var(--border);
@@ -83,6 +130,68 @@ body {
   background: var(--accent-light);
   color: var(--accent);
   font-weight: 600;
+}
+
+/* 只留 emoji、不顯示文字標籤的導覽項目（目前是「資料備份」）。
+   margin-left: auto 會把它（以及它後面的深色模式切換鈕）一起推到最右邊，
+   前面幾個導覽項目維持靠左，不需要額外包一層 div 分左右兩組。 */
+.nav-item-icon-only {
+  margin-left: auto;
+  padding-left: 12px;
+  padding-right: 12px;
+}
+
+/* ── 深色模式切換鈕（滑動式開關）── */
+.theme-toggle-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+}
+
+.theme-toggle-icon {
+  font-size: 0.85rem;
+  line-height: 1;
+}
+
+.theme-toggle-switch {
+  position: relative;
+  width: 46px;
+  height: 24px;
+  flex-shrink: 0;
+  padding: 0;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  cursor: pointer;
+  transition:
+    background 0.2s,
+    border-color 0.2s;
+}
+
+.theme-toggle-switch:hover {
+  border-color: var(--accent);
+}
+
+.theme-toggle-switch.is-dark {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.theme-toggle-knob {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.theme-toggle-switch.is-dark .theme-toggle-knob {
+  transform: translateX(22px);
 }
 
 /* ── Toast ── */
@@ -830,6 +939,85 @@ input:-webkit-autofill:focus {
   border-color: #2ecc71;
 }
 
+/* ── 封面預覽 ── */
+.cover-preview-wrap {
+  display: none;
+  align-items: flex-start;
+  gap: 14px;
+  margin-top: -4px;
+  margin-bottom: 16px;
+  padding: 12px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  animation: fadeIn 0.2s ease;
+}
+
+.cover-preview-frame {
+  position: relative;
+  width: 84px;
+  height: 118px;
+  flex-shrink: 0;
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+}
+
+.cover-preview-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.cover-preview-placeholder {
+  position: absolute;
+  inset: 0;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  text-align: center;
+  padding: 6px;
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+  background: var(--surface);
+}
+
+.cover-preview-placeholder .icon {
+  font-size: 1.3rem;
+  line-height: 1;
+}
+
+.cover-preview-info {
+  flex: 1;
+  min-width: 0;
+  padding-top: 3px;
+}
+
+.cover-preview-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  letter-spacing: 0.02em;
+  margin-bottom: 5px;
+}
+
+.cover-preview-hint {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+.cover-preview-hint.error {
+  color: #be123c;
+  font-weight: 500;
+}
+
 /* ── URL 平台標籤 ── */
 .url-platform-tag {
   display: inline-block;
@@ -852,6 +1040,64 @@ input:-webkit-autofill:focus {
 }
 
 /* ── 媒體查詢 ── */
+/* ── 深色模式微調 ──
+   上面 :root 的變數只涵蓋 --bg/--surface/--border/--text-*/--accent* 這幾個
+   通用色，這裡另外處理站內直接寫死色碼的語義色（成功/失敗提示、分級按鈕、
+   重複書籍卡片等），淺色系底色在深色背景上會太刺眼，深色模式下換成低飽和度、
+   帶點底色的深色版本，文字則調亮確保對比度足夠。 */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .rating-low { color: #6bbf8a !important; border-color: #4a9d6c !important; }
+  :root:not([data-theme="light"]) .rating-mid { color: #7fa8e0 !important; border-color: #5a84c4 !important; }
+  :root:not([data-theme="light"]) .rating-high { color: #e08080 !important; border-color: #c25a5a !important; }
+  :root:not([data-theme="light"]) .icon-clear-btn:hover { background-color: #3a2020; color: #f28b8b; border-color: #8a3a3a; }
+  :root:not([data-theme="light"]) .success { background: #16321f; color: #7ee2a8; border-color: #2c5c3c; }
+  :root:not([data-theme="light"]) .error { background: #3a1620; color: #ff8fa3; border-color: #6b2838; }
+  :root:not([data-theme="light"]) .status-found { background: #3a1620; color: #ff8fa3; border-left-color: #ff8fa3; }
+  :root:not([data-theme="light"]) .status-new { background: #16321f; color: #7ee2a8; border-left-color: #7ee2a8; }
+  :root:not([data-theme="light"]) .duplicate-book-card { background: #332413; border-color: #6b4a1e; color: #e8c589; }
+  :root:not([data-theme="light"]) .duplicate-dismiss-btn { color: #d4a94f; }
+  :root:not([data-theme="light"]) .duplicate-book-hint { color: #c9a967; }
+  :root:not([data-theme="light"]) .duplicate-secondary-btn { border-color: #6b4a1e; background: transparent; color: #d4a94f; }
+  :root:not([data-theme="light"]) .duplicate-secondary-btn:hover { background: #3a2c14; }
+  :root:not([data-theme="light"]) .cover-preview-hint.error { color: #ff8fa3; }
+  :root:not([data-theme="light"]) .ebook-badge { background: #1e3a26; color: #7ee2a8; }
+  :root:not([data-theme="light"]) .chil-badge { background: #3a1e2c; color: #ec9bb8; }
+  :root:not([data-theme="light"]) .custom-tag-list .tag-item.keyboard-active { background: #2a3244; }
+  :root:not([data-theme="light"]) .level-btn[data-level="清水"]:hover { border-color: #2ecc71; color: #6bd99a; background: #163322; }
+  :root:not([data-theme="light"]) .level-btn[data-level="肉少"]:hover { border-color: #f39c12; color: #f0b955; background: #332711; }
+  :root:not([data-theme="light"]) .level-btn[data-level="正常"]:hover { border-color: #3498db; color: #7ab8ea; background: #142a3a; }
+  :root:not([data-theme="light"]) .level-btn[data-level="肉多"]:hover { border-color: #e74c3c; color: #ec8177; background: #331815; }
+  :root:not([data-theme="light"]) .level-btn[data-level="肉多"].active { background: #331815; color: #ec8177; border-color: #e74c3c; }
+  :root:not([data-theme="light"]) .level-btn[data-level="正常"].active { background: #142a3a; color: #7ab8ea; border-color: #3498db; }
+  :root:not([data-theme="light"]) .level-btn[data-level="肉少"].active { background: #332711; color: #f0b955; border-color: #f39c12; }
+  :root:not([data-theme="light"]) .level-btn[data-level="清水"].active { background: #163322; color: #6bd99a; border-color: #2ecc71; }
+}
+:root[data-theme="dark"] .rating-low { color: #6bbf8a !important; border-color: #4a9d6c !important; }
+:root[data-theme="dark"] .rating-mid { color: #7fa8e0 !important; border-color: #5a84c4 !important; }
+:root[data-theme="dark"] .rating-high { color: #e08080 !important; border-color: #c25a5a !important; }
+:root[data-theme="dark"] .icon-clear-btn:hover { background-color: #3a2020; color: #f28b8b; border-color: #8a3a3a; }
+:root[data-theme="dark"] .success { background: #16321f; color: #7ee2a8; border-color: #2c5c3c; }
+:root[data-theme="dark"] .error { background: #3a1620; color: #ff8fa3; border-color: #6b2838; }
+:root[data-theme="dark"] .status-found { background: #3a1620; color: #ff8fa3; border-left-color: #ff8fa3; }
+:root[data-theme="dark"] .status-new { background: #16321f; color: #7ee2a8; border-left-color: #7ee2a8; }
+:root[data-theme="dark"] .duplicate-book-card { background: #332413; border-color: #6b4a1e; color: #e8c589; }
+:root[data-theme="dark"] .duplicate-dismiss-btn { color: #d4a94f; }
+:root[data-theme="dark"] .duplicate-book-hint { color: #c9a967; }
+:root[data-theme="dark"] .duplicate-secondary-btn { border-color: #6b4a1e; background: transparent; color: #d4a94f; }
+:root[data-theme="dark"] .duplicate-secondary-btn:hover { background: #3a2c14; }
+:root[data-theme="dark"] .cover-preview-hint.error { color: #ff8fa3; }
+:root[data-theme="dark"] .ebook-badge { background: #1e3a26; color: #7ee2a8; }
+:root[data-theme="dark"] .chil-badge { background: #3a1e2c; color: #ec9bb8; }
+:root[data-theme="dark"] .custom-tag-list .tag-item.keyboard-active { background: #2a3244; }
+:root[data-theme="dark"] .level-btn[data-level="清水"]:hover { border-color: #2ecc71; color: #6bd99a; background: #163322; }
+:root[data-theme="dark"] .level-btn[data-level="肉少"]:hover { border-color: #f39c12; color: #f0b955; background: #332711; }
+:root[data-theme="dark"] .level-btn[data-level="正常"]:hover { border-color: #3498db; color: #7ab8ea; background: #142a3a; }
+:root[data-theme="dark"] .level-btn[data-level="肉多"]:hover { border-color: #e74c3c; color: #ec8177; background: #331815; }
+:root[data-theme="dark"] .level-btn[data-level="肉多"].active { background: #331815; color: #ec8177; border-color: #e74c3c; }
+:root[data-theme="dark"] .level-btn[data-level="正常"].active { background: #142a3a; color: #7ab8ea; border-color: #3498db; }
+:root[data-theme="dark"] .level-btn[data-level="肉少"].active { background: #332711; color: #f0b955; border-color: #f39c12; }
+:root[data-theme="dark"] .level-btn[data-level="清水"].active { background: #163322; color: #6bd99a; border-color: #2ecc71; }
+
 @media (max-width: 600px) {
   .container {
     width: 92%;
@@ -927,6 +1173,14 @@ input:-webkit-autofill:focus {
   .nav-label {
     font-size: 0.62rem;
     letter-spacing: 0;
+  }
+
+  /* 手機版底部分頁列直接把「資料備份」藏起來，讓其他四個分頁項目有更多空間
+     （目前唯一用到 .nav-item-icon-only 的就是資料備份，所以直接連著這個 class
+     一起隱藏；之後如果有別的 icon-only 導覽項目不想被一起藏起來，要另外拆
+     一個 class）。深色模式切換鈕不是 .nav-item，不受影響，繼續顯示在最右邊。 */
+  .nav-item-icon-only {
+    display: none;
   }
 
   /* 底部導覽列會蓋住原本貼底的提示訊息，顯示時往上多跳一段距離避開它

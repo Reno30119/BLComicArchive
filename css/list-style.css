@@ -21,6 +21,47 @@
   --shadow: 0 4px 16px rgba(0, 0, 0, 0.07), 0 1px 4px rgba(0, 0, 0, 0.04);
 }
 
+/* ── 深色模式 ──（跟 style.css 是同一份變數，見那邊的說明註解） */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #17171a;
+    --surface: #28282e;
+    --border: #48484f;
+    --border-light: #35353c;
+
+    --text-primary: #f5f5f7;
+    --text-secondary: #bcbcc4;
+    --text-muted: #8e8e97;
+
+    --accent: #8ea3d6;
+    --accent-light: #2a3552;
+    --accent-hover: #a8bce8;
+
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.5), 0 1px 2px rgba(0, 0, 0, 0.4);
+    --shadow: 0 4px 16px rgba(0, 0, 0, 0.6), 0 1px 4px rgba(0, 0, 0, 0.4);
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme="dark"] {
+  --bg: #17171a;
+  --surface: #28282e;
+  --border: #48484f;
+  --border-light: #35353c;
+
+  --text-primary: #f5f5f7;
+  --text-secondary: #bcbcc4;
+  --text-muted: #8e8e97;
+
+  --accent: #8ea3d6;
+  --accent-light: #2a3552;
+  --accent-hover: #a8bce8;
+
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.5), 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow: 0 4px 16px rgba(0, 0, 0, 0.6), 0 1px 4px rgba(0, 0, 0, 0.4);
+  color-scheme: dark;
+}
+
 /* ── 全域 ── */
 * {
   box-sizing: border-box;
@@ -38,7 +79,7 @@ body {
 /* ── 導覽列 ── */
 .top-nav {
   display: flex;
-  justify-content: center;
+  justify-content: flex-start;
   background: var(--surface);
   padding: 10px 16px;
   border-bottom: 1px solid var(--border);
@@ -81,6 +122,68 @@ body {
   background: var(--accent-light);
   color: var(--accent);
   font-weight: 600;
+}
+
+/* 只留 emoji、不顯示文字標籤的導覽項目（目前是「資料備份」）。
+   margin-left: auto 會把它（以及它後面的深色模式切換鈕）一起推到最右邊，
+   前面幾個導覽項目維持靠左，不需要額外包一層 div 分左右兩組。 */
+.nav-item-icon-only {
+  margin-left: auto;
+  padding-left: 12px;
+  padding-right: 12px;
+}
+
+/* ── 深色模式切換鈕（滑動式開關）── */
+.theme-toggle-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+}
+
+.theme-toggle-icon {
+  font-size: 0.85rem;
+  line-height: 1;
+}
+
+.theme-toggle-switch {
+  position: relative;
+  width: 46px;
+  height: 24px;
+  flex-shrink: 0;
+  padding: 0;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  cursor: pointer;
+  transition:
+    background 0.2s,
+    border-color 0.2s;
+}
+
+.theme-toggle-switch:hover {
+  border-color: var(--accent);
+}
+
+.theme-toggle-switch.is-dark {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.theme-toggle-knob {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.theme-toggle-switch.is-dark .theme-toggle-knob {
+  transform: translateX(22px);
 }
 
 /* ── 容器佈局 ── */
@@ -1011,23 +1114,33 @@ body {
   font-family: var(--font-body);
 }
 
-.spinner {
-  width: 40px;
-  height: 40px;
+/* 模擬進度條：Firestore 的 getDocs() 是一次性拿到全部資料，SDK 沒有暴露
+   「目前抓到幾 %」這種中間進度事件，沒辦法做出真正反映實際進度的進度條，
+   這裡是業界常見的「假進度」動畫（見 list-data.js 的 showLoadingOverlay/
+   hideLoadingOverlay），越接近終點跑越慢，實際資料回來才跳到 100%。 */
+.loading-progress-track {
+  width: 200px;
+  height: 6px;
   margin: 0 auto 15px;
-  border: 4px solid var(--border);
-  border-top: 4px solid var(--accent);
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
+  border-radius: 999px;
+  background: var(--border);
+  overflow: hidden;
 }
 
-@keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
+.loading-progress-bar {
+  height: 100%;
+  width: 0%;
+  border-radius: 999px;
+  background: var(--accent);
+  transition: width 0.3s ease-out;
+}
+
+.loading-progress-text {
+  margin: 0 0 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
 }
 
 .loading-content p {
@@ -1043,7 +1156,8 @@ body {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   margin-bottom: 16px;
-  overflow: hidden;
+  /* 不能用 overflow: hidden 收邊角——會把裡面標籤篩選器的下拉選單一起裁掉。
+     面板本身的圓角視覺不靠這個撐，拿掉不影響外觀。 */
 }
 
 .filter-panel-row {
@@ -1109,13 +1223,86 @@ body {
   font-weight: 600;
 }
 
-.fbtn-select {
-  appearance: none;
-  padding-right: 28px;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23a1a1aa' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 10px center;
+.sort-dir-arrow {
+  margin-left: 3px;
+  font-size: 0.7em;
+}
+
+/* ── 客製化下拉選單（分級／評分／評語狀態）── */
+/* 原生 <select> 的下拉清單本身沒辦法跨瀏覽器套用自訂樣式（圓角、hover 色等），
+   所以改成按鈕＋浮動面板的客製化下拉選單，視覺風格跟標籤篩選器一致。實際的
+   篩選值仍寫在對應的隱藏欄位（#levelFilter/#ratingFilter/#commentFilter），
+   list-data.js 的 applyFilters() 讀的就是這幾個欄位的 value，資料邏輯不用改。 */
+.custom-select-wrap {
+  position: relative;
+}
+
+/* display:inline-flex 這裡再宣告一次，是為了讓這顆按鈕不管搭配 .fbtn（list.html）
+   還是 .wl-chip（wishlist.html）當基礎樣式，都能正確對齊文字跟後面的箭頭。 */
+.custom-select-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.custom-select-toggle::after {
+  content: "";
+  width: 0;
+  height: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 5px solid var(--text-muted);
+  margin-left: 2px;
+  transition: border-top-color 0.15s;
+}
+
+.custom-select-toggle:hover::after,
+.custom-select-toggle.has-active-filter::after {
+  border-top-color: var(--accent);
+}
+
+/* 目前有套用篩選條件（非「全部」）時亮起來，一眼就能看出哪些篩選正在生效
+   （跟標籤篩選器按鈕的「已選數量」提示是同一套邏輯）。 */
+.custom-select-toggle.has-active-filter {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-light);
+  font-weight: 600;
+}
+
+.custom-select-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  min-width: 180px;
+  max-width: calc(100vw - 32px);
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  z-index: 2000;
+  padding: 6px;
+  box-sizing: border-box;
+}
+
+.custom-select-option {
+  padding: 8px 10px;
+  border-radius: 6px;
   cursor: pointer;
+  font-size: 0.86rem;
+  color: var(--text-primary);
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+
+.custom-select-option:hover {
+  background: var(--accent-light);
+}
+
+.custom-select-option.selected {
+  background: var(--accent-light);
+  color: var(--accent);
+  font-weight: 600;
 }
 
 .fbtn-reset {
@@ -1130,12 +1317,147 @@ body {
   border-style: solid !important;
 }
 
+/* ── 標籤篩選器 ── */
+.tag-filter-picker {
+  position: relative;
+}
+
+.tag-filter-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: white;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.tag-filter-toggle-btn.has-selection {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-light);
+}
+
+.tag-filter-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  width: 300px;
+  max-width: calc(100vw - 32px);
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  z-index: 2000;
+  padding: 10px;
+  box-sizing: border-box;
+}
+
+.tag-filter-search {
+  width: 100%;
+  height: 34px;
+  padding: 6px 10px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 0.88rem;
+  font-family: var(--font-body);
+  margin-bottom: 8px;
+  box-sizing: border-box;
+  color: var(--text-primary);
+  background: var(--surface);
+}
+
+.tag-filter-search:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.tag-filter-list {
+  max-height: 240px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tag-filter-list::-webkit-scrollbar {
+  width: 5px;
+}
+.tag-filter-list::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 10px;
+}
+
+.tag-filter-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.86rem;
+  transition: background 0.15s;
+}
+
+.tag-filter-item:hover {
+  background: var(--accent-light);
+}
+
+.tag-filter-item .check {
+  width: 15px;
+  height: 15px;
+  border-radius: 4px;
+  border: 1.5px solid var(--border);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.68rem;
+  color: white;
+  box-sizing: border-box;
+}
+
+.tag-filter-item.selected .check {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.tag-filter-item .name {
+  flex: 1;
+  min-width: 0;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tag-filter-item .count {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.tag-filter-empty {
+  padding: 14px 8px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.84rem;
+}
+
 /* ── 結果數量 ── */
 .result-count {
   font-size: 0.8rem;
   color: var(--text-muted);
   letter-spacing: 0.02em;
   padding: 0 4px 12px;
+}
+
+.data-time-label {
+  margin-left: 6px;
 }
 
 /* ── 連載狀態 badge ── */
@@ -1182,6 +1504,39 @@ body {
   border-left: 4px solid #b5837e;
 }
 
+/* ── 深色模式微調 ──（跟 style.css 同一套理由：語義色的淺色底在深色背景上
+   會太刺眼，換成低飽和度深色版本並調亮文字確保對比度）*/
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .active-tag-filters { background: #1c2a4a; border-color: #3a4f8a; }
+  :root:not([data-theme="light"]) #searchRecommendationList .tag-item:hover,
+  :root:not([data-theme="light"]) #searchRecommendationList .tag-item.keyboard-active,
+  :root:not([data-theme="light"]) .custom-tag-list .tag-item.keyboard-active { background: #232f52; }
+  :root:not([data-theme="light"]) .status-badge-tw { background: #3a1e1e; color: #ec9b9b; border-color: #6b3232; }
+  :root:not([data-theme="light"]) .status-badge-jp { background: #1e2438; color: #9badf0; border-color: #333c5c; }
+  :root:not([data-theme="light"]) .fbtn-reset:hover { background: #3a2020 !important; color: #f28b8b !important; border-color: #8a3a3a !important; }
+  :root:not([data-theme="light"]) .loading-overlay { background: rgba(20, 20, 22, 0.85); }
+  :root:not([data-theme="light"]) .text-green { color: #6bd99a; }
+  :root:not([data-theme="light"]) .text-blue { color: #7ab8ea; }
+  :root:not([data-theme="light"]) .text-red { color: #ec8177; }
+  :root:not([data-theme="light"]) .rating-low { border-color: #4a9d6c !important; color: #6bbf8a !important; }
+  :root:not([data-theme="light"]) .rating-mid { border-color: #5a84c4 !important; color: #7fa8e0 !important; }
+  :root:not([data-theme="light"]) .rating-high { border-color: #c25a5a !important; color: #e08080 !important; }
+}
+:root[data-theme="dark"] .active-tag-filters { background: #1c2a4a; border-color: #3a4f8a; }
+:root[data-theme="dark"] #searchRecommendationList .tag-item:hover,
+:root[data-theme="dark"] #searchRecommendationList .tag-item.keyboard-active,
+:root[data-theme="dark"] .custom-tag-list .tag-item.keyboard-active { background: #232f52; }
+:root[data-theme="dark"] .status-badge-tw { background: #3a1e1e; color: #ec9b9b; border-color: #6b3232; }
+:root[data-theme="dark"] .status-badge-jp { background: #1e2438; color: #9badf0; border-color: #333c5c; }
+:root[data-theme="dark"] .fbtn-reset:hover { background: #3a2020 !important; color: #f28b8b !important; border-color: #8a3a3a !important; }
+:root[data-theme="dark"] .loading-overlay { background: rgba(20, 20, 22, 0.85); }
+:root[data-theme="dark"] .text-green { color: #6bd99a; }
+:root[data-theme="dark"] .text-blue { color: #7ab8ea; }
+:root[data-theme="dark"] .text-red { color: #ec8177; }
+:root[data-theme="dark"] .rating-low { border-color: #4a9d6c !important; color: #6bbf8a !important; }
+:root[data-theme="dark"] .rating-mid { border-color: #5a84c4 !important; color: #7fa8e0 !important; }
+:root[data-theme="dark"] .rating-high { border-color: #c25a5a !important; color: #e08080 !important; }
+
 /* ── 手機版 ── */
 @media screen and (max-width: 600px) {
   .book-cover-side {
@@ -1224,6 +1579,14 @@ body {
   .nav-label {
     font-size: 0.62rem;
     letter-spacing: 0;
+  }
+
+  /* 手機版底部分頁列直接把「資料備份」藏起來，讓其他四個分頁項目有更多空間
+     （目前唯一用到 .nav-item-icon-only 的就是資料備份，所以直接連著這個 class
+     一起隱藏；之後如果有別的 icon-only 導覽項目不想被一起藏起來，要另外拆
+     一個 class）。深色模式切換鈕不是 .nav-item，不受影響，繼續顯示在最右邊。 */
+  .nav-item-icon-only {
+    display: none;
   }
 
   /* 底部導覽列會蓋住原本貼底的提示訊息，顯示時往上多跳一段距離避開它
@@ -1305,11 +1668,33 @@ body {
     justify-content: center;
   }
 
-  /* 補回 select 右側空間，避免文字壓到箭頭 */
-  .fbtn-select {
-    padding-right: 30px;
+  .custom-select-wrap {
     flex: 1;
     min-width: 100px;
+  }
+
+  .custom-select-toggle {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .custom-select-dropdown {
+    left: 0;
+    width: 100%;
+    min-width: unset;
+  }
+
+  .tag-filter-picker {
+    width: 100%;
+  }
+
+  .tag-filter-toggle-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .tag-filter-dropdown {
+    width: 100%;
   }
 
   .fbtn-reset {

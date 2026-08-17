@@ -2,6 +2,16 @@
 <html lang="zh-TW">
   <head>
     <meta charset="UTF-8" />
+    <script>
+      // 深色模式：在 CSS 套用前就把明確設定寫到 <html> 上，避免載入時先閃一下
+      // 錯的主題色再變回來。詳細切換邏輯在 js/theme-toggle.js。
+      (function () {
+        var t = localStorage.getItem("theme");
+        if (t === "light" || t === "dark") {
+          document.documentElement.setAttribute("data-theme", t);
+        }
+      })();
+    </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>漫畫書庫 - 查詢系統</title>
     <link rel="stylesheet" href="css/list-style.css" />
@@ -28,7 +38,12 @@
       <a href="list.html" class="nav-item active"><span class="nav-icon">🔍</span><span class="nav-label">查詢書庫</span></a>
       <a href="wishlist.html" class="nav-item"><span class="nav-icon">🛍️</span><span class="nav-label">待購清單</span></a>
       <a href="tags.html" class="nav-item"><span class="nav-icon">🏷️</span><span class="nav-label">標籤管理</span></a>
-      <a href="backup.html" class="nav-item"><span class="nav-icon">💾</span><span class="nav-label">資料備份</span></a>
+      <a href="backup.html" class="nav-item nav-item-icon-only" title="資料備份"><span class="nav-icon">💾</span></a>
+      <span class="theme-toggle-wrap">
+        <span class="theme-toggle-icon" aria-hidden="true">☀️</span>
+        <button type="button" class="theme-toggle-switch" aria-label="切換深色模式"><span class="theme-toggle-knob"></span></button>
+        <span class="theme-toggle-icon" aria-hidden="true">🌙</span>
+      </span>
     </nav>
 
     <div class="list-container">
@@ -64,7 +79,7 @@
           </div>
 
           <button id="refreshBtn" class="refresh-btn" onclick="fetchData(true)">
-            🔄 更新數據
+            🔄 更新書庫
           </button>
         </div>
         <div
@@ -81,35 +96,35 @@
                 data-sort="date"
                 onclick="sortData('date')"
               >
-                📅 最新
+                📅 最新<span class="sort-dir-arrow" aria-hidden="true"></span>
               </button>
               <button
                 class="fbtn sort-chip active-chip"
                 data-sort="updated"
                 onclick="sortData('updated')"
               >
-                🕐 近期更新
+                🕐 近期更新<span class="sort-dir-arrow" aria-hidden="true"></span>
               </button>
               <button
                 class="fbtn sort-chip"
                 data-sort="rating"
                 onclick="sortData('rating')"
               >
-                ⭐ 評分
+                ⭐ 評分<span class="sort-dir-arrow" aria-hidden="true"></span>
               </button>
               <button
                 class="fbtn sort-chip"
                 data-sort="author"
                 onclick="sortData('author')"
               >
-                🖋️ 作者
+                🖋️ 作者<span class="sort-dir-arrow" aria-hidden="true"></span>
               </button>
               <button
                 class="fbtn sort-chip"
                 data-sort="title"
                 onclick="sortData('title')"
               >
-                📜 書名
+                📜 書名<span class="sort-dir-arrow" aria-hidden="true"></span>
               </button>
             </div>
           </div>
@@ -117,35 +132,110 @@
           <div class="filter-panel-row">
             <span class="filter-panel-label">篩選</span>
             <div class="filter-btn-group">
-              <select
-                id="levelFilter"
-                class="fbtn fbtn-select"
-                onchange="applyFilters()"
+              <div class="custom-select-wrap" id="levelFilterWrap">
+                <button
+                  type="button"
+                  id="levelFilterToggle"
+                  class="fbtn custom-select-toggle"
+                >
+                  <span class="custom-select-label">🍙 分級</span>
+                </button>
+                <div
+                  id="levelFilterDropdown"
+                  class="custom-select-dropdown hidden"
+                >
+                  <div class="custom-select-option" data-value="all">
+                    🍙 分級
+                  </div>
+                  <div class="custom-select-option" data-value="肉多">
+                    🥩 肉多
+                  </div>
+                  <div class="custom-select-option" data-value="正常">
+                    🍛 正常
+                  </div>
+                  <div class="custom-select-option" data-value="肉少">
+                    🥗 肉少
+                  </div>
+                  <div class="custom-select-option" data-value="清水">
+                    💧 清水
+                  </div>
+                </div>
+                <input type="hidden" id="levelFilter" value="all" />
+              </div>
+              <div class="custom-select-wrap" id="ratingFilterWrap">
+                <button
+                  type="button"
+                  id="ratingFilterToggle"
+                  class="fbtn custom-select-toggle"
+                >
+                  <span class="custom-select-label">💎 評分</span>
+                </button>
+                <div
+                  id="ratingFilterDropdown"
+                  class="custom-select-dropdown hidden"
+                >
+                  <div class="custom-select-option" data-value="all">
+                    💎 評分
+                  </div>
+                  <div class="custom-select-option" data-value="8">
+                    8 分以上 ✨
+                  </div>
+                  <div class="custom-select-option" data-value="6">
+                    6–7 分
+                  </div>
+                  <div class="custom-select-option" data-value="0">
+                    5 分以下
+                  </div>
+                </div>
+                <input type="hidden" id="ratingFilter" value="all" />
+              </div>
+              <div class="custom-select-wrap" id="commentFilterWrap">
+                <button
+                  type="button"
+                  id="commentFilterToggle"
+                  class="fbtn custom-select-toggle"
+                >
+                  <span class="custom-select-label">💬 評語狀態</span>
+                </button>
+                <div
+                  id="commentFilterDropdown"
+                  class="custom-select-dropdown hidden"
+                >
+                  <div class="custom-select-option" data-value="all">
+                    💬 評語狀態
+                  </div>
+                  <div
+                    class="custom-select-option"
+                    data-value="ratedWithoutComment"
+                  >
+                    ⭐ 已評分但無評語
+                  </div>
+                </div>
+                <input type="hidden" id="commentFilter" value="all" />
+              </div>
+            </div>
+          </div>
+          <div class="filter-panel-divider"></div>
+          <div class="filter-panel-row">
+            <span class="filter-panel-label">標籤</span>
+            <div class="tag-filter-picker">
+              <button
+                type="button"
+                id="tagFilterToggleBtn"
+                class="fbtn tag-filter-toggle-btn"
               >
-                <option value="all">🍙 分級</option>
-                <option value="肉多">🥩 肉多</option>
-                <option value="正常">🍛 正常</option>
-                <option value="肉少">🥗 肉少</option>
-                <option value="清水">💧 清水</option>
-              </select>
-              <select
-                id="ratingFilter"
-                class="fbtn fbtn-select"
-                onchange="applyFilters()"
-              >
-                <option value="all">💎 評分</option>
-                <option value="8">8 分以上 ✨</option>
-                <option value="6">6–7 分</option>
-                <option value="0">5 分以下</option>
-              </select>
-              <select
-                id="commentFilter"
-                class="fbtn fbtn-select"
-                onchange="applyFilters()"
-              >
-                <option value="all">💬 評語狀態</option>
-                <option value="ratedWithoutComment">⭐ 已評分但無評語</option>
-              </select>
+                🏷️ 選擇標籤<span id="tagFilterCount" class="tag-filter-count hidden">0</span>
+              </button>
+              <div id="tagFilterDropdown" class="tag-filter-dropdown hidden">
+                <input
+                  type="text"
+                  id="tagFilterSearch"
+                  class="tag-filter-search"
+                  placeholder="搜尋標籤..."
+                  autocomplete="off"
+                />
+                <div id="tagFilterList" class="tag-filter-list"></div>
+              </div>
             </div>
           </div>
           <div class="filter-panel-divider"></div>
@@ -167,12 +257,18 @@
             </button>
           </div>
         </div>
-        <div id="resultCount" class="result-count"></div>
+        <div id="resultCount" class="result-count">
+          <span id="resultCountText"></span>
+          <span id="dataTimeLabel" class="data-time-label"></span>
+        </div>
       </header>
 
       <div id="loading" class="loading-overlay">
         <div class="loading-content">
-          <div class="spinner"></div>
+          <div class="loading-progress-track">
+            <div id="loadingProgressBar" class="loading-progress-bar"></div>
+          </div>
+          <div id="loadingProgressText" class="loading-progress-text">0%</div>
           <p>正在同步最新書庫...</p>
         </div>
       </div>
@@ -401,6 +497,7 @@
     </div>
 
     <script type="module" src="js/app.js"></script>
+    <script type="module" src="js/theme-toggle.js"></script>
     <script type="module" src="js/list/list-main.js"></script>
   </body>
 </html>
