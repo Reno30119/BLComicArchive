@@ -49,9 +49,10 @@ BLComicArchive-main/
 │  │  ├─ index-form.js        表單本體：評分/分級/評論者按鈕、封面自動抓取、送出寫入 Firestore
 │  │  ├─ index-tags.js        標籤雲＋標籤輸入框自動完成
 │  │  ├─ index-cover-preview.js 封面預覽：依 #coverUrl 目前的值顯示圖片，分「載入中／推算成功／
-│  │  │                        載入失敗」三種狀態並附文字說明（例如提醒封面是用網址商品編號
-│  │  │                        推算的，不是真的抓取頁面內容）；coverUrl 只會被程式設值（使用者
-│  │  │                        看不到這個隱藏欄位），所以由 index-form.js／index-title-search.js／
+│  │  │                        載入失敗」三種狀態；載入中／失敗有文字說明，推算成功不顯示任何
+│  │  │                        說明文字（使用者不喜歡「封面是用網址推算，並非真的抓取頁面」這句
+│  │  │                        提示，成功時只留圖片本身）；coverUrl 只會被程式設值（使用者看不到
+│  │  │                        這個隱藏欄位），所以由 index-form.js／index-title-search.js／
 │  │  │                        index-main.js 在設值後主動呼叫 updateCoverPreview()，不是靠監聽
 │  │  │                        input 事件
 │  │  └─ index-toast.js       底部提示訊息（showToast）
@@ -62,7 +63,12 @@ BLComicArchive-main/
 │  │  │                        toMillis() 時間戳轉換、首次載入（無快取）時全螢幕 loading
 │  │  │                        遮罩的模擬進度條（showLoadingOverlay/hideLoadingOverlay，
 │  │  │                        見下方說明）；其他 list-*.js 只透過這裡匯出的函式讀寫
-│  │  │                        資料，避免互相依賴
+│  │  │                        資料，避免互相依賴。搜尋框的 input 事件有做 200ms
+│  │  │                        防抖（debounce）才呼叫 applyFilters()（會整個重畫
+│  │  │                        #bookGrid），避免每個按鍵都觸發一次完整重繪；清除
+│  │  │                        按鈕的顯示/隱藏維持即時反應，不受防抖影響。
+│  │  │                        list-search.js 的自動完成建議清單是另一個獨立的
+│  │  │                        input 監聽器，一樣維持即時，不受這裡影響
 │  │  ├─ list-render.js       書卡渲染（renderBooks）與封面抓取補救（reFetchCover）
 │  │  ├─ list-search.js       搜尋框自動完成建議、書名/標籤快速搜尋
 │  │  ├─ list-modal-edit.js   「編輯書籍資訊／編輯評語／刪除評論」，含標籤自動完成
@@ -124,6 +130,8 @@ BLComicArchive-main/
 > `style.css`／`list-style.css` 這兩個基礎檔案各自定義了相同的一份 `:root` 設計變數，修改設計變數時需同步更新這兩個檔案；`tags-style.css`／`wishlist-style.css` 只是疊加在其上的頁面專用樣式，靠 `var(--xxx)` 引用變數，不重複定義 `:root`。
 > `js/index/`、`js/list/`、`js/wishlist/`、`js/tags/` 底下的模組彼此用相對路徑 `import`，一起搬動即可，不受根目錄結構影響。
 > `wishlist.html`、`tags.html` 的 `<script type="module">` 一定要保留 `type="module"`——如果改回普通 `<script>`，會在 `app.js`（`type="module"`，延後到文件解析完才執行）跑完之前就先同步執行，導致呼叫 `BookArchive.*` 時噴 `BookArchive is not defined`（之前 `tags.html` 就是踩到這個）。
+> 自訂下拉選單（`list-custom-select.js`／`list-tag-filter.js`／`wishlist-data.js` 的狀態篩選）的開關按鈕**不能呼叫 `e.stopPropagation()`**——「點外部關閉」的邏輯是掛在 `document` 上監聽 click 冒泡，呼叫了 stopPropagation 會讓事件冒泡不到 document，導致點另一個下拉選單時，前一個收不起來。判斷「點到自己內部不算外部點擊」已經靠 `closest()` 處理了，不需要靠阻止冒泡（這幾支檔案都各自踩過這個坑）。
+> **把互動元素從 `<span onclick>` 改成 `<button>`（或其他元素類型）時，要檢查有沒有依賴「元素類型」的 CSS 選擇器會因此失效**——`list-render.js` 的 `.tag-badge` 曾經是 `<span class="tag-badge">`，同時符合 `.tag-badge`（class，特異性 0,1,0）跟一條舊規則 `.tags span`（class+元素類型，特異性 0,1,1，比較高），兩條都設定 background/color 時，特異性較高的 `.tags span` 會贏，所以畫面上一直是 `.tags span` 的灰色，`.tag-badge` 自己寫的藍色其實從沒生效過。後來把 `<span>` 改成 `<button>`（為了鍵盤可操作性）之後，`.tags span` 因為元素類型對不上而不再匹配，灰色規則失效，`.tag-badge` 自己的藍色設定才第一次真的顯示出來——結果是使用者從沒看過的顏色，被誤以為是設計改版。現在已經把灰色數值直接寫進 `.tag-badge` 本身、刪掉 `.tags span`，不再依賴外部規則覆蓋；之後改任何元素的標籤類型，記得搜尋一次有沒有『類別+元素類型』的複合選擇器在吃該元素的樣式。
 
 ## Firestore 資料結構
 
@@ -191,7 +199,7 @@ BLComicArchive-main/
 - `doGet` 對應的 action：`read`、`readTags`、`readWishlist`（都會附加文件 `id`）、`fetchCover`、`fetchMeta`
 - `fetchCover`／`fetchMeta`：**目前是佔位邏輯**，因為純前端瀏覽器無法跨域爬蟲，永遠回傳空結果。要真的抓封面/書籍資料需要另外做 Firebase Cloud Functions 或保留一支純抓圖用的 GAS
 - `postForm(formData)` 對應的 action：`processForm`（新增書籍/評論）、`update`（修改書籍，`docId` 定位個人欄位、`oldTitle` 定位共用欄位）、`updateCoverOnly`（只更新封面）、`deleteReview`（刪除單筆評論／書籍列）、`upsertTag`（新增/更新標籤定義；額外帶 `oldName` 時會觸發改名／合併，見「tags.html 功能說明」）、`deleteTag`、`addWishlist`、`updateWishlist`（`docId` 定位個人欄位、`oldTitle`〔沒有則退回 `title`〕定位共用欄位）、`deleteWishlist`
-- `waitForCollection({action, matches, attempts, delayMs})`：寫入後輪詢確認資料真的反映到 Firestore 才回報成功，避免「以為成功但其實沒寫進去」
+- `waitForCollection({action, matches, attempts, delayMs, onAttempt})`：寫入後輪詢確認資料真的反映到 Firestore 才回報成功，避免「以為成功但其實沒寫進去」。`onAttempt(attempt, attempts)` 是選填的進度回呼，每次輪詢前呼叫一次；`list.html` 的新增評論／編輯／刪除都有帶這個參數，把按鈕文字更新成「確認中… (2/8)」這種進度提示，避免最長 16 秒的等待看起來像卡住（沒帶這個參數的呼叫端行為不受影響，純粹是額外選填）
 - `restoreBackup(payload, onProgress)`：`backup.html` 專用，把備份 JSON 裡的每筆資料用 `id` 當文件 ID 寫回去（`setDoc(..., {merge:true})`），**只會新增/補回，不會刪除任何現有資料**
 - 欄位更新使用 `!== undefined` 判斷，確保空字串也能清空欄位
 
@@ -211,7 +219,8 @@ BLComicArchive-main/
 5. **iOS 圖示**：`apple-touch-icon.png` 需先用瀏覽器開啟 `generate-icon.html` 產生並放到 `assets/` 資料夾
 6. **備份還原是「只補回」不是「完全替換」**：`backup.html` 的還原功能不會刪除任何現有資料，也不會讓 Firestore 變得跟備份當下完全一樣（備份之後才新增的資料不會被清掉）。如果需要「完全恢復成某個時間點」的還原方式，目前沒有做，需要另外處理
 7. **Firestore Security Rules**：目前架構下瀏覽器直接讀寫 Firestore，存取控制完全依賴 Firebase Console 的 Security Rules，務必確認沒有開放成任何人可讀寫
-8. **`list.html` 首次載入的進度條是模擬的，不是真實進度**：Firestore 的 `getDocs()` 一次性拿到全部資料，SDK 沒有暴露中間進度事件，技術上做不出真正反映實際傳輸進度的進度條。`js/list/list-data.js` 的 `showLoadingOverlay()` 用計時器讓進度條漸近跑到 90%（越接近終點增量越小），實際資料回來時 `hideLoadingOverlay()` 才把它拉到 100% 再蓋住。之後如果要改這段邏輯，記得這個 90% 上限和跑動速度都是刻意調出來的觀感，不是根據任何真實數據
+8. **`list.html` 首次載入的進度條（含 % 數字）是模擬的，不是真實進度**：Firestore 的 `getDocs()` 一次性拿到全部資料，SDK 沒有暴露中間進度事件，技術上做不出真正反映實際傳輸進度的進度條。`js/list/list-data.js` 的 `showLoadingOverlay()` 用計時器讓進度條（`#loadingProgressBar`）跟旁邊的 `#loadingProgressText` 數字同步漸近跑到 90%（越接近終點增量越小），實際資料回來時 `hideLoadingOverlay()` 才把兩者一起拉到 100% 再蓋住遮罩。之後如果要改這段邏輯，記得這個 90% 上限和跑動速度都是刻意調出來的觀感，不是根據任何真實數據。`/impeccable optimize` 把進度條動畫從改 `width`（每一格都觸發 layout 重排）換成改 `transform: scaleX()`（只吃合成層），視覺結果一樣，之後改這段邏輯要維持用 `scaleX()`，不要改回 `width`
+9. **舊資料可能缺選填欄位，讀取時要防呆**：手動從 Sheets 遷移的舊資料，`author`／`jpTitle`／`tags`／`ebookUrl`／`chilUrl`／`twStatus`／`jpStatus` 這類選填欄位不保證存在。`list-render.js` 曾經直接對 `book.author` 呼叫 `.replace()` 沒先判斷是否存在，一筆缺 `author` 的舊資料就會讓 `renderBooks()` 的 `forEach` 迴圈中途拋錯、書單畫面渲染到一半停住且沒有任何錯誤提示（已修正為 `(book.author || "")`）。之後新增任何直接對這些欄位呼叫字串方法（`.replace()`／`.toLowerCase()`／`.split()` 等）的程式碼，記得先用 `|| ""` 防呆，比照同一個檔案裡 `book.ebookUrl || ""`／`book.chilUrl || ""` 已經在用的寫法
 
 ## 評論者設定
 
@@ -239,6 +248,8 @@ BLComicArchive-main/
 
 > **不要直接改 `bottom` 屬性來閃避底部導覽列**——隱藏狀態的 `translateY(100px)` 位移量是配合 `bottom: 20px` 算出來的，改了 `bottom` 會讓隱藏時的位置沒有真的移出畫面外，導致 toast 卡在畫面邊緣被切一半、一直看得到（這是實際踩過的坑）。要調整顯示位置，只能改 `.show` 這個 class 的 `transform` 值。
 
+`list.html` 的錯誤 toast 不要直接把 `err.message` 塞進去顯示——Firebase SDK 的原始錯誤字串（`permission-denied`、`Failed to fetch` 這類）不是寫給 Reno／茶壺看的。`js/list/list-toast.js` 額外匯出 `friendlyErrorMessage(err)`，把常見的 Firestore 錯誤代碼／逾時／離線對應成中文句子，其餘情況給一個通用的「請稍後再試」；原始錯誤物件另外用 `console.error()` 記錄，不會消失，只是不直接顯示給使用者。`list-modal-edit.js`／`list-modal-comment.js`／`list-data.js` 的寫入/讀取錯誤分支都是這樣處理的，之後新增會拋錯的 Firestore 操作，比照這個模式用 `friendlyErrorMessage()` 包一層，不要直接串 `err.message`。
+
 ## tags.html 功能說明
 
 - **標籤名稱 chip**：點擊後跳轉到 `list.html?tag=標籤名稱`，自動篩選含此標籤的書
@@ -256,13 +267,26 @@ BLComicArchive-main/
 
 ## list.html 排序選項
 
-| 選項 | 排序邏輯 |
-|------|---------|
-| 📅 最新 | 書籍第一筆資料的 timestamp（經 `toMillis()` 轉換） |
-| 🕐 近期更新 | 該書所有評論中最新的 timestamp（經 `toMillis()` 轉換） |
-| ⭐ 評分 | 平均分數由高到低 |
-| 🖋️ 作者 | 作者名筆畫排序 |
-| 📜 書名 | 書名筆畫排序 |
+排序 UI 是「欄位下拉選單＋獨立方向按鈕」兩個控制項的組合（原本是 5 顆並排的排序 chip，`/impeccable layout` 改版收成下拉選單，減少篩選面板一次全展開的視覺負擔，同時保留一鍵反轉方向的操作方式）：
+- `#sortFieldWrap`／`#sortFieldToggle`／`#sortFieldDropdown`：選排序欄位，點開下拉選單挑其中一個選項會切到該排序、改用該排序自己的預設方向，不會沿用剛剛反轉過的方向；選完自動收合
+- `#sortDirToggle`：獨立的方向反轉按鈕，不用開下拉選單就能一鍵反轉目前欄位的排序方向（▲ 由小到大／▼ 由大到小），行為對齊改版前「再點一次同一顆排序 chip 會反轉方向」
+
+這組邏輯（`SORT_DEFAULT_DIR`、`SORT_FIELD_LABELS`、`sortData()`、`updateSortSelectUI()`、`setupSortSelect()`）都在 `js/list/list-data.js`；下拉選單的開合行為跟 `list-custom-select.js` 的另外三個下拉選單一致（點外部關閉、不呼叫 `stopPropagation()`），但選項點擊要呼叫 `sortData()` 而非只寫隱藏欄位，所以是另外一份獨立的開關邏輯，沒有共用 `list-custom-select.js` 的 `setupCustomSelect()`。
+
+| 選項 | 排序邏輯 | 預設方向 |
+|------|---------|---------|
+| 📅 最新 | 書籍第一筆資料的 timestamp（經 `toMillis()` 轉換） | 新到舊 |
+| 🕐 近期更新 | 該書所有評論中最新的 timestamp（經 `toMillis()` 轉換） | 新到舊 |
+| ⭐ 評分 | 平均分數 | 高到低 |
+| 🖋️ 作者 | 作者名筆畫 | 少到多 |
+| 📜 書名 | 書名筆畫 | 少到多 |
+
+## list.html 無障礙補強
+
+- `<main class="list-container">` 包住主要內容，開頭有一個視覺隱藏的 `<h1 class="sr-only">漫畫書庫查詢系統</h1>` 補齊頁面地標跟標題階層（原本整頁沒有 `<main>`／`<h1>`，只有 `<title>`，螢幕閱讀器沒有錨點可以跳轉）。`.sr-only`（list-style.css）是只給螢幕閱讀器讀、畫面上不佔版面的工具 class，跟 `.hidden`（連螢幕閱讀器都跳過）不同，兩個用途不一樣不能互相取代
+- `#searchInput`／`#tagFilterSearch` 補了 `aria-label`（placeholder 屬性在輸入後就消失，不能單靠它當作可持續辨識的欄位名稱）
+- 四個下拉選單（分級／評分／評語狀態／排序）跟標籤篩選器的開關按鈕都有 `aria-haspopup`/`aria-expanded`/`aria-controls`，選項有 `role="option"`/`aria-selected`（標籤篩選器另外整個清單有 `role="listbox"`/`aria-multiselectable`），開合時同步更新 `aria-expanded`。`list-custom-select.js`／`list-tag-filter.js`／`list-data.js`（排序用的 `setupSortSelect()`）各自負責自己那組下拉選單的狀態同步，沒有共用同一份程式碼（開合邏輯本來就是分開寫的，見上面「排序選項」的說明）
+- 封面圖 `alt` 帶書名（不是固定寫死的「封面」），評語列的 ✎／🗑 按鈕有動態 `aria-label`（含評論者跟書名，因為同一張卡可能有多筆評論）
 
 ## list.html URL 參數
 
@@ -271,8 +295,11 @@ BLComicArchive-main/
 ## list.html 評論管理
 
 - 每則評語右上角有兩個按鈕：✎ 編輯、🗑 刪除
-- 刪除是直接刪掉該筆評論對應的 Firestore 文件（`docId` 定位），刪除前會跳確認視窗
-- **如果要刪除的是這本書目前唯一的一筆評論**，會額外警告「整本書會一併從書庫移除」，因為書籍基本資訊跟評論共用同一份文件，沒有其他評論者的列可以承載書籍資訊時，刪掉就等於整本書消失
+- 刪除是直接刪掉該筆評論對應的 Firestore 文件（`docId` 定位）
+- **刪除前的確認視窗是 `#confirmDeleteModal`（list.html + `js/list/list-modal-edit.js`），不是瀏覽器原生 `confirm()`**：早期版本用原生 `confirm()`，跟頁面其他 Modal 的視覺風格不一致，`/impeccable harden` 改成套用 `.modal`/`.modal-content` 的客製確認視窗，按鈕用 `.danger-btn`（紅色）取代 `.save-btn`（藍色）強調是不可逆操作，支援 Esc／點背景關閉，按下確定刪除後按鈕會顯示「刪除中... (2/8)」這種帶輪詢進度的文字（見下方 `waitForCollection` 的 `onAttempt`）
+- **如果要刪除的是這本書目前唯一的一筆評論**：`deleteReview()` 會先算出 `sameTitleCount`，是最後一筆的話會在確認視窗裡額外插入一段紅字警告「整本書會一併從書庫移除」，因為書籍基本資訊跟評論共用同一份文件，沒有其他評論者的列可以承載書籍資訊時，刪掉就等於整本書消失
+- `#editModal`（編輯書籍資訊／評語）跟 `#addCommentModal`（新增評論）也都支援 Esc／點背景關閉（跟自訂下拉選單「點外部關閉」是同一套使用者習慣）
+- 每則評語的 ✎／🗑 按鈕、書卡上的標籤 chip、作者名字都是真正的 `<button>` 元素（不是 `<span onclick>`），鍵盤使用者可以 Tab 到並用 Enter/Space 觸發；`.small-delete-btn`（🗑）在觸控裝置上（`@media (pointer: coarse)`，不是螢幕寬度斷點）會放大點擊區域並跟 `.small-edit-btn`（✎）拉開間距，降低誤觸到刪除這個不可逆操作的機率
 
 ## wishlist.html 功能說明
 
@@ -316,6 +343,8 @@ BLComicArchive-main/
 | 正常 | 藍 | `#3498db` |
 | 肉少 | 橘 | `#f39c12` |
 | 清水 | 綠 | `#2ecc71` |
+
+> 這組 hex 是 `index.html` `.level-btn`（style.css）用的語義色參考基準——淺色底疊深文字，對比度沒問題。`list.html` 的分級 badge（`.badge .red/.blue/.green/.orange`，list-style.css）則是白字直接疊在色底上，**跟這張表不是同一組色碼**：肉多 `#ff4d39`、正常 `#3498db`、肉少 `#ffa20c`、清水 `#19c561`，是使用者 2026-08-18 指定的客製配色（原本的 `#e74c3c`／`#f39c12`／`#2ecc71` 白字對比度就已經過不了 WCAG AA 4.5:1，`/impeccable harden` 一度改深到 `#b91c1c`／`#c2410c`／`#15803d` 修掉這個問題，但使用者偏好亮色調性，先選擇改回原色、後來再進一步指定這組新配色，同樣沒有通過 4.5:1）。這是使用者在知情對比度落差後刻意做的取捨，不要因為對比度理由自動把這四色改深或改動。
 
 ### 評分顏色（書卡左側色條 + 評分輸入框）
 | 分數 | 顏色 |

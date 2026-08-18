@@ -1,7 +1,7 @@
 // 編輯 Modal：書籍基本資訊（齒輪）與個人評語（✎）共用同一個 #editModal，
 // 依進入方式切換顯示欄位；也包含標籤輸入的自動完成。
 import { getAllBooks, setAllBooks, buildMergedBooks, applyFilters } from "./list-data.js";
-import { showSyncToast } from "./list-toast.js";
+import { showSyncToast, friendlyErrorMessage } from "./list-toast.js";
 
 function openEditModal(ts) {
   // 找尋對應時間戳記的原始資料
@@ -126,8 +126,11 @@ function openCommentModal(ts) {
 window.openCommentModal = openCommentModal;
 
 // 刪除單一評論（單筆 Firestore 文件）。如果這是這本書唯一的一筆資料，
-// 整本書也會一併從書庫消失，所以刪除前明確提醒。
-async function deleteReview(docId, title, reviewer) {
+// 整本書也會一併從書庫消失，所以刪除前用 #confirmDeleteModal 明確提醒
+// （不用瀏覽器原生 confirm()，維持跟其他 Modal 一致的視覺風格）。
+let pendingDeleteReview = null;
+
+function deleteReview(docId, title, reviewer) {
   if (!docId) {
     showSyncToast("❌ 找不到這筆評論的文件 id，請重新整理頁面後再試", "error");
     return;
@@ -135,17 +138,39 @@ async function deleteReview(docId, title, reviewer) {
   const sameTitleCount = getAllBooks().filter(
     (b) => String(b.title).trim() === String(title).trim(),
   ).length;
-  const extraWarning =
-    sameTitleCount <= 1
-      ? "\n\n⚠️ 這是《" + title + "》目前唯一的一筆資料，刪除後整本書會一併從書庫移除！"
-      : "";
+  const isLastReview = sameTitleCount <= 1;
 
-  if (
-    !confirm(
-      `確定要刪除《${title}》${reviewer ? `（${reviewer}）` : ""} 的這則評論嗎？${extraWarning}`,
-    )
-  )
-    return;
+  pendingDeleteReview = { docId, title, reviewer };
+
+  document.getElementById("confirmDeleteMessage").innerText =
+    `確定要刪除《${title}》${reviewer ? `（${reviewer}）` : ""} 的這則評論嗎？`;
+
+  const extraWarningEl = document.getElementById("confirmDeleteExtraWarning");
+  if (isLastReview) {
+    extraWarningEl.innerText =
+      `⚠️ 這是《${title}》目前唯一的一筆資料，刪除後整本書會一併從書庫移除！`;
+    extraWarningEl.classList.remove("hidden");
+  } else {
+    extraWarningEl.innerText = "";
+    extraWarningEl.classList.add("hidden");
+  }
+
+  document.getElementById("confirmDeleteModal").classList.remove("hidden");
+}
+window.deleteReview = deleteReview;
+
+function closeDeleteConfirmModal() {
+  pendingDeleteReview = null;
+  document.getElementById("confirmDeleteModal").classList.add("hidden");
+}
+window.closeDeleteConfirmModal = closeDeleteConfirmModal;
+
+async function executeDeleteReview() {
+  if (!pendingDeleteReview) return;
+  const { docId } = pendingDeleteReview;
+  const btn = document.getElementById("confirmDeleteBtn");
+  btn.disabled = true;
+  btn.innerText = "刪除中...";
 
   try {
     const formData = new FormData();
@@ -157,6 +182,9 @@ async function deleteReview(docId, title, reviewer) {
     const confirmedBooks = await BookArchive.waitForCollection({
       action: "read",
       matches: (books) => !books.some((b) => String(b.id) === docId),
+      onAttempt: (attempt, attempts) => {
+        btn.innerText = `刪除中... (${attempt}/${attempts})`;
+      },
     });
 
     setAllBooks(confirmedBooks);
@@ -164,11 +192,37 @@ async function deleteReview(docId, title, reviewer) {
     buildMergedBooks();
     applyFilters();
     showSyncToast("✅ 評論已確認刪除", "success");
+    closeDeleteConfirmModal();
   } catch (err) {
-    showSyncToast("❌ 刪除失敗：" + err.message, "error");
+    console.error("刪除評論失敗:", err);
+    showSyncToast("❌ 刪除失敗：" + friendlyErrorMessage(err), "error");
+  } finally {
+    btn.disabled = false;
+    btn.innerText = "🗑 確定刪除";
   }
 }
-window.deleteReview = deleteReview;
+window.executeDeleteReview = executeDeleteReview;
+
+document.getElementById("confirmDeleteModal").addEventListener("click", (e) => {
+  if (e.target.id === "confirmDeleteModal") closeDeleteConfirmModal();
+});
+
+// 點背景關閉：跟下拉選單「點外部關閉」是同一套使用者習慣，之前只有
+// #confirmDeleteModal 有做，#editModal 補齊同一個行為。
+document.getElementById("editModal").addEventListener("click", (e) => {
+  if (e.target.id === "editModal") closeModal();
+});
+
+document.addEventListener("keydown", (e) => {
+  if (e.key !== "Escape") return;
+  const confirmModal = document.getElementById("confirmDeleteModal");
+  if (!confirmModal.classList.contains("hidden")) {
+    closeDeleteConfirmModal();
+    return;
+  }
+  const editModal = document.getElementById("editModal");
+  if (!editModal.classList.contains("hidden")) closeModal();
+});
 
 document.getElementById("editForm").onsubmit = async (e) => {
   e.preventDefault();
@@ -204,6 +258,9 @@ document.getElementById("editForm").onsubmit = async (e) => {
             String(book.comment || "") === String(formData.get("comment") || "")
           );
         }),
+      onAttempt: (attempt, attempts) => {
+        btn.innerText = `💾 確認中... (${attempt}/${attempts})`;
+      },
     });
 
     setAllBooks(confirmedBooks);
@@ -213,7 +270,8 @@ document.getElementById("editForm").onsubmit = async (e) => {
     showSyncToast("✅ 資料已確認更新", "success");
     closeModal();
   } catch (err) {
-    showSyncToast("❌ 更新失敗：" + err.message, "error");
+    console.error("更新書籍失敗:", err);
+    showSyncToast("❌ 更新失敗：" + friendlyErrorMessage(err), "error");
   } finally {
     btn.innerText = "儲存修改";
     btn.disabled = false;

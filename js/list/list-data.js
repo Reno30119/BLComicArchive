@@ -2,7 +2,7 @@
 // 其他檔案（list-search.js、list-modal-edit.js、list-modal-comment.js）
 // 都只透過這裡匯出的函式讀寫書庫資料，不直接互相依賴。
 import { renderBooks } from "./list-render.js";
-import { showSyncToast } from "./list-toast.js";
+import { showSyncToast, friendlyErrorMessage } from "./list-toast.js";
 import { refreshCustomSelects } from "./list-custom-select.js";
 
 let allBooks = [];
@@ -80,12 +80,12 @@ function showLoadingOverlay() {
   if (!bar) return;
 
   let progress = 0;
-  bar.style.width = "0%";
+  bar.style.transform = "scaleX(0)";
   if (text) text.textContent = "0%";
   clearInterval(loadingProgressTimer);
   loadingProgressTimer = setInterval(() => {
     progress += (90 - progress) * 0.1;
-    bar.style.width = `${progress}%`;
+    bar.style.transform = `scaleX(${progress / 100})`;
     if (text) text.textContent = `${Math.round(progress)}%`;
   }, 150);
 }
@@ -95,7 +95,7 @@ function hideLoadingOverlay() {
   const bar = document.getElementById("loadingProgressBar");
   const text = document.getElementById("loadingProgressText");
   clearInterval(loadingProgressTimer);
-  if (bar) bar.style.width = "100%";
+  if (bar) bar.style.transform = "scaleX(1)";
   if (text) text.textContent = "100%";
   if (!loadingEl) return;
   setTimeout(() => {
@@ -169,7 +169,7 @@ export async function fetchData(isManual = false) {
           : "⚠️ 同步失敗，正在顯示共用資料"
         : timedOut
           ? "❌ 連線逾時，請稍後再試"
-          : `❌ 同步失敗：${error.message}`,
+          : `❌ 同步失敗：${friendlyErrorMessage(error)}`,
       "error",
     );
   } finally {
@@ -332,20 +332,38 @@ export function applyFilters() {
 }
 window.applyFilters = applyFilters;
 
-// 更新排序 chip 的 active 狀態與方向箭頭（▲ 由小到大／▼ 由大到小）。
-function updateSortChipUI() {
-  document.querySelectorAll(".sort-chip").forEach((chip) => {
-    const isActive = chip.dataset.sort === currentSortType;
-    chip.classList.toggle("active-chip", isActive);
-    const arrow = chip.querySelector(".sort-dir-arrow");
-    if (arrow) {
-      arrow.textContent = isActive
-        ? currentSortDir === "asc"
-          ? "▲"
-          : "▼"
-        : "";
-    }
-  });
+const SORT_FIELD_LABELS = {
+  date: "📅 最新",
+  updated: "🕐 近期更新",
+  rating: "⭐ 評分",
+  author: "🖋️ 作者",
+  title: "📜 書名",
+};
+
+// 更新排序下拉選單的按鈕文字、選項亮燈狀態，以及方向反轉按鈕的箭頭（▲ 由小到大／▼ 由大到小）。
+function updateSortSelectUI() {
+  const toggleLabel = document.querySelector(
+    "#sortFieldToggle .custom-select-label",
+  );
+  if (toggleLabel) toggleLabel.textContent = SORT_FIELD_LABELS[currentSortType] || "";
+
+  document
+    .querySelectorAll("#sortFieldDropdown .custom-select-option")
+    .forEach((opt) => {
+      const isActive = opt.dataset.sort === currentSortType;
+      opt.classList.toggle("selected", isActive);
+      opt.setAttribute("aria-selected", String(isActive));
+    });
+
+  const dirBtn = document.getElementById("sortDirToggle");
+  if (dirBtn) {
+    const isAsc = currentSortDir === "asc";
+    dirBtn.textContent = isAsc ? "▲" : "▼";
+    dirBtn.setAttribute(
+      "aria-label",
+      isAsc ? "目前由小到大，點擊改成由大到小" : "目前由大到小，點擊改成由小到大",
+    );
+  }
 }
 
 // 統一排序入口：點同一種排序方式會反轉方向，切到別的排序方式則改用該排序的預設方向。
@@ -356,10 +374,61 @@ export function sortData(type) {
     currentSortType = type;
     currentSortDir = SORT_DEFAULT_DIR[type] || "desc";
   }
-  updateSortChipUI();
+  updateSortSelectUI();
   applyFilters();
 }
 window.sortData = sortData;
+
+// 排序欄位下拉選單的開關；跟 list-custom-select.js 的另外三個下拉選單不同，
+// 這裡選項點擊要呼叫 sortData()（同一個欄位再點一次會反轉方向），不是單純寫入
+// 隱藏欄位，所以另外寫一份。方向反轉額外有一顆獨立按鈕，不用開下拉選單就能
+// 一鍵反轉，行為對齊改版前「再點一次同一顆排序 chip 會反轉方向」的操作方式。
+function setupSortSelect() {
+  const wrap = document.getElementById("sortFieldWrap");
+  const toggleBtn = document.getElementById("sortFieldToggle");
+  const dropdown = document.getElementById("sortFieldDropdown");
+  const dirBtn = document.getElementById("sortDirToggle");
+  if (!wrap || !toggleBtn || !dropdown || !dirBtn) return;
+
+  function open() {
+    dropdown.classList.remove("hidden");
+    toggleBtn.setAttribute("aria-expanded", "true");
+  }
+  function close() {
+    dropdown.classList.add("hidden");
+    toggleBtn.setAttribute("aria-expanded", "false");
+  }
+
+  // 不能呼叫 e.stopPropagation()：這個 click 事件還要繼續冒泡到 document，
+  // 讓「別的下拉選單」用 closest() 判斷出這是外部點擊而把自己收起來。
+  toggleBtn.addEventListener("click", () => {
+    if (dropdown.classList.contains("hidden")) open();
+    else close();
+  });
+
+  toggleBtn.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {
+      e.preventDefault();
+      close();
+    }
+  });
+
+  dropdown.addEventListener("click", (e) => {
+    const opt = e.target.closest(".custom-select-option");
+    if (!opt) return;
+    sortData(opt.dataset.sort);
+    close();
+  });
+
+  dirBtn.addEventListener("click", () => sortData(currentSortType));
+
+  document.addEventListener("click", (e) => {
+    if (!dropdown.classList.contains("hidden") && !e.target.closest("#sortFieldWrap")) {
+      close();
+    }
+  });
+}
+setupSortSelect();
 
 export function resetAllFilters() {
   const searchInput = document.getElementById("searchInput");
@@ -385,7 +454,7 @@ export function resetAllFilters() {
 
   currentSortType = "updated";
   currentSortDir = SORT_DEFAULT_DIR[currentSortType];
-  updateSortChipUI();
+  updateSortSelectUI();
 
   applyFilters();
   window.scrollTo({ top: 0, behavior: "smooth" });
@@ -396,10 +465,14 @@ const sInput = document.getElementById("searchInput");
 const cBtn = document.getElementById("clearSearch");
 const activeTagFilters = document.getElementById("activeTagFilters");
 
+// applyFilters() 會整個重畫 #bookGrid，每個按鍵都觸發太浪費，所以加 200ms 防抖；
+// 清除按鈕的顯示/隱藏很便宜，維持即時反應，不用等防抖。list-search.js 另外掛了
+// 一個 input 監聽器處理自動完成建議清單，那個維持即時、不受這裡影響。
+let searchDebounceTimer = null;
 sInput.addEventListener("input", () => {
-  cBtn.style.display = sInput.value ? "block" : "inline";
-  if (!sInput.value) cBtn.style.display = "none";
-  applyFilters();
+  cBtn.style.display = sInput.value ? "block" : "none";
+  clearTimeout(searchDebounceTimer);
+  searchDebounceTimer = setTimeout(applyFilters, 200);
 });
 
 cBtn.addEventListener("click", () => {
@@ -466,5 +539,5 @@ activeTagFilters.addEventListener("click", (event) => {
   }
 });
 
-// 頁面載入時先畫一次排序 chip 的方向箭頭，對齊 HTML 預設啟用的「近期更新」。
-updateSortChipUI();
+// 頁面載入時先畫一次排序下拉選單與方向按鈕，對齊 HTML 預設啟用的「近期更新」。
+updateSortSelectUI();

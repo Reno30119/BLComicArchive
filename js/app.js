@@ -414,8 +414,10 @@ import {
     matches,
     attempts = 8,
     delayMs = 1500,
+    onAttempt,
   }) {
     for (let attempt = 0; attempt < attempts; attempt += 1) {
+      onAttempt?.(attempt + 1, attempts);
       const data = await fetchJson(action);
       if (matches(data)) return data;
       if (attempt < attempts - 1) await sleep(delayMs);

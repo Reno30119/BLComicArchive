@@ -1,6 +1,6 @@
 // 「新增評論」Modal：讓同一本書追加另一位評論者的評分／評語。
 import { getAllBooks, setAllBooks, buildMergedBooks, applyFilters } from "./list-data.js";
-import { showSyncToast } from "./list-toast.js";
+import { showSyncToast, friendlyErrorMessage } from "./list-toast.js";
 
 // 開啟 Modal
 function openAddCommentModal(ts) {
@@ -53,6 +53,18 @@ function closeAddCommentModal() {
   document.getElementById("dupReviewWarning").style.display = "none";
 }
 window.closeAddCommentModal = closeAddCommentModal;
+
+// 點背景關閉／Esc 關閉：跟下拉選單「點外部關閉」是同一套使用者習慣，
+// 也對齊 #confirmDeleteModal／#editModal 已經有的行為。
+document.getElementById("addCommentModal").addEventListener("click", (e) => {
+  if (e.target.id === "addCommentModal") closeAddCommentModal();
+});
+
+document.addEventListener("keydown", (e) => {
+  if (e.key !== "Escape") return;
+  const modal = document.getElementById("addCommentModal");
+  if (!modal.classList.contains("hidden")) closeAddCommentModal();
+});
 
 // 評論者選擇切換
 function setAddReviewer(name, btn) {
@@ -120,6 +132,9 @@ document.getElementById("addCommentForm").onsubmit = async function (e) {
             normalize(String(book.reviewer || "")) === expectedReviewer &&
             normalize(String(book.comment || "")) === expectedComment,
         ),
+      onAttempt: (attempt, attempts) => {
+        btn.innerText = `確認中... (${attempt}/${attempts})`;
+      },
     });
 
     setAllBooks(confirmedBooks);
@@ -130,7 +145,7 @@ document.getElementById("addCommentForm").onsubmit = async function (e) {
     showSyncToast("✅ 評論已確認建立", "success");
   } catch (err) {
     console.error("儲存失敗:", err);
-    showSyncToast("❌ 儲存失敗：" + err.message, "error");
+    showSyncToast("❌ 儲存失敗：" + friendlyErrorMessage(err), "error");
   } finally {
     btn.disabled = false;
     btn.innerText = "確認送出";

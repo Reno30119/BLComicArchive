@@ -21,16 +21,20 @@ function setupCustomSelect(id) {
     const active = options.find((o) => o.dataset.value === value);
     if (active) label.textContent = active.textContent.trim();
     toggleBtn.classList.toggle("has-active-filter", value !== "all");
-    options.forEach((o) =>
-      o.classList.toggle("selected", o.dataset.value === value),
-    );
+    options.forEach((o) => {
+      const isActive = o.dataset.value === value;
+      o.classList.toggle("selected", isActive);
+      o.setAttribute("aria-selected", String(isActive));
+    });
   }
 
   function open() {
     dropdown.classList.remove("hidden");
+    toggleBtn.setAttribute("aria-expanded", "true");
   }
   function close() {
     dropdown.classList.add("hidden");
+    toggleBtn.setAttribute("aria-expanded", "false");
   }
 
   // 不能呼叫 e.stopPropagation()：這個 click 事件還要繼續冒泡到 document，

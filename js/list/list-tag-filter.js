@@ -63,7 +63,7 @@ function renderList() {
     .map((t) => {
       const isSelected = selected.includes(t.name);
       return `
-    <div class="tag-filter-item${isSelected ? " selected" : ""}" data-tag="${escAttr(t.name)}">
+    <div class="tag-filter-item${isSelected ? " selected" : ""}" data-tag="${escAttr(t.name)}" role="option" aria-selected="${isSelected}">
       <span class="check">${isSelected ? "✓" : ""}</span>
       <span class="name">${escHtml(t.name)}</span>
       <span class="count">${t.count} 本</span>
@@ -81,6 +81,7 @@ function updateToggleBadge() {
 
 function openDropdown() {
   dropdown.classList.remove("hidden");
+  toggleBtn.setAttribute("aria-expanded", "true");
   searchInput.value = "";
   renderList();
   searchInput.focus();
@@ -88,6 +89,7 @@ function openDropdown() {
 
 function closeDropdown() {
   dropdown.classList.add("hidden");
+  toggleBtn.setAttribute("aria-expanded", "false");
 }
 
 // 不能呼叫 e.stopPropagation()：這個 click 事件還要繼續冒泡到 document，

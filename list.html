@@ -46,7 +46,8 @@
       </span>
     </nav>
 
-    <div class="list-container">
+    <main class="list-container">
+      <h1 class="sr-only">漫畫書庫查詢系統</h1>
       <header class="list-header">
         <div class="search-bar">
           <div
@@ -61,6 +62,7 @@
               type="text"
               id="searchInput"
               placeholder="搜尋書名、作者或標籤..."
+              aria-label="搜尋書名、作者或標籤"
               style="width: 100%; padding-right: 30px"
               autocomplete="off"
             />
@@ -90,41 +92,53 @@
         <div class="filter-panel">
           <div class="filter-panel-row">
             <span class="filter-panel-label">排序</span>
-            <div class="filter-btn-group">
+            <div class="sort-select-group">
+              <div class="custom-select-wrap" id="sortFieldWrap">
+                <button
+                  type="button"
+                  id="sortFieldToggle"
+                  class="fbtn custom-select-toggle has-active-filter"
+                  aria-haspopup="listbox"
+                  aria-expanded="false"
+                  aria-controls="sortFieldDropdown"
+                >
+                  <span class="custom-select-label">🕐 近期更新</span>
+                </button>
+                <div
+                  id="sortFieldDropdown"
+                  class="custom-select-dropdown hidden"
+                  role="listbox"
+                >
+                  <div class="custom-select-option" data-sort="date" role="option">
+                    📅 最新
+                  </div>
+                  <div
+                    class="custom-select-option selected"
+                    data-sort="updated"
+                    role="option"
+                    aria-selected="true"
+                  >
+                    🕐 近期更新
+                  </div>
+                  <div class="custom-select-option" data-sort="rating" role="option">
+                    ⭐ 評分
+                  </div>
+                  <div class="custom-select-option" data-sort="author" role="option">
+                    🖋️ 作者
+                  </div>
+                  <div class="custom-select-option" data-sort="title" role="option">
+                    📜 書名
+                  </div>
+                </div>
+              </div>
               <button
-                class="fbtn sort-chip"
-                data-sort="date"
-                onclick="sortData('date')"
+                type="button"
+                id="sortDirToggle"
+                class="fbtn sort-dir-toggle"
+                title="反轉排序方向"
+                aria-label="目前由大到小，點擊改成由小到大"
               >
-                📅 最新<span class="sort-dir-arrow" aria-hidden="true"></span>
-              </button>
-              <button
-                class="fbtn sort-chip active-chip"
-                data-sort="updated"
-                onclick="sortData('updated')"
-              >
-                🕐 近期更新<span class="sort-dir-arrow" aria-hidden="true"></span>
-              </button>
-              <button
-                class="fbtn sort-chip"
-                data-sort="rating"
-                onclick="sortData('rating')"
-              >
-                ⭐ 評分<span class="sort-dir-arrow" aria-hidden="true"></span>
-              </button>
-              <button
-                class="fbtn sort-chip"
-                data-sort="author"
-                onclick="sortData('author')"
-              >
-                🖋️ 作者<span class="sort-dir-arrow" aria-hidden="true"></span>
-              </button>
-              <button
-                class="fbtn sort-chip"
-                data-sort="title"
-                onclick="sortData('title')"
-              >
-                📜 書名<span class="sort-dir-arrow" aria-hidden="true"></span>
+                ▼
               </button>
             </div>
           </div>
@@ -137,26 +151,30 @@
                   type="button"
                   id="levelFilterToggle"
                   class="fbtn custom-select-toggle"
+                  aria-haspopup="listbox"
+                  aria-expanded="false"
+                  aria-controls="levelFilterDropdown"
                 >
                   <span class="custom-select-label">🍙 分級</span>
                 </button>
                 <div
                   id="levelFilterDropdown"
                   class="custom-select-dropdown hidden"
+                  role="listbox"
                 >
-                  <div class="custom-select-option" data-value="all">
+                  <div class="custom-select-option" data-value="all" role="option">
                     🍙 分級
                   </div>
-                  <div class="custom-select-option" data-value="肉多">
+                  <div class="custom-select-option" data-value="肉多" role="option">
                     🥩 肉多
                   </div>
-                  <div class="custom-select-option" data-value="正常">
+                  <div class="custom-select-option" data-value="正常" role="option">
                     🍛 正常
                   </div>
-                  <div class="custom-select-option" data-value="肉少">
+                  <div class="custom-select-option" data-value="肉少" role="option">
                     🥗 肉少
                   </div>
-                  <div class="custom-select-option" data-value="清水">
+                  <div class="custom-select-option" data-value="清水" role="option">
                     💧 清水
                   </div>
                 </div>
@@ -167,23 +185,27 @@
                   type="button"
                   id="ratingFilterToggle"
                   class="fbtn custom-select-toggle"
+                  aria-haspopup="listbox"
+                  aria-expanded="false"
+                  aria-controls="ratingFilterDropdown"
                 >
                   <span class="custom-select-label">💎 評分</span>
                 </button>
                 <div
                   id="ratingFilterDropdown"
                   class="custom-select-dropdown hidden"
+                  role="listbox"
                 >
-                  <div class="custom-select-option" data-value="all">
+                  <div class="custom-select-option" data-value="all" role="option">
                     💎 評分
                   </div>
-                  <div class="custom-select-option" data-value="8">
+                  <div class="custom-select-option" data-value="8" role="option">
                     8 分以上 ✨
                   </div>
-                  <div class="custom-select-option" data-value="6">
+                  <div class="custom-select-option" data-value="6" role="option">
                     6–7 分
                   </div>
-                  <div class="custom-select-option" data-value="0">
+                  <div class="custom-select-option" data-value="0" role="option">
                     5 分以下
                   </div>
                 </div>
@@ -194,19 +216,24 @@
                   type="button"
                   id="commentFilterToggle"
                   class="fbtn custom-select-toggle"
+                  aria-haspopup="listbox"
+                  aria-expanded="false"
+                  aria-controls="commentFilterDropdown"
                 >
                   <span class="custom-select-label">💬 評語狀態</span>
                 </button>
                 <div
                   id="commentFilterDropdown"
                   class="custom-select-dropdown hidden"
+                  role="listbox"
                 >
-                  <div class="custom-select-option" data-value="all">
+                  <div class="custom-select-option" data-value="all" role="option">
                     💬 評語狀態
                   </div>
                   <div
                     class="custom-select-option"
                     data-value="ratedWithoutComment"
+                    role="option"
                   >
                     ⭐ 已評分但無評語
                   </div>
@@ -223,6 +250,9 @@
                 type="button"
                 id="tagFilterToggleBtn"
                 class="fbtn tag-filter-toggle-btn"
+                aria-haspopup="true"
+                aria-expanded="false"
+                aria-controls="tagFilterDropdown"
               >
                 🏷️ 選擇標籤<span id="tagFilterCount" class="tag-filter-count hidden">0</span>
               </button>
@@ -232,9 +262,15 @@
                   id="tagFilterSearch"
                   class="tag-filter-search"
                   placeholder="搜尋標籤..."
+                  aria-label="搜尋標籤"
                   autocomplete="off"
                 />
-                <div id="tagFilterList" class="tag-filter-list"></div>
+                <div
+                  id="tagFilterList"
+                  class="tag-filter-list"
+                  role="listbox"
+                  aria-multiselectable="true"
+                ></div>
               </div>
             </div>
           </div>
@@ -273,7 +309,7 @@
         </div>
       </div>
       <div class="book-grid" id="bookGrid"></div>
-    </div>
+    </main>
 
     <div id="editModal" class="modal hidden">
       <div class="modal-content">
@@ -415,19 +451,7 @@
               name="reviewer"
               required
             />
-            <div
-              id="dupReviewWarning"
-              style="
-                display: none;
-                margin-top: 8px;
-                padding: 8px 12px;
-                background: #fff8e1;
-                border-left: 3px solid #f39c12;
-                border-radius: 4px;
-                font-size: 0.85em;
-                color: #7d5a00;
-              "
-            >
+            <div id="dupReviewWarning" class="dup-review-warning">
               ⚠️ <span id="dupReviewMsg"></span>
             </div>
           </div>
@@ -472,6 +496,34 @@
             </button>
           </div>
         </form>
+      </div>
+    </div>
+
+    <div id="confirmDeleteModal" class="modal hidden">
+      <div class="modal-content confirm-delete-content">
+        <h3>🗑 刪除評論</h3>
+        <p id="confirmDeleteMessage" class="confirm-delete-message"></p>
+        <p
+          id="confirmDeleteExtraWarning"
+          class="confirm-delete-warning hidden"
+        ></p>
+        <div class="modal-btns">
+          <button
+            type="button"
+            id="confirmDeleteBtn"
+            class="danger-btn"
+            onclick="executeDeleteReview()"
+          >
+            🗑 確定刪除
+          </button>
+          <button
+            type="button"
+            class="cancel-btn"
+            onclick="closeDeleteConfirmModal()"
+          >
+            取消
+          </button>
+        </div>
       </div>
     </div>
 

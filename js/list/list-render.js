@@ -50,10 +50,12 @@ export function renderBooks(data) {
     row.dataset.ratingTier =
       ratingVal < 5.5 ? "low" : ratingVal <= 7 ? "mid" : "high";
 
+    const titleAttr = (book.title || "").replace(/"/g, "&quot;");
+
     const coverHTML =
       book.coverUrl && book.coverUrl !== ""
-        ? `<img src="${book.coverUrl}" alt="封面" loading="lazy"
-          data-title="${(book.title || "").replace(/"/g, "&quot;")}"
+        ? `<img src="${book.coverUrl}" alt="${titleAttr} 封面" loading="lazy"
+          data-title="${titleAttr}"
           data-bw="${(book.ebookUrl || "").replace(/"/g, "&quot;")}"
           data-chil="${(book.chilUrl || "").replace(/"/g, "&quot;")}"
           onerror="handleCoverError(this)">`
@@ -66,7 +68,7 @@ export function renderBooks(data) {
       .map((t) => {
         const tag = t.trim();
         return tag
-          ? `<span class="tag-badge" onclick="quickSearch('${tag.replace(/'/g, "\\'")}', 'tag')">#${tag}</span>`
+          ? `<button type="button" class="tag-badge" onclick="quickSearch('${tag.replace(/'/g, "\\'")}', 'tag')">#${tag}</button>`
           : "";
       })
       .join("");
@@ -79,8 +81,8 @@ export function renderBooks(data) {
           <span class="rev-sep">|</span>
           <span class="rev-score ${getScoreColor(r.rating)}">⭐ ${r.rating}</span>
           <span class="rev-comment">${r.comment}</span>
-          <button class="small-edit-btn" onclick="openCommentModal('${r.timestamp}')">✎</button>
-          <button class="small-delete-btn" onclick="deleteReview('${r.id || ""}', '${book.title.replace(/'/g, "\\'")}', '${r.reviewer.replace(/'/g, "\\'")}')">🗑</button>
+          <button class="small-edit-btn" onclick="openCommentModal('${r.timestamp}')" aria-label="編輯${r.reviewer}對《${titleAttr}》的評語">✎</button>
+          <button class="small-delete-btn" onclick="deleteReview('${r.id || ""}', '${book.title.replace(/'/g, "\\'")}', '${r.reviewer.replace(/'/g, "\\'")}')" aria-label="刪除${r.reviewer}對《${titleAttr}》的這則評論">🗑</button>
         </div>
       `,
       )
@@ -97,7 +99,7 @@ export function renderBooks(data) {
             <button class="edit-book-btn" onclick="openBookInfoModal('${book.reviews[0]?.timestamp || ""}')" title="編輯書籍基本資訊">⚙️</button>
           </div>
           <p class="author">
-            👤 <span class="author-link" onclick="quickSearch('${book.author.replace(/'/g, "\\'")}')">${book.author}</span>
+            👤 <button type="button" class="author-link" onclick="quickSearch('${(book.author || "").replace(/'/g, "\\'")}')">${book.author || ""}</button>
             <span class="jp-title">${book.jpTitle || ""}</span>
           </p>
           <div class="status-row">
@@ -165,7 +167,8 @@ async function reFetchCover(title, bwUrl, chilUrl, event) {
 
   try {
     // 先把前端算出來的圖片網址直接顯示在畫面上，提升使用者體驗
-    coverContainer.innerHTML = `<img src="${finalCoverUrl}" alt="封面">`;
+    const titleAttr = (title || "").replace(/"/g, "&quot;");
+    coverContainer.innerHTML = `<img src="${finalCoverUrl}" alt="${titleAttr} 封面">`;
 
     // 同步更新回 Firebase
     const formData = new FormData();
