@@ -2,6 +2,7 @@
 import { getAllBooks } from "./index-status.js";
 import { showToast } from "./index-toast.js";
 import { updateCoverPreview } from "./index-cover-preview.js";
+import { escapeHtmlAttr, escapeJsString } from "./index-escape.js";
 
 // 異體字對照表，讓書名比對更寬鬆
 const variantMap = {
@@ -41,6 +42,7 @@ titleInput.addEventListener("input", function () {
     feedback.innerHTML = "";
     feedback.className = "search-feedback";
     titleRecList.style.display = "none";
+    titleInput.setAttribute("aria-expanded", "false");
     dismissDuplicateCard();
     return;
   }
@@ -63,17 +65,19 @@ titleInput.addEventListener("input", function () {
       .map((t) => {
         const book = allBooks.find((b) => b.title === t);
         return `
-  <div class="tag-item" data-title="${t.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;")}" onclick="selectTitleFromRec('${t.replace(/'/g, "\\'")}')">
+  <button type="button" class="tag-item" role="option" aria-selected="false" data-title="${escapeHtmlAttr(t)}" onclick="selectTitleFromRec('${escapeJsString(t)}')">
     <div style="display:flex; justify-content:space-between;">
       <strong>${t}</strong>
       <span style="color:#a5b1c2; font-size:0.85rem;">${book.author || ""}</span>
     </div>
-  </div>`;
+  </button>`;
       })
       .join("");
     titleRecList.style.display = "block"; // 顯示
+    titleInput.setAttribute("aria-expanded", "true");
   } else {
     titleRecList.style.display = "none"; // 沒資料就隱藏
+    titleInput.setAttribute("aria-expanded", "false");
   }
 
   titleRecList.removeAttribute("data-active-index");
@@ -179,6 +183,7 @@ titleInput.addEventListener("keydown", (event) => {
     event.preventDefault();
     titleRecList.style.display = "none";
     titleRecList.removeAttribute("data-active-index");
+    titleInput.setAttribute("aria-expanded", "false");
   }
 });
 
@@ -187,6 +192,7 @@ function selectTitleFromRec(title) {
   titleInput.value = title;
   titleRecList.style.display = "none";
   titleRecList.removeAttribute("data-active-index");
+  titleInput.setAttribute("aria-expanded", "false");
 
   // 找出該書的完整資料並帶入
   const fullBook = getAllBooks().find((b) => b.title === title);
@@ -198,7 +204,10 @@ window.selectTitleFromRec = selectTitleFromRec;
 
 // 點擊頁面其他地方時關閉清單
 document.addEventListener("click", (e) => {
-  if (e.target !== titleInput) titleRecList.style.display = "none";
+  if (e.target !== titleInput) {
+    titleRecList.style.display = "none";
+    titleInput.setAttribute("aria-expanded", "false");
+  }
 });
 
 // 封裝自動填入邏輯
@@ -227,7 +236,7 @@ function autoFillForm(book) {
   // 換書時一律覆寫封面欄位（即使新書沒有封面），避免預覽誤留上一本書的圖。
   document.getElementById("coverUrl").value = book.coverUrl || "";
   updateCoverPreview();
-  showToast("✅ 資料已從待購清單帶入", "success");
+  showToast("✅ 已帶入這本書的既有資料", "success");
 }
 
 // 專門用來隱藏搜尋回饋與重設狀態的函式

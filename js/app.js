@@ -250,10 +250,14 @@ import {
           const newName = String(dataObj.tagName || "").trim();
           const oldName = String(dataObj.oldName || "").trim();
           const definition = dataObj.definition ?? "";
+          // type 區分「系列標籤」跟一般「內容標籤」，純粹給 tags.html 分區顯示用，
+          // 不影響 books 的 tags 欄位或既有的篩選/合併邏輯。舊標籤沒有這個欄位時，
+          // 前端一律當作 content 處理，不需要特別遷移舊資料。
+          const type = dataObj.type === "series" ? "series" : "content";
 
           await setDoc(
             doc(db, "tags", newName),
-            { name: newName, definition },
+            { name: newName, definition, type },
             { merge: true },
           );
 
@@ -279,9 +283,26 @@ import {
           break;
         }
 
-        // [標籤] 刪除標籤
+        // [標籤] 刪除標籤（對稱於 upsertTag 的改名分支：先把這個標籤從所有引用到
+        // 它的書籍 tags 欄位移除，再刪標籤文件本身，避免刪除後書籍留下指向不存在
+        // 標籤的孤兒字串）
         case "deleteTag": {
-          await deleteDoc(doc(db, "tags", dataObj.tagName));
+          const tagNameToDelete = String(dataObj.tagName || "").trim();
+          if (tagNameToDelete) {
+            const booksSnap = await getDocs(collection(db, "books"));
+            const bookUpdates = [];
+            booksSnap.docs.forEach((d) => {
+              const parts = String(d.data().tags || "")
+                .split(/[ ,、]+/)
+                .map((t) => t.trim())
+                .filter(Boolean);
+              if (!parts.includes(tagNameToDelete)) return;
+              const remaining = parts.filter((t) => t !== tagNameToDelete);
+              bookUpdates.push(updateDoc(d.ref, { tags: remaining.join(", ") }));
+            });
+            await Promise.all(bookUpdates);
+            await deleteDoc(doc(db, "tags", tagNameToDelete));
+          }
           break;
         }
 

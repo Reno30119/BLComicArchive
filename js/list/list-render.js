@@ -1,5 +1,6 @@
 // 書卡渲染：把 mergedBooks 陣列畫成 #bookGrid 裡的卡片，以及封面抓取的補救流程。
 import { showSyncToast } from "./list-toast.js";
+import { getTagTypeMap } from "./list-data.js";
 
 // 顏色邏輯：與新增時一致
 function getScoreColor(val) {
@@ -64,12 +65,25 @@ export function renderBooks(data) {
            <button onclick="reFetchCover('${book.title.replace(/'/g, "\\'")}', '${book.ebookUrl || ""}', '${book.chilUrl || ""}', event)">🔍 抓取</button>
          </div>`;
 
-    const tagsHTML = (book.tags ? String(book.tags).split(",") : [])
-      .map((t) => {
-        const tag = t.trim();
-        return tag
-          ? `<button type="button" class="tag-badge" onclick="quickSearch('${tag.replace(/'/g, "\\'")}', 'tag')">#${tag}</button>`
-          : "";
+    // 系列標籤排到最前面（穩定排序，同一組內維持原本順序），並套用不同樣式，
+    // 讓使用者一眼看出「這是系列標籤」而不是一般內容標籤（見 tags.html 的
+    // 標籤類型設定）。tagTypeMap 抓不到（例如還在載入中）時，找不到的標籤一律
+    // 當內容標籤處理，不影響原本的顯示。
+    const tagTypeMap = getTagTypeMap();
+    const tagList = (book.tags ? String(book.tags).split(",") : [])
+      .map((t) => t.trim())
+      .filter(Boolean);
+    const sortedTagList = [...tagList].sort((a, b) => {
+      const aIsSeries = tagTypeMap[a] === "series" ? 0 : 1;
+      const bIsSeries = tagTypeMap[b] === "series" ? 0 : 1;
+      return aIsSeries - bIsSeries;
+    });
+    const tagsHTML = sortedTagList
+      .map((tag) => {
+        const isSeries = tagTypeMap[tag] === "series";
+        const cls = isSeries ? "tag-badge tag-badge-series" : "tag-badge";
+        const label = isSeries ? `🧩 ${tag}` : `#${tag}`;
+        return `<button type="button" class="${cls}" onclick="quickSearch('${tag.replace(/'/g, "\\'")}', 'tag')">${label}</button>`;
       })
       .join("");
 

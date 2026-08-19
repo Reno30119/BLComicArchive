@@ -41,7 +41,7 @@ function updateBadges(source, cachedAt) {
   const updateTime = cachedAt ? new Date(cachedAt) : new Date();
   const timeStr = `${updateTime.getHours().toString().padStart(2, "0")}:${updateTime.getMinutes().toString().padStart(2, "0")}`;
   if (dbCountBadge) {
-    const sourceText = source === "network" ? "已重新讀取" : "共用資料";
+    const sourceText = source === "network" ? "已重新讀取" : "沿用先前資料";
     dbCountBadge.innerHTML = `📖 ${sourceText}：${uniqueTitles.size} 本 (共 ${allBooks.length} 筆評論)`;
     dbCountBadge.className = "status-badge connected";
   }
@@ -88,7 +88,7 @@ export async function fetchAndRefreshStatus(isManual = false) {
       allBooks = cached.data;
       updateBadges("cache", cached.cachedAt);
     } else if (dbCountBadge) {
-      dbCountBadge.innerHTML = "❌ 尚無共用資料，請按重新讀取";
+      dbCountBadge.innerHTML = "❌ 尚無資料，請按「🔄 重新讀取」";
       dbCountBadge.className = "status-badge error";
     }
     if (isManual) showToast("❌ 重新讀取失敗，保留目前資料", "error");

@@ -98,12 +98,23 @@ document.querySelectorAll(".wl-chip[data-reviewer]").forEach((btn) => {
 // 排序只有「新增日期」一種維度，比照 list.html 的做法：同一顆按鈕點擊反轉方向，
 // 用箭頭（▼ 新到舊／▲ 舊到新）表示目前方向，不用兩顆各自代表一個方向的按鈕。
 const sortToggleBtn = document.getElementById("sortToggleBtn");
+
+function updateSortToggleAria() {
+  const isDesc = currentSort === "desc";
+  sortToggleBtn.setAttribute(
+    "aria-label",
+    isDesc ? "依新增日期，目前新到舊，點擊改成舊到新" : "依新增日期，目前舊到新，點擊改成新到舊",
+  );
+}
+
 sortToggleBtn.addEventListener("click", () => {
   currentSort = currentSort === "desc" ? "asc" : "desc";
   sortToggleBtn.querySelector(".sort-dir-arrow").textContent =
     currentSort === "desc" ? "▼" : "▲";
+  updateSortToggleAria();
   renderWishlist();
 });
+updateSortToggleAria();
 
 // 狀態篩選：客製化下拉選單（原生 <select> 的下拉清單本身沒辦法套用自訂樣式），
 // 沿用 list.html 那組 .custom-select-* 樣式（定義在 list-style.css，兩頁共用）
@@ -128,13 +139,35 @@ function refreshStatusFilterUI() {
     "has-active-filter",
     currentStatus !== "all",
   );
-  statusFilterOptions.forEach((o) =>
-    o.classList.toggle("selected", o.dataset.value === currentStatus),
-  );
+  statusFilterOptions.forEach((o) => {
+    const isActive = o.dataset.value === currentStatus;
+    o.classList.toggle("selected", isActive);
+    o.setAttribute("aria-selected", String(isActive));
+  });
+}
+
+function openStatusFilterDropdown() {
+  statusFilterDropdown.classList.remove("hidden");
+  statusFilterToggle.setAttribute("aria-expanded", "true");
+}
+function closeStatusFilterDropdown() {
+  statusFilterDropdown.classList.add("hidden");
+  statusFilterToggle.setAttribute("aria-expanded", "false");
 }
 
 statusFilterToggle.addEventListener("click", () => {
-  statusFilterDropdown.classList.toggle("hidden");
+  if (statusFilterDropdown.classList.contains("hidden")) {
+    openStatusFilterDropdown();
+  } else {
+    closeStatusFilterDropdown();
+  }
+});
+
+statusFilterToggle.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") {
+    e.preventDefault();
+    closeStatusFilterDropdown();
+  }
 });
 
 statusFilterDropdown.addEventListener("click", (e) => {
@@ -142,7 +175,7 @@ statusFilterDropdown.addEventListener("click", (e) => {
   if (!opt) return;
   currentStatus = opt.dataset.value;
   refreshStatusFilterUI();
-  statusFilterDropdown.classList.add("hidden");
+  closeStatusFilterDropdown();
   renderWishlist();
 });
 
@@ -154,7 +187,7 @@ document.addEventListener("click", (e) => {
     !statusFilterDropdown.classList.contains("hidden") &&
     !e.target.closest("#statusFilterWrap")
   ) {
-    statusFilterDropdown.classList.add("hidden");
+    closeStatusFilterDropdown();
   }
 });
 
@@ -172,10 +205,11 @@ const WISHLIST_CACHE_KEY = "wishlistCache";
 const WISHLIST_CACHE_TS_KEY = "wishlistCacheTs";
 const WISHLIST_CACHE_TTL = 3 * 60 * 1000; // 3 分鐘
 
-export async function confirmWishlistWrite(matches) {
+export async function confirmWishlistWrite(matches, { onAttempt } = {}) {
   const confirmedItems = await BookArchive.waitForCollection({
     action: "readWishlist",
     matches,
+    onAttempt,
   });
   allItems = confirmedItems;
   BookArchive.setCachedData(

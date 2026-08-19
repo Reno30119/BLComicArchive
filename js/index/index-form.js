@@ -1,9 +1,9 @@
 // 新增書籍表單：評分/分級/評論者按鈕、封面自動抓取、標籤格式化、送出寫入 Firestore。
 import { showToast } from "./index-toast.js";
 import { resetSearchFeedback } from "./index-title-search.js";
-import { fetchAndRefreshStatus } from "./index-status.js";
 import { getAllBooks } from "./index-status.js";
 import { updateCoverPreview } from "./index-cover-preview.js";
+import { friendlyErrorMessage } from "../error-messages.js";
 
 // 取得評分輸入框
 const ratingInput = document.getElementById("rating");
@@ -20,15 +20,6 @@ function updateRatingColor(value) {
   } else {
     ratingInput.classList.add("rating-high");
   }
-}
-
-// 顯示訊息的共用函數
-function showMessage(text, type) {
-  const msg = document.getElementById("message");
-  msg.innerHTML = text;
-  msg.className = `${type} show`;
-  msg.classList.remove("hidden");
-  setTimeout(() => msg.classList.add("hidden"), 2000);
 }
 
 // 1. 從 BookWalker 網址自動產生封面
@@ -48,7 +39,7 @@ function autoFetchBwCover() {
     // BookWalker 封面優先，無條件覆蓋
     coverInput.value = coverUrl;
     updateCoverPreview();
-    showMessage("✅ BookWalker 封面已帶入！", "success");
+    showToast("✅ BookWalker 封面已帶入！", "success");
   } else {
     console.error("無法解析 BookWalker 網址 ID");
   }
@@ -75,7 +66,7 @@ function autoFetchChilCover() {
     if (!coverInput.value.trim()) {
       coverInput.value = coverUrl;
       updateCoverPreview();
-      showMessage("✅ ちるちる 封面已帶入！", "success");
+      showToast("✅ ちるちる 封面已帶入！", "success");
     }
   } else {
     console.error("無法解析 ちるちる 網址 ID");
@@ -115,7 +106,6 @@ updateRatingColor(ratingInput.value);
 
 const form = document.getElementById("bookForm");
 const btn = document.getElementById("submitBtn");
-const msg = document.getElementById("message");
 
 const revButtons = document.querySelectorAll(".rev-btn");
 const reviewerInput = document.getElementById("reviewer");
@@ -149,19 +139,20 @@ form.addEventListener("submit", async (e) => {
   }
 
   btn.disabled = true;
-  btn.innerHTML = "正在抓取封面並寫入...";
-  msg.className = "info show";
-  msg.classList.remove("hidden");
+  btn.innerHTML = "正在寫入資料庫...";
 
   // 1. 先抓取並整理標籤（去除多餘空格、重複、及結尾逗號）
   const tagsInputField = document.getElementById("tags");
-  const cleanTags = tagsInputField.value
-    .trim()
-    .replace(/[ ,、]+$/, "")
-    .split(/[ ,、]+/)
-    .map((t) => t.trim())
-    .filter((t) => t !== "")
-    .join(", ");
+  const cleanTags = [
+    ...new Set(
+      tagsInputField.value
+        .trim()
+        .replace(/[ ,、]+$/, "")
+        .split(/[ ,、]+/)
+        .map((t) => t.trim())
+        .filter((t) => t !== ""),
+    ),
+  ].join(", ");
 
   tagsInputField.value = cleanTags;
   // 4. 準備傳送資料
@@ -192,22 +183,58 @@ form.addEventListener("submit", async (e) => {
       }
     }
 
-    // 改用 Firestore 後，postForm 會直接拋出寫入錯誤，await 成功即代表已寫入。
+    // 改用 Firestore 後，postForm 會直接拋出寫入錯誤，await 成功即代表已送出，
+    // 但送出不等於「確實寫進去了」——比照 list.html 新增評論的作法，額外用
+    // waitForCollection 輪詢確認資料真的反映到 Firestore，才把訊息換成成功，
+    // 避免使用者以為存了、其實沒存進去。
     await BookArchive.postForm(formData);
-    msg.innerHTML = "✅ 書籍已寫入書庫！";
-    msg.className = "success show";
+
+    btn.innerHTML = "正在確認寫入結果...";
+    showToast("⏳ 已送出，正在確認同步結果...", "info");
+
+    const normalize = (str) => str.replace(/\r\n/g, "\n").trim();
+    const expectedTitle = normalize(String(data.title || ""));
+    const expectedReviewer = normalize(String(data.reviewer || ""));
+    const expectedComment = normalize(String(data.comment || ""));
+
+    await BookArchive.waitForCollection({
+      action: "read",
+      attempts: 8,
+      delayMs: 2000,
+      matches: (books) =>
+        books.some(
+          (book) =>
+            normalize(String(book.title || "")) === expectedTitle &&
+            normalize(String(book.reviewer || "")) === expectedReviewer &&
+            normalize(String(book.comment || "")) === expectedComment,
+        ),
+      onAttempt: (attempt, attempts) => {
+        btn.innerHTML = `確認中... (${attempt}/${attempts})`;
+      },
+    });
+
+    showToast("✅ 書籍已寫入書庫！", "success");
+
+    // 這個表單由固定兩人（Reno／茶壺）反覆連續使用，form.reset() 會把評論者／
+    // 分級這兩個隱藏欄位重置回 HTML 預設值，這裡先記住剛剛送出的選擇，reset
+    // 之後再恢復回去，讓下一筆不用重新點選同一個人／同一個分級。真的要清空
+    // 這兩個選擇，走明確的「清空資料」按鈕（見 clearFullForm()）。
+    const keepReviewer = reviewerInput.value;
+    const keepLevel = levelInput.value;
 
     form.reset();
     resetSearchFeedback();
     updateCoverPreview();
 
     updateRatingColor(5.0);
-    revButtons.forEach((b) => b.classList.remove("active"));
-    reviewerInput.value = "";
-    levelBtns.forEach((b) =>
-      b.classList.toggle("active", b.dataset.level === "正常"),
+    reviewerInput.value = keepReviewer;
+    revButtons.forEach((b) =>
+      b.classList.toggle("active", b.dataset.name === keepReviewer),
     );
-    levelInput.value = "正常";
+    levelInput.value = keepLevel;
+    levelBtns.forEach((b) =>
+      b.classList.toggle("active", b.dataset.level === keepLevel),
+    );
     btn.disabled = false;
     btn.innerHTML = "確認送出資料";
 
@@ -228,16 +255,9 @@ form.addEventListener("submit", async (e) => {
       dbCountBadge.innerHTML = `📖 已暫存：${uniqueCount} 本 (共 ${localBooks.length} 筆評論)`;
       dbCountBadge.className = "status-badge connected";
     }
-
-    setTimeout(() => {
-      msg.classList.remove("show");
-      msg.classList.add("hidden");
-      msg.style.display = "none";
-    }, 3000);
   } catch (error) {
     console.error("送出請求時發生錯誤:", error);
-    msg.innerHTML = "❌ 寫入失敗：" + error.message;
-    msg.className = "error show";
+    showToast("❌ 寫入失敗：" + friendlyErrorMessage(error), "error");
     btn.disabled = false;
     btn.innerHTML = "確認送出資料";
   }

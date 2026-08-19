@@ -7,6 +7,7 @@ import { refreshCustomSelects } from "./list-custom-select.js";
 
 let allBooks = [];
 let mergedBooks = [];
+let tagTypeMap = {};
 let isSyncing = false;
 let currentReviewer = "all";
 let currentSortType = "updated"; // 預設依最近更新
@@ -46,6 +47,30 @@ export function getAllBooks() {
 // 供 modal 送出成功後，把確認過的最新資料寫回這裡並重建畫面。
 export function setAllBooks(data) {
   allBooks = data;
+}
+
+export function getTagTypeMap() {
+  return tagTypeMap;
+}
+
+// list.html 原本不讀 tags collection（只有 index.html／tags.html 會讀），這裡額外
+// 抓一次是為了知道哪些標籤是「系列標籤」，讓 list-render.js 畫書卡時能把系列
+// 標籤排到最前面、套用不同樣式。跟書籍資料分開抓、失敗互不影響——標籤類型讀
+// 失敗頂多是系列標籤看起來跟一般標籤一樣，不影響書籍本身能不能顯示。
+export async function fetchTagTypes() {
+  try {
+    const tags = await BookArchive.fetchJson("readTags");
+    const map = {};
+    tags.forEach((t) => {
+      if (t && t.name) map[t.name] = t.type === "series" ? "series" : "content";
+    });
+    tagTypeMap = map;
+    // 標籤類型比書籍資料晚到是常態；如果書籍已經先渲染過一次，這裡重新套用
+    // 一次篩選讓系列標籤的樣式/排序立刻生效，書籍還沒載入完成則不用做事。
+    if (mergedBooks.length) applyFilters();
+  } catch (err) {
+    console.error("載入標籤類型失敗（不影響書籍顯示，只是系列標籤暫時套用不到樣式）:", err);
+  }
 }
 
 // 資料刷新時間：跟 index.html 的「🕒 資料時間」badge 是同一套邏輯，

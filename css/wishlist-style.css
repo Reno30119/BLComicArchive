@@ -40,12 +40,12 @@
     background 0.15s,
     box-shadow 0.15s,
     transform 0.1s;
-  box-shadow: 0 4px 16px rgba(98, 53, 221, 0.4);
+  box-shadow: 0 4px 16px rgba(49, 162, 255, 0.4);
   letter-spacing: 0.02em;
 }
 .add-btn:hover {
   background: linear-gradient(135deg, #2dd4f0, #5024c4);
-  box-shadow: 0 6px 22px rgba(98, 53, 221, 0.5);
+  box-shadow: 0 6px 22px rgba(0, 81, 255, 0.5);
   transform: translateY(-2px);
 }
 .add-btn:active {
@@ -615,6 +615,44 @@
   border-color: var(--text-secondary);
 }
 
+/* ── 刪除／升級確認 Modal ── */
+.wl-confirm-message {
+  color: var(--text-primary);
+  font-size: 0.92rem;
+  line-height: 1.6;
+  margin: 0 0 4px;
+}
+.wl-confirm-warning {
+  color: #c0392b;
+  background: #fef2f2;
+  border-radius: var(--radius);
+  padding: 10px 14px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  line-height: 1.5;
+  margin: 10px 0 0;
+}
+.modal-danger-btn {
+  flex: 1;
+  padding: 10px;
+  background: #c0392b;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-family: var(--font-body);
+  cursor: pointer;
+  font-weight: 500;
+  transition: background 0.15s;
+}
+.modal-danger-btn:hover {
+  background: #a5281b;
+}
+.modal-danger-btn:disabled {
+  background: var(--border);
+  cursor: not-allowed;
+}
+
 .fetch-hint {
   font-size: 0.77rem;
   color: var(--text-muted);
@@ -747,41 +785,151 @@
 /* ── 深色模式微調 ──（跟 style.css/list-style.css 同一套理由：語義色的淺色底
    在深色背景上會太刺眼，換成低飽和度深色版本並調亮文字確保對比度）*/
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .shared-badge { background: #3a1e1e; color: #ec9b9b; border-color: #6b3232; }
-  :root:not([data-theme="light"]) .status-jp_physical { background: #303136; color: #b0b3ba; }
-  :root:not([data-theme="light"]) .status-jp_ebook { background: #1e2438; color: #9badf0; }
-  :root:not([data-theme="light"]) .status-tw_physical { background: #332711; color: #f0b955; }
-  :root:not([data-theme="light"]) .status-tw_ebook { background: #16321f; color: #7ee2a8; }
-  :root:not([data-theme="light"]) .status-purchased { background: #2c2c30; color: #77777f; }
-  :root:not([data-theme="light"]) .upgrade-btn { color: #7ee2a8; border-color: #2c5c3c; }
-  :root:not([data-theme="light"]) .upgrade-btn:hover { background: #16321f; border-color: #3a7a52; color: #9ceab8; }
-  :root:not([data-theme="light"]) .delete-btn:hover { border-color: #8a3a3a; color: #f28b8b; background: #3a2020; }
-  :root:not([data-theme="light"]) .wl-notes { background: #332711; border-left-color: #d4a94f; }
-  :root:not([data-theme="light"]) .wl-notes-label { color: #d4a94f; }
-  :root:not([data-theme="light"]) .status-select-btn.active-jp_physical { border-color: #6b6e76; background: #303136; }
-  :root:not([data-theme="light"]) .status-select-btn.active-jp_ebook { border-color: #4a68c4; background: #1e2438; }
-  :root:not([data-theme="light"]) .status-select-btn.active-tw_physical { border-color: #b4832e; background: #332711; }
-  :root:not([data-theme="light"]) .status-select-btn.active-tw_ebook { border-color: #3a9a5e; background: #16321f; }
-  :root:not([data-theme="light"]) .fetch-hint.success { color: #7ee2a8; }
-  :root:not([data-theme="light"]) .cover-preview-hint.error { color: #ff8fa3; }
+  :root:not([data-theme="light"]) .shared-badge {
+    background: #3a1e1e;
+    color: #ec9b9b;
+    border-color: #6b3232;
+  }
+  :root:not([data-theme="light"]) .wl-confirm-warning {
+    background: #3a1e1e;
+    color: #ec9b9b;
+  }
+  :root:not([data-theme="light"]) .status-jp_physical {
+    background: #303136;
+    color: #b0b3ba;
+  }
+  :root:not([data-theme="light"]) .status-jp_ebook {
+    background: #1e2438;
+    color: #9badf0;
+  }
+  :root:not([data-theme="light"]) .status-tw_physical {
+    background: #332711;
+    color: #f0b955;
+  }
+  :root:not([data-theme="light"]) .status-tw_ebook {
+    background: #16321f;
+    color: #7ee2a8;
+  }
+  :root:not([data-theme="light"]) .status-purchased {
+    background: #2c2c30;
+    color: #77777f;
+  }
+  :root:not([data-theme="light"]) .upgrade-btn {
+    color: #7ee2a8;
+    border-color: #2c5c3c;
+  }
+  :root:not([data-theme="light"]) .upgrade-btn:hover {
+    background: #16321f;
+    border-color: #3a7a52;
+    color: #9ceab8;
+  }
+  :root:not([data-theme="light"]) .delete-btn:hover {
+    border-color: #8a3a3a;
+    color: #f28b8b;
+    background: #3a2020;
+  }
+  :root:not([data-theme="light"]) .wl-notes {
+    background: #332711;
+    border-left-color: #d4a94f;
+  }
+  :root:not([data-theme="light"]) .wl-notes-label {
+    color: #d4a94f;
+  }
+  :root:not([data-theme="light"]) .status-select-btn.active-jp_physical {
+    border-color: #6b6e76;
+    background: #303136;
+  }
+  :root:not([data-theme="light"]) .status-select-btn.active-jp_ebook {
+    border-color: #4a68c4;
+    background: #1e2438;
+  }
+  :root:not([data-theme="light"]) .status-select-btn.active-tw_physical {
+    border-color: #b4832e;
+    background: #332711;
+  }
+  :root:not([data-theme="light"]) .status-select-btn.active-tw_ebook {
+    border-color: #3a9a5e;
+    background: #16321f;
+  }
+  :root:not([data-theme="light"]) .fetch-hint.success {
+    color: #7ee2a8;
+  }
+  :root:not([data-theme="light"]) .cover-preview-hint.error {
+    color: #ff8fa3;
+  }
 }
-:root[data-theme="dark"] .shared-badge { background: #3a1e1e; color: #ec9b9b; border-color: #6b3232; }
-:root[data-theme="dark"] .status-jp_physical { background: #303136; color: #b0b3ba; }
-:root[data-theme="dark"] .status-jp_ebook { background: #1e2438; color: #9badf0; }
-:root[data-theme="dark"] .status-tw_physical { background: #332711; color: #f0b955; }
-:root[data-theme="dark"] .status-tw_ebook { background: #16321f; color: #7ee2a8; }
-:root[data-theme="dark"] .status-purchased { background: #2c2c30; color: #77777f; }
-:root[data-theme="dark"] .upgrade-btn { color: #7ee2a8; border-color: #2c5c3c; }
-:root[data-theme="dark"] .upgrade-btn:hover { background: #16321f; border-color: #3a7a52; color: #9ceab8; }
-:root[data-theme="dark"] .delete-btn:hover { border-color: #8a3a3a; color: #f28b8b; background: #3a2020; }
-:root[data-theme="dark"] .wl-notes { background: #332711; border-left-color: #d4a94f; }
-:root[data-theme="dark"] .wl-notes-label { color: #d4a94f; }
-:root[data-theme="dark"] .status-select-btn.active-jp_physical { border-color: #6b6e76; background: #303136; }
-:root[data-theme="dark"] .status-select-btn.active-jp_ebook { border-color: #4a68c4; background: #1e2438; }
-:root[data-theme="dark"] .status-select-btn.active-tw_physical { border-color: #b4832e; background: #332711; }
-:root[data-theme="dark"] .status-select-btn.active-tw_ebook { border-color: #3a9a5e; background: #16321f; }
-:root[data-theme="dark"] .fetch-hint.success { color: #7ee2a8; }
-:root[data-theme="dark"] .cover-preview-hint.error { color: #ff8fa3; }
+:root[data-theme="dark"] .shared-badge {
+  background: #3a1e1e;
+  color: #ec9b9b;
+  border-color: #6b3232;
+}
+:root[data-theme="dark"] .wl-confirm-warning {
+  background: #3a1e1e;
+  color: #ec9b9b;
+}
+:root[data-theme="dark"] .status-jp_physical {
+  background: #303136;
+  color: #b0b3ba;
+}
+:root[data-theme="dark"] .status-jp_ebook {
+  background: #1e2438;
+  color: #9badf0;
+}
+:root[data-theme="dark"] .status-tw_physical {
+  background: #332711;
+  color: #f0b955;
+}
+:root[data-theme="dark"] .status-tw_ebook {
+  background: #16321f;
+  color: #7ee2a8;
+}
+:root[data-theme="dark"] .status-purchased {
+  background: #2c2c30;
+  color: #77777f;
+}
+:root[data-theme="dark"] .upgrade-btn {
+  color: #7ee2a8;
+  border-color: #2c5c3c;
+}
+:root[data-theme="dark"] .upgrade-btn:hover {
+  background: #16321f;
+  border-color: #3a7a52;
+  color: #9ceab8;
+}
+:root[data-theme="dark"] .delete-btn:hover {
+  border-color: #8a3a3a;
+  color: #f28b8b;
+  background: #3a2020;
+}
+:root[data-theme="dark"] .wl-notes {
+  background: #332711;
+  border-left-color: #d4a94f;
+}
+:root[data-theme="dark"] .wl-notes-label {
+  color: #d4a94f;
+}
+:root[data-theme="dark"] .status-select-btn.active-jp_physical {
+  border-color: #6b6e76;
+  background: #303136;
+}
+:root[data-theme="dark"] .status-select-btn.active-jp_ebook {
+  border-color: #4a68c4;
+  background: #1e2438;
+}
+:root[data-theme="dark"] .status-select-btn.active-tw_physical {
+  border-color: #b4832e;
+  background: #332711;
+}
+:root[data-theme="dark"] .status-select-btn.active-tw_ebook {
+  border-color: #3a9a5e;
+  background: #16321f;
+}
+:root[data-theme="dark"] .fetch-hint.success {
+  color: #7ee2a8;
+}
+:root[data-theme="dark"] .cover-preview-hint.error {
+  color: #ff8fa3;
+}
 
 /* ── 手機 ── */
 @media (max-width: 540px) {
@@ -821,5 +969,22 @@
   }
   .show-purchased-chip {
     margin-left: auto;
+  }
+}
+
+/* 觸控裝置（用 pointer: coarse 判斷，不是螢幕寬度）：🗑 刪除鍵旁邊就是 ✎ 備註／
+   📚 升級鍵，滑鼠可以精準點小目標，觸控不行，容易誤觸到不可逆的刪除操作。放大
+   三顆按鈕的點擊區域、額外拉開刪除鍵跟前面按鈕的間距，理由跟 list.html 的
+   .small-delete-btn／.small-edit-btn 一樣。這條規則刻意寫在上面
+   @media (max-width: 540px) 的 .entry-btn 縮小規則「之後」——手機同時符合
+   兩個 media query，兩條規則對 .entry-btn 的特異性一樣，寫在後面的才會贏，
+   不然觸控保護會被窄螢幕的縮小規則悄悄蓋掉。 */
+@media (pointer: coarse) {
+  .entry-btn {
+    padding: 6px 10px;
+    min-height: 30px;
+  }
+  .delete-btn {
+    margin-left: 8px;
   }
 }

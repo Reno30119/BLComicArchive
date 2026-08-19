@@ -41,21 +41,48 @@ BLComicArchive-main/
 │  │                      讀取使用者選的 JSON 檔，呼叫 BookArchive.restoreBackup 還原
 │  ├─ theme-toggle.js     深色模式切換鈕的互動邏輯（五個主要頁面共用同一份），見下方
 │  │                      「深色模式」章節說明
+│  ├─ error-messages.js   跨頁面共用：把 Firestore／網路錯誤代碼（permission-denied、
+│  │                      Failed to fetch 等）對照成中文說明的 friendlyErrorMessage()。
+│  │                      原本只在 js/list/list-toast.js，index.html 也需要用之後抽出來；
+│  │                      list-toast.js 改成從這裡 re-export，list-data.js／
+│  │                      list-modal-comment.js／list-modal-edit.js 既有的
+│  │                      `import { friendlyErrorMessage } from "./list-toast.js"` 完全不用改
 │  ├─ index/              index.html 專用模組（皆為 ES module，靠 import/export 溝通）
 │  │  ├─ index-main.js        進入點：匯入下面模組、處理「從待購清單升級」URL 參數帶入、
 │  │  │                        觸發首次 fetchAndRefreshStatus
 │  │  ├─ index-status.js      頁首書庫狀態列：讀取資料、顯示目前幾本書/幾筆評論
-│  │  ├─ index-title-search.js 書名輸入框：重複書名偵測、自動完成推薦、帶入既有書籍資訊
-│  │  ├─ index-form.js        表單本體：評分/分級/評論者按鈕、封面自動抓取、送出寫入 Firestore
-│  │  ├─ index-tags.js        標籤雲＋標籤輸入框自動完成
+│  │  ├─ index-title-search.js 書名輸入框：重複書名偵測、自動完成推薦、帶入既有書籍資訊；
+│  │  │                        書名建議清單是真正的 <button>（role="option"，容器
+│  │  │                        role="listbox"），鍵盤方向鍵/Enter/Escape 都能操作
+│  │  ├─ index-form.js        表單本體：評分/分級/評論者按鈕、封面自動抓取、標籤去重、
+│  │  │                        送出寫入 Firestore 後用 waitForCollection 輪詢確認真的寫進去
+│  │  │                        （比對書名/評論者/評語）才顯示成功，寫入失敗用
+│  │  │                        error-messages.js 的 friendlyErrorMessage() 轉成中文；
+│  │  │                        送出成功後評論者／分級選擇會保留（不清空），因為這頁是
+│  │  │                        固定兩人反覆連續使用，只有明確按「清空資料」才會真的清空
+│  │  ├─ index-tags.js        標籤雲＋標籤輸入框自動完成；標籤雲項目、標籤建議清單都是
+│  │  │                        真正的 <button>（role="option"，容器 role="listbox"）；
+│  │  │                        標籤雲分四類（作品性質／角色身分／情境設定／故事特質），
+│  │  │                        分類色點用 --cat-color 這個 CSS 自訂屬性設在 .tag-group
+│  │  │                        容器上，子元素（分類標題色點、cloud-item hover 色）一起
+│  │  │                        繼承同一個值，不用每個子元素重複設定；標籤建議清單裡，
+│  │  │                        tags.html 設定為「系列標籤」（type: series）的項目會加
+│  │  │                        🧩 圖示前綴＋琥珀色背景（.tag-item-series），跟 list.html
+│  │  │                        書卡上的系列標籤 chip 是同一套視覺語言（見下方「標籤類型」
+│  │  │                        說明）；跳脫使用者輸入的邏輯用 index-escape.js 共用
+│  │  ├─ index-escape.js      index-tags.js／index-title-search.js 共用的字串跳脫工具
+│  │  │                        （escapeHtmlAttr／escapeJsString），原本兩個檔案各自
+│  │  │                        重複寫一份 .replace() 鏈，抽出來避免重複
 │  │  ├─ index-cover-preview.js 封面預覽：依 #coverUrl 目前的值顯示圖片，分「載入中／推算成功／
 │  │  │                        載入失敗」三種狀態；載入中／失敗有文字說明，推算成功不顯示任何
 │  │  │                        說明文字（使用者不喜歡「封面是用網址推算，並非真的抓取頁面」這句
 │  │  │                        提示，成功時只留圖片本身）；coverUrl 只會被程式設值（使用者看不到
 │  │  │                        這個隱藏欄位），所以由 index-form.js／index-title-search.js／
 │  │  │                        index-main.js 在設值後主動呼叫 updateCoverPreview()，不是靠監聽
-│  │  │                        input 事件
-│  │  └─ index-toast.js       底部提示訊息（showToast）
+│  │  │                        input 事件；alt 文字會帶目前書名（例如「《OO》封面預覽」），
+│  │  │                        沒有書名時退回固定的「封面預覽」
+│  │  └─ index-toast.js       底部提示訊息（showToast）；index.html 現在只有這一套提示
+│  │                        機制（原本並存的 #message 橫幅已移除，全部統一走這裡）
 │  ├─ list/               list.html 專用模組（皆為 ES module，靠 import/export 溝通）
 │  │  ├─ list-main.js         進入點：匯入下面模組（副作用匯入負責掛 window.* 綁定＋事件監聽）、
 │  │  │                        處理 ?tag= URL 參數、觸發首次 fetchData
@@ -68,8 +95,16 @@ BLComicArchive-main/
 │  │  │                        #bookGrid），避免每個按鍵都觸發一次完整重繪；清除
 │  │  │                        按鈕的顯示/隱藏維持即時反應，不受防抖影響。
 │  │  │                        list-search.js 的自動完成建議清單是另一個獨立的
-│  │  │                        input 監聽器，一樣維持即時，不受這裡影響
-│  │  ├─ list-render.js       書卡渲染（renderBooks）與封面抓取補救（reFetchCover）
+│  │  │                        input 監聽器，一樣維持即時，不受這裡影響。另外用
+│  │  │                        fetchTagTypes()／getTagTypeMap() 額外讀一次 tags
+│  │  │                        collection（list.html 原本不讀這個 collection），
+│  │  │                        建立「標籤名稱→類型」對照表給 list-render.js 判斷
+│  │  │                        系列標籤；跟書籍資料分開抓、失敗互不影響，慢到的話
+│  │  │                        書籍已經渲染過就重新套用一次篩選讓樣式補上
+│  │  ├─ list-render.js       書卡渲染（renderBooks）與封面抓取補救（reFetchCover）；
+│  │  │                        每本書的標籤 chip 會依 getTagTypeMap() 把系列標籤
+│  │  │                        （穩定排序）排到最前面，並套用 .tag-badge-series
+│  │  │                        樣式＋🧩 圖示前綴
 │  │  ├─ list-search.js       搜尋框自動完成建議、書名/標籤快速搜尋
 │  │  ├─ list-modal-edit.js   「編輯書籍資訊／編輯評語／刪除評論」，含標籤自動完成
 │  │  ├─ list-modal-comment.js 「新增評論」Modal
@@ -116,9 +151,15 @@ BLComicArchive-main/
 │     ├─ tags-data.js         資料引擎：抓取／保存標籤定義清單、依 localStorage 書庫快取
 │     │                        計算標籤使用次數；tags-render.js／tags-form.js 只透過這裡
 │     │                        匯出的函式讀寫資料
-│     ├─ tags-render.js       標籤清單渲染（renderTagList，純畫 HTML，不綁事件）
+│     ├─ tags-render.js       標籤清單渲染（renderTagList，純畫 HTML，不綁事件）；依
+│     │                        type 分成「🧩 系列標籤」「🏷️ 內容標籤」兩個 <details>/
+│     │                        <summary> 區塊（原生可折疊，不用額外寫開合邏輯），沒有
+│     │                        type 欄位的舊標籤一律當內容標籤，不用遷移資料；每次重新
+│     │                        渲染都預設展開，不記憶使用者上次折疊狀態
 │     └─ tags-form.js         新增／編輯／刪除標籤表單邏輯、標籤清單的點擊互動（用事件
-│                              委派掛在容器上）、搜尋框篩選
+│                              委派掛在容器上）、搜尋框篩選；標籤類型（系列／內容）用
+│                              跟評論者/分級按鈕同一套 active class + 隱藏欄位（#tagType）
+│                              寫法，見下方「標籤類型」說明
 ├─ assets/
 │  ├─ manifest.json      PWA 設定（主畫面捷徑用；start_url 用 "../list.html" 指回根目錄）
 │  └─ apple-touch-icon.png  iOS 主畫面圖示（需先執行 generate-icon.html 產生）
@@ -172,6 +213,7 @@ BLComicArchive-main/
 |------|------|
 | name | 標籤名稱，同時也是文件 ID |
 | definition | 標籤定義 |
+| type | 標籤類型，`"series"`（系列標籤）或 `"content"`（內容標籤，預設值）。舊資料沒有這個欄位時，前端一律當 `"content"` 處理，不需要遷移。純粹給 `tags.html` 分區顯示、`list.html` 書卡標籤 chip 排序/上色、`index.html` 標籤自動完成上色用，不影響 `books` 的 `tags` 欄位格式（還是同一個逗號分隔字串） |
 
 ### wishlist 欄位
 
@@ -199,7 +241,7 @@ BLComicArchive-main/
 - `doGet` 對應的 action：`read`、`readTags`、`readWishlist`（都會附加文件 `id`）、`fetchCover`、`fetchMeta`
 - `fetchCover`／`fetchMeta`：**目前是佔位邏輯**，因為純前端瀏覽器無法跨域爬蟲，永遠回傳空結果。要真的抓封面/書籍資料需要另外做 Firebase Cloud Functions 或保留一支純抓圖用的 GAS
 - `postForm(formData)` 對應的 action：`processForm`（新增書籍/評論）、`update`（修改書籍，`docId` 定位個人欄位、`oldTitle` 定位共用欄位）、`updateCoverOnly`（只更新封面）、`deleteReview`（刪除單筆評論／書籍列）、`upsertTag`（新增/更新標籤定義；額外帶 `oldName` 時會觸發改名／合併，見「tags.html 功能說明」）、`deleteTag`、`addWishlist`、`updateWishlist`（`docId` 定位個人欄位、`oldTitle`〔沒有則退回 `title`〕定位共用欄位）、`deleteWishlist`
-- `waitForCollection({action, matches, attempts, delayMs, onAttempt})`：寫入後輪詢確認資料真的反映到 Firestore 才回報成功，避免「以為成功但其實沒寫進去」。`onAttempt(attempt, attempts)` 是選填的進度回呼，每次輪詢前呼叫一次；`list.html` 的新增評論／編輯／刪除都有帶這個參數，把按鈕文字更新成「確認中… (2/8)」這種進度提示，避免最長 16 秒的等待看起來像卡住（沒帶這個參數的呼叫端行為不受影響，純粹是額外選填）
+- `waitForCollection({action, matches, attempts, delayMs, onAttempt})`：寫入後輪詢確認資料真的反映到 Firestore 才回報成功，避免「以為成功但其實沒寫進去」。`onAttempt(attempt, attempts)` 是選填的進度回呼，每次輪詢前呼叫一次；`list.html` 的新增評論／編輯／刪除、`index.html` 新增書籍的送出流程都有帶這個參數，把按鈕文字更新成「確認中… (2/8)」這種進度提示，避免最長 16 秒的等待看起來像卡住（沒帶這個參數的呼叫端行為不受影響，純粹是額外選填）
 - `restoreBackup(payload, onProgress)`：`backup.html` 專用，把備份 JSON 裡的每筆資料用 `id` 當文件 ID 寫回去（`setDoc(..., {merge:true})`），**只會新增/補回，不會刪除任何現有資料**
 - 欄位更新使用 `!== undefined` 判斷，確保空字串也能清空欄位
 
@@ -246,6 +288,11 @@ BLComicArchive-main/
 - CSS 用 `.xxx-toast.show { transform: translateX(-50%) translateY(0) !important; }` 覆蓋成顯示狀態
 - 手機版另外用 `.xxx-toast.show { transform: translateX(-50%) translateY(-64px) !important; }` 讓顯示時的位置再往上跳，避開底部導覽列
 
+`index.html` 原本還有一個並存的 `#message` 頁面內橫幅（`showMessage()`），跟 `#idx-toast`
+是兩套不同的視覺語言，且橫幅的錯誤狀態沒有自動消失、成功狀態卻有，行為不一致。已經把
+`#message`／`showMessage()` 整個移除，`index.html` 現在所有暫時性提示（送出表單的
+確認中/成功/失敗、封面自動帶入、待購清單升級帶入、清空表單）都統一走 `#idx-toast`。
+
 > **不要直接改 `bottom` 屬性來閃避底部導覽列**——隱藏狀態的 `translateY(100px)` 位移量是配合 `bottom: 20px` 算出來的，改了 `bottom` 會讓隱藏時的位置沒有真的移出畫面外，導致 toast 卡在畫面邊緣被切一半、一直看得到（這是實際踩過的坑）。要調整顯示位置，只能改 `.show` 這個 class 的 `transform` 值。
 
 `list.html` 的錯誤 toast 不要直接把 `err.message` 塞進去顯示——Firebase SDK 的原始錯誤字串（`permission-denied`、`Failed to fetch` 這類）不是寫給 Reno／茶壺看的。`js/list/list-toast.js` 額外匯出 `friendlyErrorMessage(err)`，把常見的 Firestore 錯誤代碼／逾時／離線對應成中文句子，其餘情況給一個通用的「請稍後再試」；原始錯誤物件另外用 `console.error()` 記錄，不會消失，只是不直接顯示給使用者。`list-modal-edit.js`／`list-modal-comment.js`／`list-data.js` 的寫入/讀取錯誤分支都是這樣處理的，之後新增會拋錯的 Firestore 操作，比照這個模式用 `friendlyErrorMessage()` 包一層，不要直接串 `err.message`。
@@ -264,6 +311,28 @@ BLComicArchive-main/
     `confirm()` 二次確認），合併後的定義以表單當時填的內容為準，舊標籤文件刪除
   - 因為標籤文件 ID 就是名稱本身，如果沒有這個機制，單純改名稱欄位存檔只會多產生一筆
     新標籤文件，不會清掉舊的、也不會同步任何書籍的 `tags` 欄位（曾經是實際踩過的坑）
+- **標籤類型（系列／內容）**：新增/編輯標籤時，標籤名稱下方可以切換「🏷️ 內容標籤」／
+  「🧩 系列標籤」（`.rev-btn` 樣式，跟 `index.html` 評論者/分級按鈕同一套 active class +
+  隱藏欄位寫法），存進 `tags` collection 的 `type` 欄位。這個功能是設計來解決「同系列
+  的書分開記錄、想讓它們能互相找到」的需求：不管是共享世界觀但主角不同、還是書名不同
+  的續集，都可以取一個系列標籤（例如「《OO》系列」）套用到系列裡每一本書上，點標籤 chip
+  就能篩選出整個系列——跟一般用途的內容標籤（分級/情境/角色描述等）分開管理，方便一眼
+  看出哪些標籤是系列標籤。
+  - `tags.html` 標籤清單依 `type` 分「🧩 系列標籤」「🏷️ 內容標籤」兩個可折疊區塊
+  - `list.html` 書卡上的標籤 chip：系列標籤排到最前面、換成琥珀色（`.tag-badge-series`）
+  - `index.html` 打標籤時的自動完成建議清單：系列標籤同樣換成琥珀色（`.tag-item-series`）
+  - 圖示統一用 🧩（不是 📚——📚 在 `index.html` 頁首、書籍資訊分區、`wishlist.html`
+    升級按鈕已經用過好幾次，重複度太高會失去辨識度，特地選一個全站沒用過的 emoji）
+  - 顏色統一用琥珀色系（`#fffaf0` 底 / `#7c4a03` 字，深色模式 `#332413` / `#e8c589`），
+    直接沿用 `.duplicate-book-card` 已經在用的配色，不是另外發明一組新顏色
+  - **曾經踩過的坑**：`tags-form.js` 的標籤名稱輸入框有「打的名稱撞到既有標籤時，自動
+    帶入該標籤現有定義/類型方便確認」的即時比對邏輯，這個邏輯是**每次打字都重新執行**
+    的。一開始沒有防呆，使用者手動點了「系列標籤」之後，只要在名稱欄位再多打幾下字
+    （哪怕沒真的改到內容），類型就會被悄悄蓋回該標籤原本存的舊類型，存檔時使用者不會
+    發現存錯了。修法是加一個 `typeManuallySet` 旗標，使用者手動點過類型按鈕之後，這個
+    自動帶入邏輯就不會再覆寫，只有開新表單／切換編輯對象時才重置。之後任何「輸入時即時
+    帶入某個既有值方便確認」的邏輯，都要考慮清楚會不會在使用者已經手動改過之後，又被
+    同一段邏輯悄悄覆寫回去
 
 ## list.html 排序選項
 
@@ -352,6 +421,22 @@ BLComicArchive-main/
 | < 5.5 | 霧綠 `#6c7b6a` |
 | 5.5 – 7.0 | 藍灰 `#5f77a8` |
 | > 7.0 | 霧玫瑰 `#b5837e` |
+
+### 系列／警示色（琥珀色系）
+
+`.duplicate-book-card`（index.html 重複書籍警示卡）率先用的一組暖琥珀色，之後
+`list.html` 的 `.tag-badge-series`、`index.html` 的 `.tag-item-series`（系列標籤的
+書卡 chip／自動完成建議）都直接沿用同一組配色，不是各自發明新顏色：
+
+| 用途 | 淺色模式 | 深色模式 |
+|------|---------|---------|
+| 背景 | `#fffaf0` | `#332413` |
+| 文字 | `#7c4a03` | `#e8c589` |
+| 邊框 | `rgba(232, 184, 84, 0.45)` | `rgba(232, 197, 137, 0.35)` |
+
+> 新增任何「需要跟警示/系列語義相關」的暖色調元件時，優先沿用這組數值，不要再調出
+> 第四種黃色系——第一版 `.tag-badge-series` 曾經用過更亮的 `#fdf1cf`／`#8a6415`，
+> 使用者反映跟全站水彩風格的低飽和度調性不搭，才統一改成這組。
 
 ### 字體
 - `'Noto Sans TC'`，所有頁面統一

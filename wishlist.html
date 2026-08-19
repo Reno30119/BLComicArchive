@@ -80,6 +80,7 @@
             type="text"
             id="searchInput"
             placeholder="搜尋書名或作者..."
+            aria-label="搜尋書名或作者"
             style="width: 100%; padding-right: 30px"
             autocomplete="off"
           />
@@ -117,21 +118,28 @@
             type="button"
             id="statusFilterToggle"
             class="wl-chip custom-select-toggle"
+            aria-haspopup="listbox"
+            aria-expanded="false"
+            aria-controls="statusFilterDropdown"
           >
             <span class="custom-select-label">全部</span>
           </button>
-          <div id="statusFilterDropdown" class="custom-select-dropdown hidden">
-            <div class="custom-select-option" data-value="all">全部</div>
-            <div class="custom-select-option" data-value="jp_physical">
+          <div
+            id="statusFilterDropdown"
+            class="custom-select-dropdown hidden"
+            role="listbox"
+          >
+            <div class="custom-select-option" data-value="all" role="option">全部</div>
+            <div class="custom-select-option" data-value="jp_physical" role="option">
               僅日版，僅實體
             </div>
-            <div class="custom-select-option" data-value="jp_ebook">
+            <div class="custom-select-option" data-value="jp_ebook" role="option">
               僅日版，電子版
             </div>
-            <div class="custom-select-option" data-value="tw_physical">
+            <div class="custom-select-option" data-value="tw_physical" role="option">
               有台版，僅實體
             </div>
-            <div class="custom-select-option" data-value="tw_ebook">
+            <div class="custom-select-option" data-value="tw_ebook" role="option">
               有台版，電子版
             </div>
           </div>
@@ -385,6 +393,32 @@
             儲存
           </button>
           <button class="modal-cancel-btn" onclick="closeStatusModal()">
+            取消
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 刪除／升級確認 Modal -->
+    <div id="wlConfirmModal" class="modal hidden">
+      <div class="modal-box">
+        <h3 id="wlConfirmTitle">🗑 刪除待購紀錄</h3>
+        <p id="wlConfirmMessage" class="wl-confirm-message"></p>
+        <p id="wlConfirmWarning" class="wl-confirm-warning hidden"></p>
+        <div class="modal-footer">
+          <button
+            type="button"
+            id="wlConfirmBtn"
+            class="modal-danger-btn"
+            onclick="executeWlConfirmAction()"
+          >
+            🗑 確定刪除
+          </button>
+          <button
+            type="button"
+            class="modal-cancel-btn"
+            onclick="closeWlConfirmModal()"
+          >
             取消
           </button>
         </div>

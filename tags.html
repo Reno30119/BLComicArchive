@@ -55,6 +55,7 @@
           type="text"
           id="tagSearchInput"
           placeholder="搜尋標籤名稱或定義..."
+          aria-label="搜尋標籤名稱或定義"
         />
       </div>
 
@@ -65,12 +66,25 @@
       </div>
       <div class="form-box">
         <input type="hidden" id="tagOldName" />
-        <input type="text" id="tagName" placeholder="標籤名稱" />
+        <input type="text" id="tagName" placeholder="標籤名稱" aria-label="標籤名稱" />
         <div id="tagNameHint"></div>
+        <div class="tag-type-buttons" style="margin-top: 10px">
+          <button type="button" class="rev-btn tag-type-btn active" data-type="content">
+            🏷️ 內容標籤
+          </button>
+          <button type="button" class="rev-btn tag-type-btn" data-type="series">
+            🧩 系列標籤
+          </button>
+        </div>
+        <p class="tag-type-hint">
+          系列標籤會在書單和新增書籍的標籤建議清單裡改用琥珀色標示，方便一眼認出同系列的書
+        </p>
+        <input type="hidden" id="tagType" value="content" />
         <textarea
           id="tagDefinition"
           rows="2"
           placeholder="輸入標籤定義..."
+          aria-label="標籤定義"
           style="margin-top: 10px"
         ></textarea>
         <div id="statusMsg"></div>
@@ -103,8 +117,53 @@
         <span class="section-icon">📋</span>
         <h3 class="section-title" id="listTitle">標籤清單</h3>
       </div>
+      <div class="tag-sort-row">
+        <span class="tag-sort-label">排序：</span>
+        <button
+          type="button"
+          class="tag-sort-btn active"
+          data-sort="name"
+          data-label="🔤 名稱"
+          aria-pressed="true"
+        >
+          🔤 名稱 ▲
+        </button>
+        <button
+          type="button"
+          class="tag-sort-btn"
+          data-sort="usage"
+          data-label="🔢 使用次數"
+          aria-pressed="false"
+        >
+          🔢 使用次數
+        </button>
+      </div>
       <div id="tagList">
         <p class="tag-list-empty">載入標籤中...</p>
+      </div>
+    </div>
+
+    <div id="tagConfirmModal" class="modal hidden">
+      <div class="modal-content confirm-delete-content">
+        <h3 id="tagConfirmTitle">🗑 刪除標籤</h3>
+        <p id="tagConfirmMessage" class="confirm-delete-message"></p>
+        <div class="modal-btns">
+          <button
+            type="button"
+            id="tagConfirmBtn"
+            class="danger-btn"
+            onclick="executeTagConfirmAction()"
+          >
+            🗑 確定刪除
+          </button>
+          <button
+            type="button"
+            class="cancel-btn"
+            onclick="closeTagConfirmModal()"
+          >
+            取消
+          </button>
+        </div>
       </div>
     </div>
 

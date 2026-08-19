@@ -1,5 +1,39 @@
 /* tags.html 專用樣式，疊加在 style.css 共用的 :root 設計變數與版面之上。 */
 
+/* ── 排序控制 ── */
+.tag-sort-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 8px 0 2px;
+  flex-wrap: wrap;
+}
+.tag-sort-label {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+.tag-sort-btn {
+  padding: 4px 12px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-secondary);
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-family: var(--font-body);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.tag-sort-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-light);
+}
+.tag-sort-btn.active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+
 /* ── 標籤清單容器 ── */
 #tagList {
   margin-top: 8px;
@@ -40,7 +74,9 @@
   gap: 7px;
 }
 
-/* 標籤名稱：pill chip 樣式（可點擊跳轉） */
+/* 標籤名稱：pill chip 樣式（可點擊跳轉）。是 <button>（原本是 <span onclick>，
+   改成按鈕讓鍵盤使用者也能操作，比照 list-render.js 的 .tag-badge 已經修過的
+   同一個模式），這裡蓋掉瀏覽器預設的 button 外觀，讓視覺跟改版前一致。 */
 .tag-name {
   display: inline-flex;
   align-items: center;
@@ -53,6 +89,9 @@
   border-radius: 20px;
   letter-spacing: 0.02em;
   cursor: pointer;
+  font-family: inherit;
+  appearance: none;
+  -webkit-appearance: none;
   transition:
     background 0.15s,
     color 0.15s,
@@ -62,6 +101,20 @@
   background: var(--accent);
   color: #fff;
   border-color: var(--accent);
+}
+
+/* 系列標籤的名稱 chip：跟 list.html 的 .tag-badge-series、index.html 的
+   .tag-item-series 同一組琥珀色語彙，讓標籤清單裡也能一眼跟內容標籤分開，
+   不用只靠上面的分區標題才看得出來。 */
+.tag-name.tag-name-series {
+  background: #fffaf0;
+  color: #7c4a03;
+  border-color: rgba(232, 184, 84, 0.45);
+}
+.tag-name.tag-name-series:hover {
+  background: #e8b854;
+  color: #fff;
+  border-color: #e8b854;
 }
 
 /* 使用次數：緊貼名稱旁，低調小字 */
@@ -119,6 +172,42 @@
   font-size: 0.9rem;
 }
 
+/* ── 標籤清單分區（系列／內容），用 <details>/<summary> 做可折疊區塊 ── */
+.tag-section + .tag-section {
+  border-top: 1px solid var(--border-light);
+}
+
+.tag-section-heading {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 14px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  letter-spacing: 0.04em;
+  background: var(--bg);
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+}
+.tag-section-heading::-webkit-details-marker {
+  display: none;
+}
+.tag-section-heading::before {
+  content: "▸";
+  display: inline-block;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  transition: transform 0.15s;
+}
+details[open] > .tag-section-heading::before {
+  transform: rotate(90deg);
+}
+.tag-section-heading:hover {
+  color: var(--accent);
+}
+
 /* ── 狀態訊息（對齊 style.css 色系）── */
 #statusMsg {
   display: none;
@@ -158,6 +247,14 @@
   border: 1px solid #bbf7d0;
 }
 
+/* ── 標籤類型提示 ── */
+.tag-type-hint {
+  margin: 6px 0 0 0;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
 /* ── 表單框 ── */
 .form-box {
   margin-top: 8px;
@@ -168,6 +265,125 @@
   box-shadow: var(--shadow-sm);
 }
 
+/* ── 刪除／合併確認 Modal（跟 list.html 的 #confirmDeleteModal 同一套視覺風格，
+   不用瀏覽器原生 confirm()——tags.html 原本沒有載入 list-style.css，這裡只搬
+   實際用得到的子集過來，不整份複製）── */
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(4px);
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+}
+
+/* .hidden 的 display:none 定義在 style.css（比這個檔案先載入），跟這裡的
+   .modal { display: flex } 特異性相同（都是單一 class），CSS 疊層順序是
+   「後載入的規則贏」，所以 .modal.hidden 不會照預期隱藏——這正是一開始
+   #tagConfirmModal 一進頁面就顯示出來的原因。用複合選擇器把特異性拉高，
+   不要依賴載入順序這種脆弱的東西。 */
+.modal.hidden {
+  display: none;
+}
+
+.modal-content {
+  background: var(--surface);
+  width: 90%;
+  max-width: 480px;
+  padding: 30px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+}
+
+.modal-content h3 {
+  margin: 0 0 20px 0;
+  text-align: center;
+  font-size: 1.4rem;
+  color: var(--text-primary);
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 15px;
+}
+
+.modal-btns {
+  display: flex;
+  gap: 15px;
+  margin-top: 30px;
+}
+
+.confirm-delete-content {
+  max-width: 400px;
+  text-align: center;
+}
+
+.confirm-delete-message {
+  color: var(--text-primary);
+  font-size: 1rem;
+  line-height: 1.6;
+  margin: 0 0 12px 0;
+}
+
+.cancel-btn {
+  flex: 1;
+  padding: 12px;
+  border: none;
+  background: var(--bg);
+  color: var(--text-secondary);
+  border-radius: var(--radius);
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  font-family: var(--font-body);
+  transition: background 0.15s;
+}
+
+.cancel-btn:hover {
+  background: var(--border);
+  color: var(--text-primary);
+}
+
+.danger-btn {
+  flex: 2;
+  padding: 12px;
+  border: none;
+  background: #c0392b;
+  color: white;
+  border-radius: var(--radius);
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(192, 57, 43, 0.25);
+  transition: all 0.2s;
+  letter-spacing: 0.04em;
+  font-family: var(--font-body);
+}
+
+.danger-btn:hover {
+  background: #a5281b;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(192, 57, 43, 0.3);
+}
+
+.danger-btn:active {
+  transform: translateY(0);
+}
+
+.danger-btn:disabled {
+  background: var(--border);
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
 /* ── 深色模式微調 ──（跟 style.css/list-style.css 同一套理由：語義色的淺色底
    在深色背景上會太刺眼，換成低飽和度深色版本並調亮文字確保對比度）*/
 @media (prefers-color-scheme: dark) {
@@ -176,9 +392,11 @@
   :root:not([data-theme="light"]) #statusMsg.error { background: #3a1620; color: #ff8fa3; border-color: #6b2838; }
   :root:not([data-theme="light"]) #tagNameHint.hint-exists { background: #332711; color: #f0cf7a; border-color: #6b5828; }
   :root:not([data-theme="light"]) #tagNameHint.hint-new { background: #16321f; color: #7ee2a8; border-color: #2c5c3c; }
+  :root:not([data-theme="light"]) .tag-name.tag-name-series { background: #332413; color: #e8c589; border-color: rgba(232, 197, 137, 0.35); }
 }
 :root[data-theme="dark"] .tag-del-btn { background: #3a1e2c; color: #ec9bb8; }
 :root[data-theme="dark"] #statusMsg.success { background: #16321f; color: #7ee2a8; border-color: #2c5c3c; }
 :root[data-theme="dark"] #statusMsg.error { background: #3a1620; color: #ff8fa3; border-color: #6b2838; }
 :root[data-theme="dark"] #tagNameHint.hint-exists { background: #332711; color: #f0cf7a; border-color: #6b5828; }
 :root[data-theme="dark"] #tagNameHint.hint-new { background: #16321f; color: #7ee2a8; border-color: #2c5c3c; }
+:root[data-theme="dark"] .tag-name.tag-name-series { background: #332413; color: #e8c589; border-color: rgba(232, 197, 137, 0.35); }

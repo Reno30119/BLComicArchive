@@ -333,8 +333,10 @@ input:-webkit-autofill:focus {
   border-color: #c04848 !important;
 }
 
-/* ── 評論者按鈕 ── */
-.reviewer-buttons {
+/* ── 評論者按鈕（.tag-type-buttons 是 tags.html 標籤類型切換借用的同一組排版，
+   語意不同所以另外取名，避免 class 名稱裡出現「reviewer」誤導使用者）── */
+.reviewer-buttons,
+.tag-type-buttons {
   display: flex;
   gap: 8px;
   width: 100%;
@@ -429,53 +431,6 @@ input:-webkit-autofill:focus {
   height: 20px;
 }
 
-/* ── 訊息提示 ── */
-#msg {
-  display: none;
-  padding: 14px;
-  border-radius: var(--radius);
-  margin-bottom: 20px;
-  text-align: center;
-  font-weight: 500;
-  font-size: 0.9rem;
-}
-
-#msg.show {
-  display: block;
-  animation: fadeIn 0.25s ease;
-}
-
-#msg.hidden {
-  display: none !important;
-}
-
-#message {
-  margin-top: 20px;
-  padding: 12px 16px;
-  border-radius: var(--radius);
-  text-align: center;
-  font-size: 0.88rem;
-  font-weight: 500;
-}
-
-.success {
-  background: #f0fdf4;
-  color: #15803d;
-  border: 1px solid #bbf7d0;
-}
-
-.error {
-  background: #fff1f2;
-  color: #be123c;
-  border: 1px solid #fecdd3;
-}
-
-.info {
-  background: var(--accent-light);
-  color: var(--accent-hover);
-  border: 1px solid #c4b5fd;
-}
-
 .custom-tag-list .tag-item.keyboard-active {
   background: #eef2ff;
   outline: 2px solid var(--accent);
@@ -550,28 +505,24 @@ input:-webkit-autofill:focus {
 .status-searching {
   background: var(--accent-light);
   color: var(--accent);
-  border-left: 3px solid var(--accent);
 }
 
 .status-found {
   background: #fff1f2;
   color: #be123c;
-  border-left: 3px solid #be123c;
   animation: pulse 2s infinite;
 }
 
 .status-new {
   background: #f0fdf4;
   color: #15803d;
-  border-left: 3px solid #15803d;
 }
 
 .duplicate-book-card {
   margin-top: 10px;
   padding: 12px 14px;
   background: #fffaf0;
-  border: 1px solid #f3d18b;
-  border-left: 4px solid #d97706;
+  border: 1.5px solid #e8b854;
   border-radius: var(--radius);
   color: #7c4a03;
   animation: fadeIn 0.2s ease;
@@ -664,6 +615,13 @@ input:-webkit-autofill:focus {
 }
 
 /* ── 推薦清單 ── */
+/* title-system-root／tag-system-root 是 #titleRecommendationList／#customTagList
+   絕對定位的錨點（原本寫在 inline style，這裡統一收進樣式表）。 */
+.title-system-root,
+.tag-system-root {
+  position: relative;
+}
+
 .custom-tag-list {
   position: absolute;
   top: -12px;
@@ -743,10 +701,22 @@ input:-webkit-autofill:focus {
   font-size: 0.8rem;
   font-weight: 600;
   margin-bottom: 7px;
-  padding-left: 8px;
-  border-left: 3px solid var(--accent);
   color: var(--text-secondary);
   letter-spacing: 0.04em;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* 分類色點：改用裝飾性色點取代原本的左邊框，色點不是文字，不受文字對比度規範
+   限制，文字本身維持 var(--text-secondary) 已過 4.5:1 的顏色不變。 */
+.tag-group-title::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--cat-color, var(--accent));
+  flex-shrink: 0;
 }
 
 .tag-group-items {
@@ -769,12 +739,16 @@ input:-webkit-autofill:focus {
   border: 1.5px solid transparent;
   transition: all 0.15s;
   font-family: var(--font-body);
+  /* .cloud-item 是 <button>（原本是 <span>，改成按鈕讓鍵盤使用者也能操作），
+     這裡蓋掉瀏覽器預設的 button 外觀，讓視覺跟改版前一致 */
+  appearance: none;
+  -webkit-appearance: none;
+  line-height: normal;
 }
 
 .cloud-item:hover {
-  background: var(--accent-light);
-  color: var(--accent);
-  border-color: var(--accent);
+  color: var(--cat-color, var(--accent));
+  border-color: var(--cat-color, var(--accent));
   transform: translateY(-1px);
 }
 
@@ -803,10 +777,30 @@ input:-webkit-autofill:focus {
   flex-direction: column;
   transition: background 0.15s;
   border: none;
+  /* .tag-item 是 <button>（原本是 <div onclick>，改成按鈕讓鍵盤使用者也能操作），
+     這裡蓋掉瀏覽器預設的 button 外觀，讓視覺跟改版前一致 */
+  width: 100%;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  appearance: none;
+  -webkit-appearance: none;
 }
 
 .tag-item:hover {
   background-color: var(--accent-light);
+}
+
+/* 系列標籤的自動完成建議，跟 list.html 的 .tag-badge-series、tags.html 的類型
+   切換按鈕同一組暖金色語彙（沿用 .duplicate-book-card 已經在用的琥珀色系），
+   讓「這是系列標籤」的視覺語言在全站一致。 */
+.tag-item.tag-item-series {
+  background: #fffaf0;
+}
+
+.tag-item.tag-item-series:hover {
+  background: #fbecc8;
 }
 
 .tag-item strong {
@@ -840,8 +834,7 @@ input:-webkit-autofill:focus {
   margin: 20px 0 14px 0;
   padding: 7px 12px;
   background: var(--accent-light);
-  border-radius: 3px var(--radius) var(--radius) 3px;
-  border-left: 3px solid var(--accent);
+  border-radius: var(--radius);
 }
 
 .form-section-header:first-child {
@@ -1050,10 +1043,8 @@ input:-webkit-autofill:focus {
   :root:not([data-theme="light"]) .rating-mid { color: #7fa8e0 !important; border-color: #5a84c4 !important; }
   :root:not([data-theme="light"]) .rating-high { color: #e08080 !important; border-color: #c25a5a !important; }
   :root:not([data-theme="light"]) .icon-clear-btn:hover { background-color: #3a2020; color: #f28b8b; border-color: #8a3a3a; }
-  :root:not([data-theme="light"]) .success { background: #16321f; color: #7ee2a8; border-color: #2c5c3c; }
-  :root:not([data-theme="light"]) .error { background: #3a1620; color: #ff8fa3; border-color: #6b2838; }
-  :root:not([data-theme="light"]) .status-found { background: #3a1620; color: #ff8fa3; border-left-color: #ff8fa3; }
-  :root:not([data-theme="light"]) .status-new { background: #16321f; color: #7ee2a8; border-left-color: #7ee2a8; }
+  :root:not([data-theme="light"]) .status-found { background: #3a1620; color: #ff8fa3; }
+  :root:not([data-theme="light"]) .status-new { background: #16321f; color: #7ee2a8; }
   :root:not([data-theme="light"]) .duplicate-book-card { background: #332413; border-color: #6b4a1e; color: #e8c589; }
   :root:not([data-theme="light"]) .duplicate-dismiss-btn { color: #d4a94f; }
   :root:not([data-theme="light"]) .duplicate-book-hint { color: #c9a967; }
@@ -1063,6 +1054,8 @@ input:-webkit-autofill:focus {
   :root:not([data-theme="light"]) .ebook-badge { background: #1e3a26; color: #7ee2a8; }
   :root:not([data-theme="light"]) .chil-badge { background: #3a1e2c; color: #ec9bb8; }
   :root:not([data-theme="light"]) .custom-tag-list .tag-item.keyboard-active { background: #2a3244; }
+  :root:not([data-theme="light"]) .tag-item.tag-item-series { background: #332413; }
+  :root:not([data-theme="light"]) .tag-item.tag-item-series:hover { background: #4a3618; }
   :root:not([data-theme="light"]) .level-btn[data-level="清水"]:hover { border-color: #2ecc71; color: #6bd99a; background: #163322; }
   :root:not([data-theme="light"]) .level-btn[data-level="肉少"]:hover { border-color: #f39c12; color: #f0b955; background: #332711; }
   :root:not([data-theme="light"]) .level-btn[data-level="正常"]:hover { border-color: #3498db; color: #7ab8ea; background: #142a3a; }
@@ -1076,10 +1069,8 @@ input:-webkit-autofill:focus {
 :root[data-theme="dark"] .rating-mid { color: #7fa8e0 !important; border-color: #5a84c4 !important; }
 :root[data-theme="dark"] .rating-high { color: #e08080 !important; border-color: #c25a5a !important; }
 :root[data-theme="dark"] .icon-clear-btn:hover { background-color: #3a2020; color: #f28b8b; border-color: #8a3a3a; }
-:root[data-theme="dark"] .success { background: #16321f; color: #7ee2a8; border-color: #2c5c3c; }
-:root[data-theme="dark"] .error { background: #3a1620; color: #ff8fa3; border-color: #6b2838; }
-:root[data-theme="dark"] .status-found { background: #3a1620; color: #ff8fa3; border-left-color: #ff8fa3; }
-:root[data-theme="dark"] .status-new { background: #16321f; color: #7ee2a8; border-left-color: #7ee2a8; }
+:root[data-theme="dark"] .status-found { background: #3a1620; color: #ff8fa3; }
+:root[data-theme="dark"] .status-new { background: #16321f; color: #7ee2a8; }
 :root[data-theme="dark"] .duplicate-book-card { background: #332413; border-color: #6b4a1e; color: #e8c589; }
 :root[data-theme="dark"] .duplicate-dismiss-btn { color: #d4a94f; }
 :root[data-theme="dark"] .duplicate-book-hint { color: #c9a967; }
@@ -1089,6 +1080,8 @@ input:-webkit-autofill:focus {
 :root[data-theme="dark"] .ebook-badge { background: #1e3a26; color: #7ee2a8; }
 :root[data-theme="dark"] .chil-badge { background: #3a1e2c; color: #ec9bb8; }
 :root[data-theme="dark"] .custom-tag-list .tag-item.keyboard-active { background: #2a3244; }
+:root[data-theme="dark"] .tag-item.tag-item-series { background: #332413; }
+:root[data-theme="dark"] .tag-item.tag-item-series:hover { background: #4a3618; }
 :root[data-theme="dark"] .level-btn[data-level="清水"]:hover { border-color: #2ecc71; color: #6bd99a; background: #163322; }
 :root[data-theme="dark"] .level-btn[data-level="肉少"]:hover { border-color: #f39c12; color: #f0b955; background: #332711; }
 :root[data-theme="dark"] .level-btn[data-level="正常"]:hover { border-color: #3498db; color: #7ab8ea; background: #142a3a; }

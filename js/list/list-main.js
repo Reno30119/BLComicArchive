@@ -1,6 +1,6 @@
 // list.html 進入點：串起各模組（副作用匯入負責掛上 window.* 綁定與事件監聽），
 // 並處理 ?tag= 這種頁面啟動時的初始狀態。
-import { fetchData, setSearchTags } from "./list-data.js";
+import { fetchData, fetchTagTypes, setSearchTags } from "./list-data.js";
 import "./list-render.js";
 import "./list-search.js";
 import "./list-modal-edit.js";
@@ -13,5 +13,6 @@ if (tagParam) {
   setSearchTags([tagParam]);
 }
 
-// 直接呼叫抓取資料
+// 直接呼叫抓取資料；標籤類型（系列／內容）跟書籍資料分開抓，互不阻塞。
 fetchData(false);
+fetchTagTypes();

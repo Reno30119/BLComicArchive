@@ -13,7 +13,7 @@
       })();
     </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>漫畫書庫 - 建立書本</title>
+    <title>漫畫書庫 - 新增書籍</title>
     <link rel="stylesheet" href="css/style.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -48,7 +48,7 @@
 
     <div class="container">
       <header class="form-header">
-        <h2>📚 新增漫畫書籍</h2>
+        <h2>📚 新增書籍</h2>
         <div class="db-status-bar">
           <div id="dbCountBadge" class="status-badge">♻️ 正在載入書庫...</div>
           <div id="dbTimeBadge" class="status-badge">🕒 --:--</div>
@@ -65,7 +65,7 @@
         </div>
         <div class="form-group">
           <label for="title">中文書名</label>
-          <div style="position: relative; width: 100%">
+          <div>
             <input
               type="text"
               id="title"
@@ -73,10 +73,12 @@
               required
               placeholder="請輸入書名"
               autocomplete="off"
-              style="width: 100%; box-sizing: border-box"
+              aria-haspopup="listbox"
+              aria-expanded="false"
+              aria-controls="titleRecommendationList"
             />
-            <div class="title-system-root" style="position: relative" ;>
-              <div id="titleRecommendationList" class="custom-tag-list"></div>
+            <div class="title-system-root">
+              <div id="titleRecommendationList" class="custom-tag-list" role="listbox" aria-label="書名建議清單"></div>
             </div>
           </div>
           <div id="searchFeedback" class="search-feedback"></div>
@@ -98,7 +100,7 @@
             </div>
             <p id="duplicateBookDetails" class="duplicate-book-details"></p>
             <p class="duplicate-book-hint">
-              可帶入書籍共用資訊，再填寫這次的評論；也可以保留目前內容繼續建立。
+              可以帶入這本書已經填過的書名、作者、標籤等資料，只要再填你的評分和評語；也可以不理會，繼續填寫新的一筆。
             </p>
             <div class="duplicate-book-actions">
               <button
@@ -186,7 +188,7 @@
           </div>
           <div class="form-group">
             <label for="rating">評分 (1-10)</label>
-            <div style="position: relative">
+            <div>
               <input
                 type="number"
                 id="rating"
@@ -208,10 +210,13 @@
             name="tags"
             placeholder="輸入關鍵字或點選標籤..."
             autocomplete="off"
+            aria-haspopup="listbox"
+            aria-expanded="false"
+            aria-controls="customTagList"
           />
 
-          <div class="tag-system-root" style="position: relative">
-            <div id="customTagList" class="custom-tag-list"></div>
+          <div class="tag-system-root">
+            <div id="customTagList" class="custom-tag-list" role="listbox" aria-label="標籤建議清單"></div>
 
             <div class="tag-cloud-wrapper">
               <div id="tagCloud" class="tag-cloud"></div>
@@ -272,6 +277,7 @@
             class="icon-clear-btn"
             onclick="clearFullForm()"
             title="清空資料"
+            aria-label="清空表單所有欄位"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -291,8 +297,6 @@
           </button>
         </div>
       </form>
-
-      <div id="message" class="hidden"></div>
     </div>
 
     <script type="module" src="js/app.js"></script>

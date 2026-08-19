@@ -604,6 +604,23 @@ body {
   color: white;
 }
 
+/* 系列標籤（tags.html 設定的「type: series」）用暖金色跟一般內容標籤區隔開，
+   靠色彩＋🧩圖示＋粗體三種訊號一起辨識，不單靠顏色。色調沿用
+   .duplicate-book-card 已經在用的琥珀色系（比第一版的亮黃色更沉穩，跟全站
+   水彩風格的低飽和度調性一致），hover 沿用跟一般 .tag-badge 一樣的強調色，
+   點擊後的搜尋行為完全相同，只有平常靜止時的樣式不同。 */
+.tag-badge-series {
+  background: #fffaf0;
+  color: #7c4a03;
+  border-color: rgba(232, 184, 84, 0.45);
+  font-weight: 600;
+}
+
+.tag-badge-series:hover {
+  background: var(--accent);
+  color: white;
+}
+
 .author-link {
   cursor: pointer;
   background: none;
@@ -1582,6 +1599,11 @@ body {
     background: #1c2a4a;
     border-color: #3a4f8a;
   }
+  :root:not([data-theme="light"]) .tag-badge-series {
+    background: #332413;
+    color: #e8c589;
+    border-color: rgba(232, 197, 137, 0.35);
+  }
   :root:not([data-theme="light"]) #searchRecommendationList .tag-item:hover,
   :root:not([data-theme="light"])
     #searchRecommendationList
@@ -1632,6 +1654,11 @@ body {
     border-color: #c25a5a !important;
     color: #e08080 !important;
   }
+}
+:root[data-theme="dark"] .tag-badge-series {
+  background: #332413;
+  color: #e8c589;
+  border-color: rgba(232, 197, 137, 0.35);
 }
 :root[data-theme="dark"] .active-tag-filters {
   background: #1c2a4a;

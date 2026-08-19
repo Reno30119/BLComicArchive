@@ -3,6 +3,7 @@
 // 用程式設定（不是使用者直接輸入），所以由那些模組在設值後主動呼叫
 // updateCoverPreview()，而不是監聽 input/change 事件。
 const coverInput = document.getElementById("coverUrl");
+const titleInput = document.getElementById("title");
 const previewWrap = document.getElementById("coverPreviewWrap");
 const previewImg = document.getElementById("coverPreviewImg");
 const previewPlaceholder = document.getElementById("coverPreviewPlaceholder");
@@ -21,6 +22,9 @@ export function updateCoverPreview() {
     previewImg.removeAttribute("src");
     return;
   }
+
+  const title = titleInput.value.trim();
+  previewImg.alt = title ? `《${title}》封面預覽` : "封面預覽";
 
   previewWrap.style.display = "flex";
   previewHint.textContent = "正在載入封面圖片…";

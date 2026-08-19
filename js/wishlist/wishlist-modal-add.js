@@ -9,6 +9,7 @@ import {
 import { renderWishlist } from "./wishlist-render.js";
 import { showToast } from "./wishlist-toast.js";
 import { updateAddCoverPreview } from "./wishlist-cover-preview.js";
+import { friendlyErrorMessage } from "../error-messages.js";
 
 let addReviewer = "";
 let addStatus = "";
@@ -43,6 +44,11 @@ function closeAddModal() {
   document.getElementById("addModal").classList.add("hidden");
 }
 window.closeAddModal = closeAddModal;
+
+// 點背景關閉：跟自訂下拉選單「點外部關閉」是同一套使用者習慣。
+document.getElementById("addModal").addEventListener("click", (e) => {
+  if (e.target.id === "addModal") closeAddModal();
+});
 
 function setAddReviewer(name, btn) {
   addReviewer = name;
@@ -234,7 +240,7 @@ async function submitAdd() {
     );
     showToast("✅ 已確認加入待購清單", "success");
   } catch (e) {
-    showToast("⚠️ 尚未確認新增結果，請稍後重新同步確認", "error");
+    showToast("⚠️ 尚未確認新增結果：" + friendlyErrorMessage(e), "error");
     await fetchWishlist(true);
   }
 }

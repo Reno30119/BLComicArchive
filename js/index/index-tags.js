@@ -1,4 +1,6 @@
 // 標籤雲（分類快速加入）與標籤輸入框的自動完成。
+import { escapeHtmlAttr, escapeJsString } from "./index-escape.js";
+
 let allTags = []; // 儲存從 Firestore 抓回來的標籤定義
 
 // 定義分類標籤雲
@@ -7,14 +9,25 @@ const categorizedTags = {
   角色身分: [
     "DK",
     "大學生",
-    "校園戀愛",
-    "職場",
+    "竹馬",
     "床伴",
     "隱藏面貌",
     "年齡差",
     "年下攻",
+    "室友",
+    "男公關",
   ],
-  故事特質: ["暗戀", "雙向暗戀", "歡喜冤家", "重逢", "同居"],
+  情境設定: [
+    "校園戀愛",
+    "職場",
+    "演藝圈",
+    "樂團",
+    "同居",
+    "黑道",
+    "風俗",
+    "棒球",
+  ],
+  故事特質: ["暗戀", "雙向暗戀", "歡喜冤家", "重逢", "搞笑", "誤會"],
 };
 
 async function initTagFeatures() {
@@ -35,10 +48,13 @@ function renderTagCloud() {
   const cloud = document.getElementById("tagCloud");
   if (!cloud) return;
 
+  // 明度比主色盤（--accent 等）高一階：這幾色只用在標籤雲的分類點／色塊背景，
+  // 直接沿用 --accent 原色調在小色塊上會偏灰暗，調亮後分類辨識度更清楚。
   const categoryColors = {
-    作品性質: "#5f77a8",
-    角色身分: "#b5837e",
-    故事特質: "#5a8a5a",
+    作品性質: "#8799be",
+    角色身分: "#cba8a5",
+    情境設定: "#b99a6e",
+    故事特質: "#79a879",
   };
 
   let html = "";
@@ -46,17 +62,17 @@ function renderTagCloud() {
     const color = categoryColors[category] || "#95a5a6"; // 若沒對應到則用灰色
 
     html += `
-  <div class="tag-group">
-    <div class="tag-group-title" style="border-left-color: ${color}">${category}</div>
+  <div class="tag-group" style="--cat-color: ${color}">
+    <div class="tag-group-title">${category}</div>
     <div class="tag-group-items">
       ${tags
         .map(
           (tagName) => `
-        <span class="cloud-item"
-              style="border-left: 4px solid ${color} !important; background-color: ${color}15;"
+        <button type="button" class="cloud-item"
+              style="background-color: ${color}28;"
               onclick="addTagFromUI('${tagName}')">
           + ${tagName}
-        </span>
+        </button>
       `,
         )
         .join("")}
@@ -85,6 +101,7 @@ tagInput.addEventListener("input", function () {
   if (currentQuery === "") {
     customList.style.display = "none";
     customList.removeAttribute("data-active-index");
+    tagInput.setAttribute("aria-expanded", "false");
     return;
   }
 
@@ -94,18 +111,23 @@ tagInput.addEventListener("input", function () {
 
   if (matches.length > 0) {
     customList.innerHTML = matches
-      .map(
-        (t) => `
-  <div class="tag-item" data-tag-name="${t.name.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;")}" onclick="addTagFromUI('${t.name.replace(/'/g, "\\'")}')">
-    <strong>${t.name}</strong>
+      .map((t) => {
+        const isSeries = t.type === "series";
+        const cls = isSeries ? "tag-item tag-item-series" : "tag-item";
+        const namePrefix = isSeries ? "🧩 " : "";
+        return `
+  <button type="button" class="${cls}" role="option" aria-selected="false" data-tag-name="${escapeHtmlAttr(t.name)}" onclick="addTagFromUI('${escapeJsString(t.name)}')">
+    <strong>${namePrefix}${t.name}</strong>
     <span class="tag-desc">${t.definition || ""}</span>
-  </div>
-`,
-      )
+  </button>
+`;
+      })
       .join("");
     customList.style.display = "block";
+    tagInput.setAttribute("aria-expanded", "true");
   } else {
     customList.style.display = "none";
+    tagInput.setAttribute("aria-expanded", "false");
   }
   customList.removeAttribute("data-active-index");
 });
@@ -136,6 +158,7 @@ tagInput.addEventListener("keydown", (event) => {
     event.preventDefault();
     customList.style.display = "none";
     customList.removeAttribute("data-active-index");
+    tagInput.setAttribute("aria-expanded", "false");
   }
 });
 
@@ -165,13 +188,17 @@ function addTagFromUI(tagName) {
 
   document.getElementById("customTagList").style.display = "none";
   document.getElementById("customTagList").removeAttribute("data-active-index");
+  tagInput.setAttribute("aria-expanded", "false");
   tagInput.focus();
 }
 window.addTagFromUI = addTagFromUI;
 
 // 點擊外部關閉搜尋推薦
 document.addEventListener("click", (e) => {
-  if (e.target !== tagInput) customList.style.display = "none";
+  if (e.target !== tagInput) {
+    customList.style.display = "none";
+    tagInput.setAttribute("aria-expanded", "false");
+  }
 });
 
 initTagFeatures();

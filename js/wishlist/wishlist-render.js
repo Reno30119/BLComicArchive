@@ -10,6 +10,7 @@ import {
   deriveCoverUrl,
 } from "./wishlist-data.js";
 import { showToast } from "./wishlist-toast.js";
+import { friendlyErrorMessage } from "../error-messages.js";
 
 export function renderWishlist() {
   const grid = document.getElementById("wishlistGrid");
@@ -115,7 +116,7 @@ export function renderWishlist() {
             <div class="entry-actions">
               <button class="entry-btn" onclick="openEditModal('${escQ(entry.id)}', '${escQ(entry.title)}', '${escQ(entry.notes)}')">✎ 備註</button>
               ${!isPurchased ? `<button class="entry-btn upgrade-btn" onclick="upgradeToArchive('${escQ(entry.id)}', '${escQ(entry.title)}', '${escQ(entry.jpTitle)}', '${escQ(entry.author)}', '${escQ(entry.ebookUrl)}', '${escQ(entry.chilUrl)}', '${escQ(entry.coverUrl)}')">📚 升級</button>` : ""}
-              <button class="entry-btn delete-btn" onclick="deleteEntry('${escQ(entry.id)}')">🗑</button>
+              <button class="entry-btn delete-btn" onclick="deleteEntry('${escQ(entry.id)}', '${escQ(entry.title)}')">🗑</button>
             </div>
           </div>
           ${entryNotes}
@@ -194,7 +195,7 @@ async function reFetchWishlistCover(title, bwUrl, chilUrl, event) {
   } catch (e) {
     coverContainer.innerHTML = originalContent;
     console.error("更新錯誤:", e);
-    showToast("❌ 寫入資料庫失敗，請檢查網路連線", "error");
+    showToast("❌ 寫入失敗：" + friendlyErrorMessage(e), "error");
   }
 }
 window.reFetchWishlistCover = reFetchWishlistCover;

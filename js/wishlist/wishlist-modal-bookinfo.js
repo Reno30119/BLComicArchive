@@ -9,6 +9,7 @@ import {
 } from "./wishlist-data.js";
 import { renderWishlist } from "./wishlist-render.js";
 import { showToast } from "./wishlist-toast.js";
+import { friendlyErrorMessage } from "../error-messages.js";
 
 function openBookInfoModal(oldTitle, jpTitle, author, ebookUrl, chilUrl) {
   document.getElementById("bookInfoOldTitle").value = oldTitle;
@@ -27,6 +28,11 @@ function closeBookInfoModal() {
   document.getElementById("bookInfoModal").classList.add("hidden");
 }
 window.closeBookInfoModal = closeBookInfoModal;
+
+// 點背景關閉：跟自訂下拉選單「點外部關閉」是同一套使用者習慣。
+document.getElementById("bookInfoModal").addEventListener("click", (e) => {
+  if (e.target.id === "bookInfoModal") closeBookInfoModal();
+});
 
 async function submitBookInfoEdit() {
   const oldTitle = document.getElementById("bookInfoOldTitle").value;
@@ -79,7 +85,7 @@ async function submitBookInfoEdit() {
     );
     showToast("✅ 書籍資訊已確認更新", "success");
   } catch (e) {
-    showToast("⚠️ 尚未確認更新結果，請稍後重新同步確認", "error");
+    showToast("⚠️ 尚未確認更新結果：" + friendlyErrorMessage(e), "error");
     await fetchWishlist(true);
   }
 }

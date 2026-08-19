@@ -6,6 +6,7 @@ import {
 } from "./wishlist-data.js";
 import { renderWishlist } from "./wishlist-render.js";
 import { showToast } from "./wishlist-toast.js";
+import { friendlyErrorMessage } from "../error-messages.js";
 
 // ── 編輯備註 Modal ──
 function openEditModal(docId, title, notes) {
@@ -22,6 +23,11 @@ function closeEditModal() {
   document.getElementById("editModal").classList.add("hidden");
 }
 window.closeEditModal = closeEditModal;
+
+// 點背景關閉：跟自訂下拉選單「點外部關閉」是同一套使用者習慣。
+document.getElementById("editModal").addEventListener("click", (e) => {
+  if (e.target.id === "editModal") closeEditModal();
+});
 
 async function submitEdit() {
   const docId = document.getElementById("editTimestamp").value;
@@ -49,7 +55,7 @@ async function submitEdit() {
     );
     showToast("✅ 備註已確認更新", "success");
   } catch (e) {
-    showToast("⚠️ 尚未確認更新結果，請稍後重新同步確認", "error");
+    showToast("⚠️ 尚未確認更新結果：" + friendlyErrorMessage(e), "error");
     await fetchWishlist(true);
   }
 }
@@ -76,6 +82,11 @@ function closeStatusModal() {
   document.getElementById("statusModal").classList.add("hidden");
 }
 window.closeStatusModal = closeStatusModal;
+
+// 點背景關閉：跟自訂下拉選單「點外部關閉」是同一套使用者習慣。
+document.getElementById("statusModal").addEventListener("click", (e) => {
+  if (e.target.id === "statusModal") closeStatusModal();
+});
 
 function setStatusModalStatus(btn) {
   const s = btn.dataset.status;
@@ -118,7 +129,7 @@ async function submitStatusEdit() {
     );
     showToast("✅ 書籍狀態已確認更新", "success");
   } catch (e) {
-    showToast("⚠️ 尚未確認更新結果，請稍後重新同步確認", "error");
+    showToast("⚠️ 尚未確認更新結果：" + friendlyErrorMessage(e), "error");
     await fetchWishlist(true);
   }
 }
