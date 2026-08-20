@@ -7,6 +7,7 @@ import {
   applyFilters,
   renderActiveTagFilters,
 } from "./list-data.js";
+import { escapeHtml, escapeJsAttr } from "../html-escape.js";
 
 // 點擊文字自動填入搜尋框
 function quickSearch(text, type = "normal") {
@@ -87,7 +88,10 @@ searchInput.addEventListener("input", function () {
     }
     // 3. 標籤匹配 (關鍵：標記為 tag 類型)
     if (tags && tags.toLowerCase().includes(val)) {
-      const tagArr = tags.split(/[ ,、]+/);
+      // book.tags 是已儲存的逗號分隔字串（見 CLAUDE.md「標籤格式」），不能再用空白
+      // 當分隔符——標籤名稱本身可能含空白（例如 tags.html 建立時未強制轉換），
+      // 用空白切割會把單一標籤誤判成兩個詞，自動推薦跟著壞掉。
+      const tagArr = tags.split(/[,、]+/);
       tagArr.forEach((t) => {
         if (t.trim().toLowerCase().includes(val)) {
           suggestions.push({
@@ -108,16 +112,19 @@ searchInput.addEventListener("input", function () {
 
   if (uniqueMatches.length > 0) {
     searchRecList.innerHTML = uniqueMatches
-      .map(
-        (item) => `
-      <div class="tag-item" data-value="${item.text.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;")}" data-type="${item.type}" onclick="selectSearchRec('${item.text.replace(/'/g, "\\'")}', '${item.type}')">
+      .map((item) => {
+        const textAttr = escapeHtml(item.text);
+        const textJsAttr = escapeJsAttr(item.text);
+        const subText = escapeHtml(item.sub);
+        return `
+      <div class="tag-item" data-value="${textAttr}" data-type="${item.type}" onclick="selectSearchRec('${textJsAttr}', '${item.type}')">
         <div style="display:flex; justify-content:space-between; align-items:center;">
-          <span>${item.icon} ${item.text}</span>
-          <span class="rec-author">${item.sub}</span>
+          <span>${item.icon} ${textAttr}</span>
+          <span class="rec-author">${subText}</span>
         </div>
       </div>
-    `,
-      )
+    `;
+      })
       .join("");
     searchRecList.style.display = "block";
     searchRecList.removeAttribute("data-active-index");

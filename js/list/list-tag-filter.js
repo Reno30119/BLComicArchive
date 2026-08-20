@@ -27,8 +27,10 @@ function computeTagUniverse() {
   getAllBooks().forEach((book) => {
     const title = String(book.title || "").trim();
     if (!title || perTitleTags.has(title)) return;
+    // book.tags 是已儲存的逗號分隔字串，不能用空白切割（標籤名稱本身可能含空白），
+    // 理由同 list-data.js 的 applyFilters()。
     const tags = String(book.tags || "")
-      .split(/[ ,、]+/)
+      .split(/[,、]+/)
       .map((t) => t.trim())
       .filter(Boolean);
     perTitleTags.set(title, tags);

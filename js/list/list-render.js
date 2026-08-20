@@ -1,6 +1,7 @@
 // 書卡渲染：把 mergedBooks 陣列畫成 #bookGrid 裡的卡片，以及封面抓取的補救流程。
 import { showSyncToast } from "./list-toast.js";
 import { getTagTypeMap } from "./list-data.js";
+import { escapeHtml, escapeJsAttr } from "../html-escape.js";
 
 // 顏色邏輯：與新增時一致
 function getScoreColor(val) {
@@ -51,18 +52,26 @@ export function renderBooks(data) {
     row.dataset.ratingTier =
       ratingVal < 5.5 ? "low" : ratingVal <= 7 ? "mid" : "high";
 
-    const titleAttr = (book.title || "").replace(/"/g, "&quot;");
+    // 書名/連結等欄位可能被直接寫進 Firestore（目前 Security Rules 對所有人開放
+    // 寫入），塞進 innerHTML 之前一律要跳脫——屬性用 escapeHtml，內嵌在 onclick
+    // 裡的單引號 JS 字串則要用 escapeJsAttr（見 html-escape.js 的說明）。
+    const titleAttr = escapeHtml(book.title || "");
+    const titleJsAttr = escapeJsAttr(book.title || "");
+    const ebookUrlAttr = escapeHtml(book.ebookUrl || "");
+    const chilUrlAttr = escapeHtml(book.chilUrl || "");
+    const ebookUrlJsAttr = escapeJsAttr(book.ebookUrl || "");
+    const chilUrlJsAttr = escapeJsAttr(book.chilUrl || "");
 
     const coverHTML =
       book.coverUrl && book.coverUrl !== ""
-        ? `<img src="${book.coverUrl}" alt="${titleAttr} 封面" loading="lazy"
+        ? `<img src="${escapeHtml(book.coverUrl)}" alt="${titleAttr} 封面" loading="lazy"
           data-title="${titleAttr}"
-          data-bw="${(book.ebookUrl || "").replace(/"/g, "&quot;")}"
-          data-chil="${(book.chilUrl || "").replace(/"/g, "&quot;")}"
+          data-bw="${ebookUrlAttr}"
+          data-chil="${chilUrlAttr}"
           onerror="handleCoverError(this)">`
         : `<div class="no-cover">
            <span>無封面</span>
-           <button onclick="reFetchCover('${book.title.replace(/'/g, "\\'")}', '${book.ebookUrl || ""}', '${book.chilUrl || ""}', event)">🔍 抓取</button>
+           <button onclick="reFetchCover('${titleJsAttr}', '${ebookUrlJsAttr}', '${chilUrlJsAttr}', event)">🔍 抓取</button>
          </div>`;
 
     // 系列標籤排到最前面（穩定排序，同一組內維持原本順序），並套用不同樣式，
@@ -82,50 +91,64 @@ export function renderBooks(data) {
       .map((tag) => {
         const isSeries = tagTypeMap[tag] === "series";
         const cls = isSeries ? "tag-badge tag-badge-series" : "tag-badge";
-        const label = isSeries ? `🧩 ${tag}` : `#${tag}`;
-        return `<button type="button" class="${cls}" onclick="quickSearch('${tag.replace(/'/g, "\\'")}', 'tag')">${label}</button>`;
+        const tagText = escapeHtml(tag);
+        const label = isSeries ? `🧩 ${tagText}` : `#${tagText}`;
+        return `<button type="button" class="${cls}" onclick="quickSearch('${escapeJsAttr(tag)}', 'tag')">${label}</button>`;
       })
       .join("");
 
     const reviewsHTML = (book.reviews || [])
-      .map(
-        (r) => `
+      .map((r) => {
+        const reviewerText = escapeHtml(r.reviewer || "");
+        const reviewerJsAttr = escapeJsAttr(r.reviewer || "");
+        const commentText = escapeHtml(r.comment || "");
+        const timestampJsAttr = escapeJsAttr(String(r.timestamp ?? ""));
+        const idJsAttr = escapeJsAttr(r.id || "");
+        return `
         <div class="mini-review">
-          <span class="rev-name">${r.reviewer}</span>
+          <span class="rev-name">${reviewerText}</span>
           <span class="rev-sep">|</span>
           <span class="rev-score ${getScoreColor(r.rating)}">⭐ ${r.rating}</span>
-          <span class="rev-comment">${r.comment}</span>
-          <button class="small-edit-btn" onclick="openCommentModal('${r.timestamp}')" aria-label="編輯${r.reviewer}對《${titleAttr}》的評語">✎</button>
-          <button class="small-delete-btn" onclick="deleteReview('${r.id || ""}', '${book.title.replace(/'/g, "\\'")}', '${r.reviewer.replace(/'/g, "\\'")}')" aria-label="刪除${r.reviewer}對《${titleAttr}》的這則評論">🗑</button>
+          <span class="rev-comment">${commentText}</span>
+          <button class="small-edit-btn" onclick="openCommentModal('${timestampJsAttr}')" aria-label="編輯${reviewerText}對《${titleAttr}》的評語">✎</button>
+          <button class="small-delete-btn" onclick="deleteReview('${idJsAttr}', '${titleJsAttr}', '${reviewerJsAttr}')" aria-label="刪除${reviewerText}對《${titleAttr}》的這則評論">🗑</button>
         </div>
-      `,
-      )
+      `;
+      })
       .join("");
+
+    const authorText = escapeHtml(book.author || "");
+    const authorJsAttr = escapeJsAttr(book.author || "");
+    const jpTitleText = escapeHtml(book.jpTitle || "");
+    const twStatusText = escapeHtml(book.twStatus || "-");
+    const jpStatusText = escapeHtml(book.jpStatus || "-");
+    const levelText = escapeHtml(book.level || "");
+    const firstTimestampJsAttr = escapeJsAttr(String(book.reviews[0]?.timestamp ?? ""));
 
     row.innerHTML = `
       <div class="item-main">
         <div class="book-cover-side">${coverHTML}</div>
         <div class="item-info">
           <div class="title-row">
-            <span class="badge ${getLevelColor(book.level)}">${book.level}</span>
-            <h3 class="title">${book.title}</h3>
+            <span class="badge ${getLevelColor(book.level)}">${levelText}</span>
+            <h3 class="title">${titleAttr}</h3>
             <span class="avg-score ${getScoreColor(avgRating)}">${avgRating}</span>
-            <button class="edit-book-btn" onclick="openBookInfoModal('${book.reviews[0]?.timestamp || ""}')" title="編輯書籍基本資訊">⚙️</button>
+            <button class="edit-book-btn" onclick="openBookInfoModal('${firstTimestampJsAttr}')" title="編輯書籍基本資訊">⚙️</button>
           </div>
           <p class="author">
-            👤 <button type="button" class="author-link" onclick="quickSearch('${(book.author || "").replace(/'/g, "\\'")}')">${book.author || ""}</button>
-            <span class="jp-title">${book.jpTitle || ""}</span>
+            👤 <button type="button" class="author-link" onclick="quickSearch('${authorJsAttr}')">${authorText}</button>
+            <span class="jp-title">${jpTitleText}</span>
           </p>
           <div class="status-row">
-            <span class="status-badge-tw">🇹🇼 台：${book.twStatus || "-"}</span>
-            <span class="status-badge-jp">🇯🇵 日：${book.jpStatus || "-"}</span>
+            <span class="status-badge-tw">🇹🇼 台：${twStatusText}</span>
+            <span class="status-badge-jp">🇯🇵 日：${jpStatusText}</span>
           </div>
           <div class="tags">${tagsHTML}</div>
           <div class="item-links">
-            ${book.ebookUrl ? `<a href="${book.ebookUrl}" target="_blank" class="link-icon ebook">📖 BookWalker</a>` : ""}
-            ${book.chilUrl ? `<a href="${book.chilUrl}" target="_blank" class="link-icon chil">🍒 ちるちる</a>` : ""}
+            ${book.ebookUrl ? `<a href="${ebookUrlAttr}" target="_blank" class="link-icon ebook">📖 BookWalker</a>` : ""}
+            ${book.chilUrl ? `<a href="${chilUrlAttr}" target="_blank" class="link-icon chil">🍒 ちるちる</a>` : ""}
             <div class="add-review-action-area">
-              <button class="add-review-btn mobile-up-btn" onclick="openAddCommentModal('${book.reviews[0]?.timestamp || ""}')">📝 新增評論</button>
+              <button class="add-review-btn mobile-up-btn" onclick="openAddCommentModal('${firstTimestampJsAttr}')">📝 新增評論</button>
             </div>
           </div>
           <div class="item-reviews">${reviewsHTML}</div>
@@ -142,7 +165,7 @@ function handleCoverError(img) {
   const title = img.dataset.title || "";
   const bw = img.dataset.bw || "";
   const chil = img.dataset.chil || "";
-  img.parentElement.innerHTML = `<div class="no-cover"><span>無封面</span><button onclick="reFetchCover('${title.replace(/'/g, "\\'")}', '${bw.replace(/'/g, "\\'")}', '${chil.replace(/'/g, "\\'")}', event)">🔍 抓取</button></div>`;
+  img.parentElement.innerHTML = `<div class="no-cover"><span>無封面</span><button onclick="reFetchCover('${escapeJsAttr(title)}', '${escapeJsAttr(bw)}', '${escapeJsAttr(chil)}', event)">🔍 抓取</button></div>`;
 }
 window.handleCoverError = handleCoverError;
 
@@ -181,8 +204,8 @@ async function reFetchCover(title, bwUrl, chilUrl, event) {
 
   try {
     // 先把前端算出來的圖片網址直接顯示在畫面上，提升使用者體驗
-    const titleAttr = (title || "").replace(/"/g, "&quot;");
-    coverContainer.innerHTML = `<img src="${finalCoverUrl}" alt="${titleAttr} 封面">`;
+    const titleAttr = escapeHtml(title || "");
+    coverContainer.innerHTML = `<img src="${escapeHtml(finalCoverUrl)}" alt="${titleAttr} 封面">`;
 
     // 同步更新回 Firebase
     const formData = new FormData();

@@ -230,7 +230,8 @@ function updateDataTimeLabel(cachedAt) {
     return;
   }
   const d = new Date(cachedAt);
-  const timeStr = `${d.getHours().toString().padStart(2, "0")}:${d.getMinutes().toString().padStart(2, "0")}`;
+  const dateStr = `${d.getFullYear()}/${(d.getMonth() + 1).toString().padStart(2, "0")}/${d.getDate().toString().padStart(2, "0")}`;
+  const timeStr = `${dateStr} ${d.getHours().toString().padStart(2, "0")}:${d.getMinutes().toString().padStart(2, "0")}`;
   el.textContent = `· 🕒 資料時間 ${timeStr}`;
 }
 

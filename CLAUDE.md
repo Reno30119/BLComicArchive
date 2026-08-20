@@ -46,7 +46,12 @@ BLComicArchive-main/
 │  │                      原本只在 js/list/list-toast.js，index.html 也需要用之後抽出來；
 │  │                      list-toast.js 改成從這裡 re-export，list-data.js／
 │  │                      list-modal-comment.js／list-modal-edit.js 既有的
-│  │                      `import { friendlyErrorMessage } from "./list-toast.js"` 完全不用改
+│  │                      `import { friendlyErrorMessage } from "./list-toast.js"` 完全不用改。
+│  │                      tags.html（tags-form.js）、wishlist.html（wishlist-actions.js／
+│  │                      wishlist-render.js／wishlist-modal-add.js／
+│  │                      wishlist-modal-edit.js／wishlist-modal-bookinfo.js）之後也都
+│  │                      直接從這裡 import，四個主要頁面（index/list/tags/wishlist）
+│  │                      現在都用同一份錯誤訊息對照表，沒有各自維護一份的問題
 │  ├─ index/              index.html 專用模組（皆為 ES module，靠 import/export 溝通）
 │  │  ├─ index-main.js        進入點：匯入下面模組、處理「從待購清單升級」URL 參數帶入、
 │  │  │                        觸發首次 fetchAndRefreshStatus
@@ -122,15 +127,25 @@ BLComicArchive-main/
 │  │  └─ list-toast.js        底部提示訊息（showSyncToast）
 │  ├─ wishlist/           wishlist.html 專用模組（皆為 ES module，靠 import/export 溝通）
 │  │  ├─ wishlist-main.js     進入點：匯入下面模組（副作用匯入負責掛 window.* 綁定＋事件監聽），
-│  │  │                        觸發首次 fetchWishlist
+│  │  │                        觸發首次 fetchWishlist；集中處理 Esc 關閉 Modal（
+│  │  │                        WL_MODAL_CLOSERS 這個 id→關閉函式的對照表，涵蓋全部 5 個
+│  │  │                        Modal 包含刪除／升級確認），不用每個 Modal 檔案各自重複寫
+│  │  │                        一次 Esc 監聽；各 Modal 自己的點背景關閉邏輯仍留在各自檔案
 │  │  ├─ wishlist-data.js     資料引擎：抓取／保存待購清單、篩選＋排序狀態（含篩選 chip／
-│  │  │                        狀態下拉選單的事件綁定）、共用工具（STATUS_CONFIG、toMillis、
-│  │  │                        escH/escQ、deriveCoverUrl）、手動刷新按鈕（#wlRefreshBtn）
-│  │  │                        與資料時間標籤（#dataTimeLabel）；其他 wishlist-*.js 只透過
-│  │  │                        這裡匯出的函式讀寫資料
+│  │  │                        狀態下拉選單的事件綁定，含 aria-haspopup/aria-expanded/
+│  │  │                        aria-controls/role="listbox"/role="option"/aria-selected
+│  │  │                        的開合狀態同步，比照 list-custom-select.js 的模式；排序
+│  │  │                        按鈕〔非下拉選單，純方向切換〕改用動態 aria-label 描述目前
+│  │  │                        方向，比照 list.html 的 #sortDirToggle）、共用工具
+│  │  │                        （STATUS_CONFIG、toMillis、escH/escQ、deriveCoverUrl）、
+│  │  │                        手動刷新按鈕（#wlRefreshBtn）與資料時間標籤
+│  │  │                        （#dataTimeLabel）、confirmWishlistWrite() 可選填
+│  │  │                        onAttempt 進度回呼；其他 wishlist-*.js 只透過這裡匯出的
+│  │  │                        函式讀寫資料
 │  │  ├─ wishlist-render.js   書卡渲染（renderWishlist：篩選＋合併＋排序＋畫 HTML，篩選條件
 │  │  │                        含即時讀取 #searchInput 的搜尋字串）與封面抓取補救
-│  │  │                        （reFetchWishlistCover）
+│  │  │                        （reFetchWishlistCover）；寫入失敗訊息用
+│  │  │                        error-messages.js 的 friendlyErrorMessage() 轉成中文
 │  │  ├─ wishlist-search.js   搜尋框自動完成建議（書名/作者）、鍵盤操作；搜尋字串本身不進
 │  │  │                        wishlist-data.js 的篩選狀態，直接由 wishlist-render.js 即時
 │  │  │                        讀取 #searchInput 的值，這裡只負責觸發重繪與建議清單
@@ -138,28 +153,49 @@ BLComicArchive-main/
 │  │  │                        目前的值顯示圖片，分「載入中／推算成功／載入失敗」三種狀態；
 │  │  │                        跟 index.html 的 index-cover-preview.js 是同一套邏輯，只是
 │  │  │                        換了一組元素 id，由 wishlist-modal-add.js 在設值後呼叫
-│  │  ├─ wishlist-modal-add.js  「＋ 新增待購書籍」Modal，含書名重複偵測、封面自動帶入
-│  │  ├─ wishlist-modal-edit.js 「編輯備註」與「編輯書籍狀態」兩個小型 Modal
+│  │  ├─ wishlist-modal-add.js  「＋ 新增待購書籍」Modal，含書名重複偵測、封面自動帶入；
+│  │  │                        支援點背景關閉（Esc 由 wishlist-main.js 集中處理）；
+│  │  │                        寫入失敗訊息用 friendlyErrorMessage()
+│  │  ├─ wishlist-modal-edit.js 「編輯備註」與「編輯書籍狀態」兩個小型 Modal，都支援
+│  │  │                        點背景關閉；寫入失敗訊息用 friendlyErrorMessage()
 │  │  ├─ wishlist-modal-bookinfo.js 「⚙️ 編輯書籍資訊」Modal：改書名/日文書名/作者/
 │  │  │                        購買連結，依 oldTitle 同步更新所有同名列，連結有改動
-│  │  │                        時順便用 deriveCoverUrl() 重新推算封面
-│  │  ├─ wishlist-actions.js  書卡上的動作：升級到書庫、刪除待購紀錄
+│  │  │                        時順便用 deriveCoverUrl() 重新推算封面；支援點背景關閉；
+│  │  │                        寫入失敗訊息用 friendlyErrorMessage()
+│  │  ├─ wishlist-actions.js  書卡上的動作：升級到書庫、刪除待購紀錄；刪除／升級共用
+│  │  │                        #wlConfirmModal（不用瀏覽器原生 confirm()），
+│  │  │                        pendingWlConfirm.kind（"delete"／"upgrade"）分辨目前操作，
+│  │  │                        見下方「wishlist.html 功能說明」的「刪除／升級確認」
 │  │  └─ wishlist-toast.js    底部提示訊息（showToast）
 │  └─ tags/               tags.html 專用模組（皆為 ES module，靠 import/export 溝通）
 │     ├─ tags-main.js         進入點：匯入 tags-form.js（副作用匯入負責掛事件監聽），
 │     │                        觸發首次 loadTags
 │     ├─ tags-data.js         資料引擎：抓取／保存標籤定義清單、依 localStorage 書庫快取
-│     │                        計算標籤使用次數；tags-render.js／tags-form.js 只透過這裡
-│     │                        匯出的函式讀寫資料
+│     │                        計算標籤使用次數（`hasBooksCache()` 判斷這份快取存不存在，
+│     │                        快取不存在時 `getTagUsageCounts()` 會安靜地全部回傳 0，
+│     │                        跟「真的沒人用」看起來一樣，`updateTagCountSubtitle()`
+│     │                        會多印一行提示避免誤讀）；也負責排序狀態
+│     │                        （`sortTags()`/`setSortField()`/`resortTags()`，見下方
+│     │                        「標籤清單排序」說明）；tags-render.js／tags-form.js
+│     │                        只透過這裡匯出的函式讀寫資料
 │     ├─ tags-render.js       標籤清單渲染（renderTagList，純畫 HTML，不綁事件）；依
 │     │                        type 分成「🧩 系列標籤」「🏷️ 內容標籤」兩個 <details>/
 │     │                        <summary> 區塊（原生可折疊，不用額外寫開合邏輯），沒有
-│     │                        type 欄位的舊標籤一律當內容標籤，不用遷移資料；每次重新
-│     │                        渲染都預設展開，不記憶使用者上次折疊狀態
+│     │                        type 欄位的舊標籤一律當內容標籤，不用遷移資料；折疊狀態
+│     │                        靠模組層級變數記住，重繪（搜尋/排序/存檔/刪除都會重繪）
+│     │                        時讀出來套用，不會每次都被打回展開；`.tag-name`（點擊
+│     │                        跳轉去看該標籤所有書籍）是真正的 <button>（原本是
+│     │                        <span onclick>，同一個坑 list-render.js 的 .tag-badge
+│     │                        已經踩過一次），系列標籤的 `.tag-name-series` 額外套用
+│     │                        琥珀色（跟 list.html／index.html 同一組視覺語言）
 │     └─ tags-form.js         新增／編輯／刪除標籤表單邏輯、標籤清單的點擊互動（用事件
-│                              委派掛在容器上）、搜尋框篩選；標籤類型（系列／內容）用
-│                              跟評論者/分級按鈕同一套 active class + 隱藏欄位（#tagType）
-│                              寫法，見下方「標籤類型」說明
+│                              委派掛在容器上）、搜尋框篩選（`applySearchAndRender()`
+│                              統一處理，排序按鈕切換時也呼叫這個而不是直接
+│                              renderTagList，確保不會把使用者當下的搜尋結果清空）；
+│                              標籤類型（系列／內容）用跟評論者/分級按鈕同一套 active
+│                              class + 隱藏欄位（#tagType）寫法，見下方「標籤類型」
+│                              說明；刪除/合併共用 #tagConfirmModal（不用原生
+│                              confirm()），`pendingTagConfirm.kind` 分辨目前操作
 ├─ assets/
 │  ├─ manifest.json      PWA 設定（主畫面捷徑用；start_url 用 "../list.html" 指回根目錄）
 │  └─ apple-touch-icon.png  iOS 主畫面圖示（需先執行 generate-icon.html 產生）
@@ -172,7 +208,8 @@ BLComicArchive-main/
 > `js/index/`、`js/list/`、`js/wishlist/`、`js/tags/` 底下的模組彼此用相對路徑 `import`，一起搬動即可，不受根目錄結構影響。
 > `wishlist.html`、`tags.html` 的 `<script type="module">` 一定要保留 `type="module"`——如果改回普通 `<script>`，會在 `app.js`（`type="module"`，延後到文件解析完才執行）跑完之前就先同步執行，導致呼叫 `BookArchive.*` 時噴 `BookArchive is not defined`（之前 `tags.html` 就是踩到這個）。
 > 自訂下拉選單（`list-custom-select.js`／`list-tag-filter.js`／`wishlist-data.js` 的狀態篩選）的開關按鈕**不能呼叫 `e.stopPropagation()`**——「點外部關閉」的邏輯是掛在 `document` 上監聽 click 冒泡，呼叫了 stopPropagation 會讓事件冒泡不到 document，導致點另一個下拉選單時，前一個收不起來。判斷「點到自己內部不算外部點擊」已經靠 `closest()` 處理了，不需要靠阻止冒泡（這幾支檔案都各自踩過這個坑）。
-> **把互動元素從 `<span onclick>` 改成 `<button>`（或其他元素類型）時，要檢查有沒有依賴「元素類型」的 CSS 選擇器會因此失效**——`list-render.js` 的 `.tag-badge` 曾經是 `<span class="tag-badge">`，同時符合 `.tag-badge`（class，特異性 0,1,0）跟一條舊規則 `.tags span`（class+元素類型，特異性 0,1,1，比較高），兩條都設定 background/color 時，特異性較高的 `.tags span` 會贏，所以畫面上一直是 `.tags span` 的灰色，`.tag-badge` 自己寫的藍色其實從沒生效過。後來把 `<span>` 改成 `<button>`（為了鍵盤可操作性）之後，`.tags span` 因為元素類型對不上而不再匹配，灰色規則失效，`.tag-badge` 自己的藍色設定才第一次真的顯示出來——結果是使用者從沒看過的顏色，被誤以為是設計改版。現在已經把灰色數值直接寫進 `.tag-badge` 本身、刪掉 `.tags span`，不再依賴外部規則覆蓋；之後改任何元素的標籤類型，記得搜尋一次有沒有『類別+元素類型』的複合選擇器在吃該元素的樣式。
+> **把互動元素從 `<span onclick>` 改成 `<button>`（或其他元素類型）時，要檢查有沒有依賴「元素類型」的 CSS 選擇器會因此失效**——`list-render.js` 的 `.tag-badge` 曾經是 `<span class="tag-badge">`，同時符合 `.tag-badge`（class，特異性 0,1,0）跟一條舊規則 `.tags span`（class+元素類型，特異性 0,1,1，比較高），兩條都設定 background/color 時，特異性較高的 `.tags span` 會贏，所以畫面上一直是 `.tags span` 的灰色，`.tag-badge` 自己寫的藍色其實從沒生效過。後來把 `<span>` 改成 `<button>`（為了鍵盤可操作性）之後，`.tags span` 因為元素類型對不上而不再匹配，灰色規則失效，`.tag-badge` 自己的藍色設定才第一次真的顯示出來——結果是使用者從沒看過的顏色，被誤以為是設計改版。現在已經把灰色數值直接寫進 `.tag-badge` 本身、刪掉 `.tags span`，不再依賴外部規則覆蓋；之後改任何元素的標籤類型，記得搜尋一次有沒有『類別+元素類型』的複合選擇器在吃該元素的樣式。這個坑後來在 `tags.html` 的 `.tag-name`（`js/tags/tags-render.js`）又踩過一次同一種模式（`<span>`→`<button>`），提醒這是全站會重複出現的陷阱，不是修一次就永遠不會再發生。
+> **把 `#xxxModal` 這種確認視窗搬到新頁面時，`.modal.hidden { display: none }` 要嘛跟 `.modal { display: flex }` 寫在同一個檔案裡、嘛就直接寫成複合選擇器，不要指望「反正 `.hidden` 定義在別的檔案裡」**——`tags.html` 的 `#tagConfirmModal` 剛加上去時，`.modal { display: flex; ... }` 寫在 `tags-style.css`，但 `.hidden { display: none; }` 這個共用工具 class 定義在**先載入**的 `style.css`。兩條規則對同一個屬性（`display`）的特異性完全一樣（都是單一 class），CSS 疊層規則是「特異性同分時，後面載入的規則贏」，`tags-style.css` 比 `style.css`晚載入，所以 `.modal` 的 `display: flex` 蓋過 `.hidden` 的 `display: none`，導致 Modal 一進頁面就顯示出來（使用者回報「為什麼一進去就跳出刪除標籤提示」才發現）。修法是直接寫 `.modal.hidden { display: none; }` 複合選擇器（特異性 0,2,0，一定贏），不要依賴載入順序這種脆弱的東西。後來幫 `wishlist.html` 加同樣的 `#wlConfirmModal` 時，因為 `wishlist-style.css` 本來就自己定義了完整一份 `.modal`／`.modal.hidden`（不是共用 `list-style.css` 的），所以沒有踩到這個坑，但這不代表以後都不會踩到——**之後任何地方要新增或搬動 Modal，先確認 `.modal` 跟 `.hidden`（或任何拿來控制顯示/隱藏的 class）是不是定義在不同檔案裡，是的話直接寫複合選擇器保險**。
 
 ## Firestore 資料結構
 
@@ -241,7 +278,7 @@ BLComicArchive-main/
 - `doGet` 對應的 action：`read`、`readTags`、`readWishlist`（都會附加文件 `id`）、`fetchCover`、`fetchMeta`
 - `fetchCover`／`fetchMeta`：**目前是佔位邏輯**，因為純前端瀏覽器無法跨域爬蟲，永遠回傳空結果。要真的抓封面/書籍資料需要另外做 Firebase Cloud Functions 或保留一支純抓圖用的 GAS
 - `postForm(formData)` 對應的 action：`processForm`（新增書籍/評論）、`update`（修改書籍，`docId` 定位個人欄位、`oldTitle` 定位共用欄位）、`updateCoverOnly`（只更新封面）、`deleteReview`（刪除單筆評論／書籍列）、`upsertTag`（新增/更新標籤定義；額外帶 `oldName` 時會觸發改名／合併，見「tags.html 功能說明」）、`deleteTag`、`addWishlist`、`updateWishlist`（`docId` 定位個人欄位、`oldTitle`〔沒有則退回 `title`〕定位共用欄位）、`deleteWishlist`
-- `waitForCollection({action, matches, attempts, delayMs, onAttempt})`：寫入後輪詢確認資料真的反映到 Firestore 才回報成功，避免「以為成功但其實沒寫進去」。`onAttempt(attempt, attempts)` 是選填的進度回呼，每次輪詢前呼叫一次；`list.html` 的新增評論／編輯／刪除、`index.html` 新增書籍的送出流程都有帶這個參數，把按鈕文字更新成「確認中… (2/8)」這種進度提示，避免最長 16 秒的等待看起來像卡住（沒帶這個參數的呼叫端行為不受影響，純粹是額外選填）
+- `waitForCollection({action, matches, attempts, delayMs, onAttempt})`：寫入後輪詢確認資料真的反映到 Firestore 才回報成功，避免「以為成功但其實沒寫進去」。`onAttempt(attempt, attempts)` 是選填的進度回呼，每次輪詢前呼叫一次；`list.html` 的新增評論／編輯／刪除、`index.html` 新增書籍、`tags.html` 的新增/編輯/刪除/合併標籤、`wishlist.html` 升級到書庫的送出流程都有帶這個參數，把按鈕文字更新成「確認中… (2/8)」這種進度提示，避免最長 16 秒的等待看起來像卡住（沒帶這個參數的呼叫端行為不受影響，純粹是額外選填）。`wishlist.html` 的 `confirmWishlistWrite()` 是包了一層的版本，額外把確認過的資料寫回 `wishlistCache` 並觸發 `renderWishlist()`，也接受同樣的 `onAttempt` 選填參數往下傳
 - `restoreBackup(payload, onProgress)`：`backup.html` 專用，把備份 JSON 裡的每筆資料用 `id` 當文件 ID 寫回去（`setDoc(..., {merge:true})`），**只會新增/補回，不會刪除任何現有資料**
 - 欄位更新使用 `!== undefined` 判斷，確保空字串也能清空欄位
 
@@ -308,9 +345,23 @@ BLComicArchive-main/
   - 改成一個全新的名稱 → 重新命名，`books` collection 裡所有引用到舊名稱的列，`tags`
     欄位會同步換成新名稱，舊標籤文件刪除
   - 改成一個「已存在」的標籤名稱 → 合併，舊標籤底下的書籍併入既有標籤（存檔前會跳
-    `confirm()` 二次確認），合併後的定義以表單當時填的內容為準，舊標籤文件刪除
+    `#tagConfirmModal` 二次確認，不是瀏覽器原生 `confirm()`——`/impeccable harden`
+    之後統一改用自訂視窗，見下方「刪除／合併確認」說明），合併後的定義以表單當時
+    填的內容為準，舊標籤文件刪除
   - 因為標籤文件 ID 就是名稱本身，如果沒有這個機制，單純改名稱欄位存檔只會多產生一筆
     新標籤文件，不會清掉舊的、也不會同步任何書籍的 `tags` 欄位（曾經是實際踩過的坑）
+- **刪除／合併確認**：`#tagConfirmModal` 是刪除標籤跟合併標籤共用的同一個 Modal
+  （`js/tags/tags-form.js` 用 `pendingTagConfirm.kind`〔`"delete"`／`"merge"`〕分辨
+  目前要執行哪一種），支援 Esc／點背景關閉；刪除時如果這個標籤有書籍在用，對話框
+  會帶出使用次數。`deleteTag` 這個 action（`app.js`）現在會先把這個標籤從所有引用
+  到它的書籍 `tags` 欄位移除，才刪標籤文件本身，對稱於 `upsertTag` 改名分支的做法，
+  避免刪除後書籍留下指向不存在標籤的孤兒字串（曾經只刪標籤文件、沒清書籍引用，
+  已修正）
+- **標籤清單排序**：「📋 標籤清單」下方有「🔤 名稱」／「🔢 使用次數」兩顆排序按鈕
+  （`tags-data.js` 的 `sortTags()`/`setSortField()`/`resortTags()`），再點一次同一個
+  按鈕會反轉方向（跟 `list.html` 排序 UI 同一套操作習慣）；排序結果會保留系列/內容
+  兩個分區，不會打散；切換排序時如果搜尋框有內容，篩選結果會保留（`tags-form.js`
+  的 `applySearchAndRender()` 統一處理重繪，搜尋輸入跟排序按鈕都呼叫它）
 - **標籤類型（系列／內容）**：新增/編輯標籤時，標籤名稱下方可以切換「🏷️ 內容標籤」／
   「🧩 系列標籤」（`.rev-btn` 樣式，跟 `index.html` 評論者/分級按鈕同一套 active class +
   隱藏欄位寫法），存進 `tags` collection 的 `type` 欄位。這個功能是設計來解決「同系列
@@ -383,8 +434,41 @@ BLComicArchive-main/
 - **新增時重複偵測**：輸入書名時即時比對現有待購，提示自己已有或對方也有
 - **ちるちる 自動帶入**：目前 `fetchMeta` 是佔位邏輯（見「已知限制」），這個自動帶入功能實際上不會抓到資料
 - **升級到書庫**：點「📚 升級」按鈕後，該筆待購標記為 `purchased`，並跳轉到 `index.html` 並帶入書名、日文書名、作者、連結、封面等資料（URL 參數 `prefill=1`）
-- **樂觀更新**：新增、編輯、刪除操作先更新畫面，再發送 Firestore 寫入，並用 `waitForCollection` 輪詢確認寫入成功
+- **樂觀更新**：新增、編輯、刪除操作先更新畫面，再發送 Firestore 寫入，並用 `waitForCollection` 輪詢確認寫入成功；升級到書庫例外——因為緊接著就要導去 `index.html`，改成先等 `confirmWishlistWrite()` 確認已購入狀態真的寫進去、按鈕顯示「確認中... (n/8)」，才關閉確認視窗並跳轉，避免「以為標記成功結果沒存到」又跳走頁面回不去
 - **手動刷新／資料時間**：「🔄 更新書庫」按鈕（`#wlRefreshBtn`）強制略過 3 分鐘快取重新讀取；「共 N 本書籍」那行旁邊的 `#dataTimeLabel` 顯示上次資料時間（`HH:MM`），跟 `index.html`／`list.html` 的「🕒 資料時間」是同一套邏輯
+- **刪除／升級確認**：`#wlConfirmModal` 是刪除待購紀錄跟升級到書庫共用的同一個 Modal
+  （`js/wishlist/wishlist-actions.js` 用 `pendingWlConfirm.kind` 分辨目前要執行哪一種），
+  沿用 wishlist.html 自己既有的 `.modal`/`.modal-box`/`.modal-footer` 樣式（不是從
+  `list.html` 搬 CSS 過來，因為 wishlist.html 本來就有自己一套完整的 Modal 系統），
+  另外新增 `.modal-danger-btn` 紅色按鈕、`.wl-confirm-warning` 紅字警告框；不用瀏覽器
+  原生 `confirm()`（`/impeccable harden` 之前兩個操作都是原生 `confirm()`，跟頁面其他
+  Modal 的視覺風格不一致，已統一）
+  - **如果要刪除的是這本書目前唯一的一筆待購紀錄**：`deleteEntry()` 會先算出
+    `sameTitleCount`，是最後一筆的話會在確認視窗裡額外插入紅字警告「書名／作者／
+    連結／狀態等資料會一併消失」，因為書籍共用屬性（title/jpTitle/author/ebookUrl/
+    chilUrl/status/coverUrl）也是存在同一份文件上，沒有其他人的紀錄可以承載時，
+    刪掉就等於整本書的共用資料消失——邏輯比照 `list.html` 的 `deleteReview()`
+  - 刪除本身延續原本的樂觀更新設計：確認後立刻關閉視窗、更新畫面，不等 Firestore
+    回應才關視窗（跟升級到書庫的等待邏輯不對稱，是刻意的，不是疏漏）
+  - `addModal`／`bookInfoModal`／`editModal`／`statusModal`／`wlConfirmModal` 五個
+    Modal 都支援 Esc／點背景關閉（`wishlist-main.js` 集中處理 Esc，各檔案自己處理
+    點背景），跟自訂下拉選單「點外部關閉」是同一套使用者習慣
+  - 寫入失敗的錯誤訊息全部走 `error-messages.js` 的 `friendlyErrorMessage()`，不直接
+    顯示原始 `err.message`
+- **無障礙補強**：`#searchInput` 補了 `aria-label`；狀態篩選下拉選單（`#statusFilterToggle`／
+  `#statusFilterDropdown`）補齊 `aria-haspopup`/`aria-expanded`/`aria-controls`/
+  `role="listbox"`/`role="option"`/`aria-selected`，比照 `list-custom-select.js` 的模式；
+  排序按鈕（`#sortToggleBtn`）不是下拉選單、只是單一方向反轉按鈕，改用動態
+  `aria-label`（「依新增日期，目前新到舊，點擊改成舊到新」）描述目前狀態，比照
+  `list.html` 的 `#sortDirToggle`，不是套用下拉選單那組屬性
+- **觸控裝置點擊區域**：`.entry-btn`（✎ 備註／📚 升級／🗑 刪除）在
+  `@media (pointer: coarse)` 下會放大點擊區域、`.delete-btn` 額外拉開跟前面按鈕的
+  間距，理由跟 `list.html` 的 `.small-delete-btn`／`.small-edit-btn` 一樣（降低誤觸到
+  刪除這個不可逆操作的機率）。這條規則刻意寫在 `wishlist-style.css` 既有的
+  `@media (max-width: 540px)`（把 `.entry-btn` 縮小的規則）**之後**——手機同時符合
+  兩個 media query，兩條規則對 `.entry-btn` 特異性一樣，寫在後面的才會贏，不然觸控
+  保護會被窄螢幕的縮小規則悄悄蓋掉（跟上方「檔案結構」章節提到的 `.modal.hidden`
+  疊層順序坑是同一種「CSS 特異性同分時看載入/宣告順序」的問題）
 
 ## index.html URL 參數（升級待購用）
 

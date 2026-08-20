@@ -2,6 +2,7 @@
 // 依進入方式切換顯示欄位；也包含標籤輸入的自動完成。
 import { getAllBooks, setAllBooks, buildMergedBooks, applyFilters } from "./list-data.js";
 import { showSyncToast, friendlyErrorMessage } from "./list-toast.js";
+import { escapeHtml, escapeJsAttr } from "../html-escape.js";
 
 function openEditModal(ts) {
   // 找尋對應時間戳記的原始資料
@@ -341,14 +342,17 @@ editTagInput.addEventListener("input", function () {
 
   if (matches.length > 0) {
     customList.innerHTML = matches
-      .map(
-        (t) => `
-<div class="tag-item" data-tag-name="${t.name.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;")}" onclick="applyTagToEdit('${t.name.replace(/'/g, "\\'")}')">
-  <strong>${t.name}</strong>
-  <span class="tag-desc">${t.definition || ""}</span>
+      .map((t) => {
+        const nameAttr = escapeHtml(t.name);
+        const nameJsAttr = escapeJsAttr(t.name);
+        const defText = escapeHtml(t.definition || "");
+        return `
+<div class="tag-item" data-tag-name="${nameAttr}" onclick="applyTagToEdit('${nameJsAttr}')">
+  <strong>${nameAttr}</strong>
+  <span class="tag-desc">${defText}</span>
 </div>
-`,
-      )
+`;
+      })
       .join("");
     customList.style.display = "block";
   } else {

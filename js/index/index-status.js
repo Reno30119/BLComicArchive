@@ -39,7 +39,8 @@ function updateBadges(source, cachedAt) {
       .map((book) => normalizeText(String(book.title))),
   );
   const updateTime = cachedAt ? new Date(cachedAt) : new Date();
-  const timeStr = `${updateTime.getHours().toString().padStart(2, "0")}:${updateTime.getMinutes().toString().padStart(2, "0")}`;
+  const dateStr = `${updateTime.getFullYear()}/${(updateTime.getMonth() + 1).toString().padStart(2, "0")}/${updateTime.getDate().toString().padStart(2, "0")}`;
+  const timeStr = `${dateStr} ${updateTime.getHours().toString().padStart(2, "0")}:${updateTime.getMinutes().toString().padStart(2, "0")}`;
   if (dbCountBadge) {
     const sourceText = source === "network" ? "已重新讀取" : "沿用先前資料";
     dbCountBadge.innerHTML = `📖 ${sourceText}：${uniqueTitles.size} 本 (共 ${allBooks.length} 筆評論)`;

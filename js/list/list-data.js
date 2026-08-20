@@ -4,6 +4,7 @@
 import { renderBooks } from "./list-render.js";
 import { showSyncToast, friendlyErrorMessage } from "./list-toast.js";
 import { refreshCustomSelects } from "./list-custom-select.js";
+import { escapeHtml } from "../html-escape.js";
 
 let allBooks = [];
 let mergedBooks = [];
@@ -84,7 +85,8 @@ function updateDataTimeLabel(cachedAt) {
     return;
   }
   const d = new Date(cachedAt);
-  const timeStr = `${d.getHours().toString().padStart(2, "0")}:${d.getMinutes().toString().padStart(2, "0")}`;
+  const dateStr = `${d.getFullYear()}/${(d.getMonth() + 1).toString().padStart(2, "0")}/${d.getDate().toString().padStart(2, "0")}`;
+  const timeStr = `${dateStr} ${d.getHours().toString().padStart(2, "0")}:${d.getMinutes().toString().padStart(2, "0")}`;
   el.textContent = `· 🕒 資料時間 ${timeStr}`;
 }
 
@@ -280,9 +282,12 @@ export function applyFilters() {
     const query = searchTerm.trim();
     const selectedTags = selectedSearchTagsForFilter;
     const textQuery = query;
+    // book.tags 是已儲存的逗號分隔字串，不能用空白切割——標籤名稱本身可能含空白
+    // （例如 tags.html 建立時未強制轉換），用空白切割會把單一標籤誤判成兩個詞，
+    // 導致篩選永遠比對不到完整標籤名稱。
     const bookTagList = String(book.tags || "")
       .toLowerCase()
-      .split(/[ ,、]+/)
+      .split(/[,、]+/)
       .map((tag) => tag.trim())
       .filter(Boolean);
 
@@ -523,7 +528,7 @@ export function renderActiveTagFilters() {
 
   activeTagFilters.innerHTML = `
     <span class="active-tag-filter-label">標籤條件（全部符合）</span>
-    ${tags.map((tag) => `<button type="button" class="active-tag-filter" data-tag="${tag.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;")}">#${tag}<span aria-hidden="true">×</span></button>`).join("")}
+    ${tags.map((tag) => `<button type="button" class="active-tag-filter" data-tag="${escapeHtml(tag)}">#${escapeHtml(tag)}<span aria-hidden="true">×</span></button>`).join("")}
     <button type="button" class="clear-tag-filters">清除標籤</button>
   `;
   activeTagFilters.style.display = "flex";

@@ -1,5 +1,9 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import {
+  initializeAppCheck,
+  ReCaptchaV3Provider,
+} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app-check.js";
+import {
   initializeFirestore, // 👈 新增這行
   persistentLocalCache, // 👈 新增這行
   persistentMultipleTabManager, // 👈 新增這行
@@ -27,6 +31,44 @@ import {
 
   // 2. 初始化 Firebase 與 Firestore
   const app = initializeApp(firebaseConfig);
+
+  // 2.5 啟用 App Check：目前 Firestore Security Rules 對所有人開放寫入，唯一的
+  // 防線是「這個請求真的是從我們自己的網頁發出的」——App Check 會在每個
+  // Firestore 請求附上一組由 reCAPTCHA v3 簽發、短時效的憑證，Firestore 後台
+  // （App Check 設定裡開啟 Enforce 之後）只接受帶著合法憑證的請求，擋掉直接
+  // 拿 apiKey 從 console／腳本呼叫 SDK 寫入的行為。這不是驗證「是不是 Reno／
+  // 茶壺本人」（沒有登入機制就做不到這件事），只是把「任何人」限縮成「任何
+  // 打開這個網站真的執行過這段 JS 的瀏覽器」。
+  //
+  // 這行本身不會生效，還需要：
+  //   1. 到 https://www.google.com/recaptcha/admin/create 註冊一個 reCAPTCHA v3
+  //      站台（挑 v3，不是 v2），網域填實際部署的網域（有多個網域/localhost 都
+  //      要加進去），拿到 Site Key 貼到下面 RECAPTCHA_V3_SITE_KEY
+  //   2. Firebase Console → App Check，註冊這個 Web App，Provider 選
+  //      reCAPTCHA v3，貼上同一組 Site Key
+  //   3. Firebase Console → App Check → Cloud Firestore，先切到「監控」模式
+  //      觀察幾天確認自己人的請求都被判定為合法，再切成「強制」(Enforce)，
+  //      沒有 Enforce 之前，這段程式碼只是發憑證、Firestore 並不會真的檢查它
+  // reCAPTCHA v3 需要頁面透過 http(s) 網域載入才會動作，本機用 file:// 直接
+  // 開啟 HTML 檔案不會生效。
+  const RECAPTCHA_V3_SITE_KEY = "6LdGaI8tAAAAAKcxPu2w3-zo4FygWnMvxfy_8O5D";
+  // 本機用 127.0.0.1 測試時 reCAPTCHA 會噴 appCheck/recaptcha-error（Google 只
+  // 自動放行 localhost 這個網域名稱，不包含 127.0.0.1），先關掉避免主控台一直
+  // 洗錯誤訊息。Firestore 目前還是 Monitor 模式（還沒切 Enforce），關掉這段
+  // 完全不影響讀寫，正式部署到 GitHub Pages 前記得改回 true。
+  const APP_CHECK_ENABLED = false;
+  if (APP_CHECK_ENABLED && !RECAPTCHA_V3_SITE_KEY.includes(" ")) {
+    initializeAppCheck(app, {
+      provider: new ReCaptchaV3Provider(RECAPTCHA_V3_SITE_KEY),
+      isTokenAutoRefreshEnabled: true,
+    });
+  } else if (!APP_CHECK_ENABLED) {
+    console.warn("App Check 目前手動關閉中（APP_CHECK_ENABLED = false）。");
+  } else {
+    console.warn(
+      "App Check 尚未設定 RECAPTCHA_V3_SITE_KEY，目前 Firestore 請求沒有 App Check 憑證保護。",
+    );
+  }
 
   // 3. 🔥 啟用 Firestore 持久化快取 (取代原本的 const db = getFirestore(app);)
   const db = initializeFirestore(app, {
@@ -265,14 +307,14 @@ import {
             const booksSnap = await getDocs(collection(db, "books"));
             const bookUpdates = [];
             booksSnap.docs.forEach((d) => {
+              // 已儲存的逗號分隔字串，不能用空白切割（標籤名稱本身可能含空白），
+              // 不然含空白的標籤永遠比對不到 oldName，改名/合併會悄悄漏掉這些書籍。
               const parts = String(d.data().tags || "")
-                .split(/[ ,、]+/)
+                .split(/[,、]+/)
                 .map((t) => t.trim())
                 .filter(Boolean);
               if (!parts.includes(oldName)) return;
-              const replaced = parts.map((t) =>
-                t === oldName ? newName : t,
-              );
+              const replaced = parts.map((t) => (t === oldName ? newName : t));
               const deduped = [...new Set(replaced)];
               bookUpdates.push(updateDoc(d.ref, { tags: deduped.join(", ") }));
             });
@@ -292,13 +334,16 @@ import {
             const booksSnap = await getDocs(collection(db, "books"));
             const bookUpdates = [];
             booksSnap.docs.forEach((d) => {
+              // 同上：已儲存的逗號分隔字串，不能用空白切割。
               const parts = String(d.data().tags || "")
-                .split(/[ ,、]+/)
+                .split(/[,、]+/)
                 .map((t) => t.trim())
                 .filter(Boolean);
               if (!parts.includes(tagNameToDelete)) return;
               const remaining = parts.filter((t) => t !== tagNameToDelete);
-              bookUpdates.push(updateDoc(d.ref, { tags: remaining.join(", ") }));
+              bookUpdates.push(
+                updateDoc(d.ref, { tags: remaining.join(", ") }),
+              );
             });
             await Promise.all(bookUpdates);
             await deleteDoc(doc(db, "tags", tagNameToDelete));
