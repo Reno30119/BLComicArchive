@@ -65,6 +65,7 @@ export function renderBooks(data) {
     const coverHTML =
       book.coverUrl && book.coverUrl !== ""
         ? `<img src="${escapeHtml(book.coverUrl)}" alt="${titleAttr} 封面" loading="lazy"
+          referrerpolicy="no-referrer"
           data-title="${titleAttr}"
           data-bw="${ebookUrlAttr}"
           data-chil="${chilUrlAttr}"
@@ -123,7 +124,9 @@ export function renderBooks(data) {
     const twStatusText = escapeHtml(book.twStatus || "-");
     const jpStatusText = escapeHtml(book.jpStatus || "-");
     const levelText = escapeHtml(book.level || "");
-    const firstTimestampJsAttr = escapeJsAttr(String(book.reviews[0]?.timestamp ?? ""));
+    const firstTimestampJsAttr = escapeJsAttr(
+      String(book.reviews[0]?.timestamp ?? ""),
+    );
 
     row.innerHTML = `
       <div class="item-main">
@@ -205,7 +208,7 @@ async function reFetchCover(title, bwUrl, chilUrl, event) {
   try {
     // 先把前端算出來的圖片網址直接顯示在畫面上，提升使用者體驗
     const titleAttr = escapeHtml(title || "");
-    coverContainer.innerHTML = `<img src="${escapeHtml(finalCoverUrl)}" alt="${titleAttr} 封面">`;
+    coverContainer.innerHTML = `<img src="${escapeHtml(finalCoverUrl)}" alt="${titleAttr} 封面" referrerpolicy="no-referrer">`;
 
     // 同步更新回 Firebase
     const formData = new FormData();
