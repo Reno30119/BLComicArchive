@@ -1,0 +1,228 @@
+// 書卡渲染：把 mergedBooks 陣列畫成 #bookGrid 裡的卡片，以及封面抓取的補救流程。
+import { showSyncToast } from "./list-toast.js";
+import { getTagTypeMap } from "./list-data.js";
+import { escapeHtml, escapeJsAttr } from "../html-escape.js";
+
+// 顏色邏輯：與新增時一致
+function getScoreColor(val) {
+  const s = parseFloat(val);
+  if (s < 5.5) return "text-green";
+  if (s <= 7) return "text-blue";
+  return "text-red";
+}
+
+function getLevelColor(level) {
+  const mapping = {
+    肉多: "red",
+    正常: "blue",
+    肉少: "orange",
+    清水: "green",
+  };
+  return mapping[level] || "green";
+}
+
+export function renderBooks(data) {
+  const grid = document.getElementById("bookGrid");
+  if (!grid) return;
+
+  grid.innerHTML = "";
+  const fragment = document.createDocumentFragment();
+
+  const filteredData = data.filter(
+    (item) => item.title && String(item.title).trim() !== "",
+  );
+
+  // 注意：只能寫 #resultCountText，不能直接寫 #resultCount 的 textContent——
+  // #resultCount 底下還有 #dataTimeLabel（顯示資料刷新時間），整個覆蓋會把它一起清掉。
+  const countEl = document.getElementById("resultCountText");
+  if (countEl) {
+    countEl.textContent =
+      filteredData.length > 0
+        ? `共 ${filteredData.length} 本書籍`
+        : "無符合條件的書籍";
+  }
+
+  filteredData.forEach((book) => {
+    const row = document.createElement("div");
+    row.className = "book-list-item";
+    row.dataset.level = book.level || "";
+
+    const avgRating = parseFloat(book.avgRating || 0).toFixed(1);
+    const ratingVal = parseFloat(avgRating);
+    row.dataset.ratingTier =
+      ratingVal < 5.5 ? "low" : ratingVal <= 7 ? "mid" : "high";
+
+    // 書名/連結等欄位可能被直接寫進 Firestore（目前 Security Rules 對所有人開放
+    // 寫入），塞進 innerHTML 之前一律要跳脫——屬性用 escapeHtml，內嵌在 onclick
+    // 裡的單引號 JS 字串則要用 escapeJsAttr（見 html-escape.js 的說明）。
+    const titleAttr = escapeHtml(book.title || "");
+    const titleJsAttr = escapeJsAttr(book.title || "");
+    const ebookUrlAttr = escapeHtml(book.ebookUrl || "");
+    const chilUrlAttr = escapeHtml(book.chilUrl || "");
+    const ebookUrlJsAttr = escapeJsAttr(book.ebookUrl || "");
+    const chilUrlJsAttr = escapeJsAttr(book.chilUrl || "");
+
+    const coverHTML =
+      book.coverUrl && book.coverUrl !== ""
+        ? `<img src="${escapeHtml(book.coverUrl)}" alt="${titleAttr} 封面" loading="lazy"
+          referrerpolicy="no-referrer"
+          data-title="${titleAttr}"
+          data-bw="${ebookUrlAttr}"
+          data-chil="${chilUrlAttr}"
+          onerror="handleCoverError(this)">`
+        : `<div class="no-cover">
+           <span>無封面</span>
+           <button onclick="reFetchCover('${titleJsAttr}', '${ebookUrlJsAttr}', '${chilUrlJsAttr}', event)">🔍 抓取</button>
+         </div>`;
+
+    // 系列標籤排到最前面（穩定排序，同一組內維持原本順序），並套用不同樣式，
+    // 讓使用者一眼看出「這是系列標籤」而不是一般內容標籤（見 tags.html 的
+    // 標籤類型設定）。tagTypeMap 抓不到（例如還在載入中）時，找不到的標籤一律
+    // 當內容標籤處理，不影響原本的顯示。
+    const tagTypeMap = getTagTypeMap();
+    const tagList = (book.tags ? String(book.tags).split(",") : [])
+      .map((t) => t.trim())
+      .filter(Boolean);
+    const sortedTagList = [...tagList].sort((a, b) => {
+      const aIsSeries = tagTypeMap[a] === "series" ? 0 : 1;
+      const bIsSeries = tagTypeMap[b] === "series" ? 0 : 1;
+      return aIsSeries - bIsSeries;
+    });
+    const tagsHTML = sortedTagList
+      .map((tag) => {
+        const isSeries = tagTypeMap[tag] === "series";
+        const cls = isSeries ? "tag-badge tag-badge-series" : "tag-badge";
+        const tagText = escapeHtml(tag);
+        const label = isSeries ? `🧩 ${tagText}` : `#${tagText}`;
+        return `<button type="button" class="${cls}" onclick="quickSearch('${escapeJsAttr(tag)}', 'tag')">${label}</button>`;
+      })
+      .join("");
+
+    const reviewsHTML = (book.reviews || [])
+      .map((r) => {
+        const reviewerText = escapeHtml(r.reviewer || "");
+        const reviewerJsAttr = escapeJsAttr(r.reviewer || "");
+        const commentText = escapeHtml(r.comment || "");
+        const timestampJsAttr = escapeJsAttr(String(r.timestamp ?? ""));
+        const idJsAttr = escapeJsAttr(r.id || "");
+        return `
+        <div class="mini-review">
+          <span class="rev-name">${reviewerText}</span>
+          <span class="rev-sep">|</span>
+          <span class="rev-score ${getScoreColor(r.rating)}">⭐ ${r.rating}</span>
+          <span class="rev-comment">${commentText}</span>
+          <button class="small-edit-btn" onclick="openCommentModal('${timestampJsAttr}')" aria-label="編輯${reviewerText}對《${titleAttr}》的評語">✎</button>
+          <button class="small-delete-btn" onclick="deleteReview('${idJsAttr}', '${titleJsAttr}', '${reviewerJsAttr}')" aria-label="刪除${reviewerText}對《${titleAttr}》的這則評論">🗑</button>
+        </div>
+      `;
+      })
+      .join("");
+
+    const authorText = escapeHtml(book.author || "");
+    const authorJsAttr = escapeJsAttr(book.author || "");
+    const jpTitleText = escapeHtml(book.jpTitle || "");
+    const twStatusText = escapeHtml(book.twStatus || "-");
+    const jpStatusText = escapeHtml(book.jpStatus || "-");
+    const levelText = escapeHtml(book.level || "");
+    const firstTimestampJsAttr = escapeJsAttr(
+      String(book.reviews[0]?.timestamp ?? ""),
+    );
+
+    row.innerHTML = `
+      <div class="item-main">
+        <div class="book-cover-side">${coverHTML}</div>
+        <div class="item-info">
+          <div class="title-row">
+            <span class="badge ${getLevelColor(book.level)}">${levelText}</span>
+            <h3 class="title">${titleAttr}</h3>
+            <span class="avg-score ${getScoreColor(avgRating)}">${avgRating}</span>
+            <button class="edit-book-btn" onclick="openBookInfoModal('${firstTimestampJsAttr}')" title="編輯書籍基本資訊">⚙️</button>
+          </div>
+          <p class="author">
+            👤 <button type="button" class="author-link" onclick="quickSearch('${authorJsAttr}')">${authorText}</button>
+            <span class="jp-title">${jpTitleText}</span>
+          </p>
+          <div class="status-row">
+            <span class="status-badge-tw">🇹🇼 台：${twStatusText}</span>
+            <span class="status-badge-jp">🇯🇵 日：${jpStatusText}</span>
+          </div>
+          <div class="tags">${tagsHTML}</div>
+          <div class="item-links">
+            ${book.ebookUrl ? `<a href="${ebookUrlAttr}" target="_blank" class="link-icon ebook">📖 BookWalker</a>` : ""}
+            ${book.chilUrl ? `<a href="${chilUrlAttr}" target="_blank" class="link-icon chil">🍒 ちるちる</a>` : ""}
+            <div class="add-review-action-area">
+              <button class="add-review-btn mobile-up-btn" onclick="openAddCommentModal('${firstTimestampJsAttr}')">📝 新增評論</button>
+            </div>
+          </div>
+          <div class="item-reviews">${reviewsHTML}</div>
+        </div>
+      </div>`;
+
+    fragment.appendChild(row);
+  });
+
+  grid.appendChild(fragment);
+}
+
+function handleCoverError(img) {
+  const title = img.dataset.title || "";
+  const bw = img.dataset.bw || "";
+  const chil = img.dataset.chil || "";
+  img.parentElement.innerHTML = `<div class="no-cover"><span>無封面</span><button onclick="reFetchCover('${escapeJsAttr(title)}', '${escapeJsAttr(bw)}', '${escapeJsAttr(chil)}', event)">🔍 抓取</button></div>`;
+}
+window.handleCoverError = handleCoverError;
+
+// 1. 抓取封面的補救功能 (已轉接至 Firebase 架構)
+async function reFetchCover(title, bwUrl, chilUrl, event) {
+  let finalCoverUrl = null;
+
+  // 1. 優先嘗試解析 BookWalker 網址
+  if (bwUrl && bwUrl !== "" && bwUrl !== "undefined") {
+    const match = bwUrl.match(/product\/(\d+)/);
+    if (match && match[1]) {
+      const id = match[1];
+      finalCoverUrl = `https://taiwan-image.bookwalker.com.tw/product/${id}/${id}_1.jpg`;
+    }
+  }
+
+  // 2. 如果沒有 BookWalker，則嘗試解析 ちるちる 網址
+  if (!finalCoverUrl && chilUrl && chilUrl !== "" && chilUrl !== "undefined") {
+    const match = chilUrl.match(/goods_id\/(\d+)/);
+    if (match && match[1]) {
+      const paddedId = String(match[1]).padStart(8, "0");
+      finalCoverUrl = `https://img.chil-chil.net/goods_img/XL/${paddedId}_XL.jpg`;
+    }
+  }
+
+  // 3. 判斷是否有成功解析出封面網址
+  if (!finalCoverUrl) {
+    showSyncToast("❌ 缺少有效的網址，或網址格式無法解析封面", "error");
+    return;
+  }
+
+  const btn = event.target;
+  const coverContainer = btn.closest(".book-cover-side");
+  const originalContent = coverContainer.innerHTML;
+  coverContainer.innerHTML = "<span>⌛ 儲存中...</span>";
+
+  try {
+    // 先把前端算出來的圖片網址直接顯示在畫面上，提升使用者體驗
+    const titleAttr = escapeHtml(title || "");
+    coverContainer.innerHTML = `<img src="${escapeHtml(finalCoverUrl)}" alt="${titleAttr} 封面" referrerpolicy="no-referrer">`;
+
+    // 同步更新回 Firebase
+    const formData = new FormData();
+    formData.append("title", title);
+    formData.append("coverUrl", finalCoverUrl);
+    formData.append("action", "updateCoverOnly");
+
+    await BookArchive.postForm(formData);
+    showSyncToast("✅ 封面抓取與更新成功", "success");
+  } catch (e) {
+    // 若寫入失敗，則還原畫面
+    coverContainer.innerHTML = originalContent;
+    console.error("更新錯誤:", e);
+    showSyncToast("❌ 寫入資料庫失敗，請檢查網路連線", "error");
+  }
+}
+window.reFetchCover = reFetchCover;
