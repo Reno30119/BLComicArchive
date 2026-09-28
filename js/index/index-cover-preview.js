@@ -39,12 +39,14 @@ export function updateCoverPreview() {
   const title = titleInput.value.trim();
   previewImg.alt = title ? `《${title}》封面預覽` : "封面預覽";
 
-  // 先把內容重置成 loading 狀態，容器才顯示出來——反過來做的話，容器打開的那一刻
-  // 內容還是上一次呼叫留下的舊圖片／錯誤提示，會閃一下才被蓋掉。
   previewHint.textContent = "正在載入封面圖片…";
   previewHint.className = "cover-preview-hint";
   setPlaceholder("⌛", "載入中…");
   previewWrap.style.display = "flex";
+
+  // 👇 新增這行：不發送 Referer 以繞過防盜鏈
+  previewImg.setAttribute("referrerpolicy", "no-referrer");
+  
   previewImg.src = url;
 }
 
